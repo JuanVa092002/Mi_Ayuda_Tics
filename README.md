@@ -34,9 +34,12 @@ pnpm -C server run dev    # http://localhost:8000
 pnpm -C client run dev    # http://localhost:5173
 ```
 
-Seed del líder inicial (solo desarrollo):
+Seed del líder inicial (solo desarrollo; credenciales en `.env` local, no en el repo):
 
 ```bash
+# En server/.env (local, gitignored):
+# SEED_LIDER_EMAIL=...
+# SEED_LIDER_PASSWORD=...
 cd server && npx ts-node --transpile-only src/scripts/seed-lider.ts
 ```
 

@@ -56,7 +56,7 @@ pnpm -C client run typecheck && VITE_BACKEND_URL=http://localhost:8000 pnpm -C c
 # Fase 3
 pnpm -C server run test                # 40/40 PASS
 pnpm -C client run test -- --run       # 4/4 PASS
-npx ts-node --transpile-only src/scripts/seed-lider.ts  # lidertest@gmail.com
+npx ts-node --transpile-only src/scripts/seed-lider.ts  # requiere SEED_LIDER_EMAIL en .env
 
 # Fase 4
 pnpm run smoke:prod                    # 12/12 PASS (prod)
@@ -214,7 +214,7 @@ pnpm -C client run dev                # terminal 2
 
 # Seed líder (solo dev)
 cd server && npx ts-node --transpile-only src/scripts/seed-lider.ts
-# lidertest@gmail.com / test1234
+# Credenciales: SEED_LIDER_EMAIL / SEED_LIDER_PASSWORD en .env local (no commitear)
 
 # Calidad
 pnpm -C server run typecheck && pnpm -C server run test && pnpm -C server run build

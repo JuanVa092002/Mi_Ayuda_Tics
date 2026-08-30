@@ -1,0 +1,64 @@
+# openspec/config.yaml — MiAyudaTIC SDD bootstrap
+schema: spec-driven
+
+context: |
+  MiAyudaTIC monorepo (3 surfaces):
+  - Mobile: Expo 56 / expo-router / TypeScript / React Native 0.85 / Zod / react-hook-form / vitest
+  - Server: Node.js / Express 5 / Prisma / MongoDB / TypeScript / vitest + @vitest/coverage-v8
+  - Web: React 18 / Vite / TypeScript / vitest / @testing-library
+  Package manager: pnpm
+  Artifacts: both (openspec files + Engram)
+  Strict TDD: enabled (vitest runner detected in all surfaces)
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Include sequence diagrams for complex flows
+    - Document architecture decisions with rationale
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+  apply:
+    guidelines:
+      - Follow existing code patterns per surface
+    tdd: true
+    test_command: ""
+  verify:
+    test_command: ""
+    build_command: ""
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas
+
+strict_tdd: true
+testing:
+  mobile:
+    runner: vitest
+    command: pnpm test
+    coverage: false
+    layers:
+      unit: true
+      integration: false
+      e2e: false
+  server:
+    runner: vitest
+    command: pnpm test
+    coverage: true
+    coverage_command: pnpm test:coverage
+    layers:
+      unit: true
+      integration: true
+      e2e: false
+  web:
+    runner: vitest
+    command: pnpm test
+    coverage: true
+    coverage_command: pnpm test:coverage
+    layers:
+      unit: true
+      integration: true
+      e2e: false

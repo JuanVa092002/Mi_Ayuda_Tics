@@ -21,6 +21,8 @@
 | [`docs/architecture.md`](docs/architecture.md) | System, deploy, security, mobile API |
 | [`docs/agents.md`](docs/agents.md) | 6 roles + review matrix |
 | [`docs/handoff-template.md`](docs/handoff-template.md) | Required output on every workstream |
+| [`context/current-mobile-agent-context.md`](context/current-mobile-agent-context.md) | Canonical mobile state for agents (2026-08) |
+| [`llms.txt`](llms.txt) | LLM index — start here if you are another model |
 
 **Also:** [`docs/design-system.md`](docs/design-system.md), [`docs/analytics.md`](docs/analytics.md), [`docs/quality-bar.md`](docs/quality-bar.md)
 
@@ -121,6 +123,52 @@ Project skills in [`.cursor/skills/`](.cursor/skills/). Invoke by name or trigge
 | `50-mobile-scope` | `mobile/MiAyudaTIC-Mobile/**` |
 | `60-web-scope` | `client/**` |
 | `70-platform-scope` | `server/**`, `packages/**` |
+
+## OpenCode + Engram + Gentle-AI
+
+This project is integrated with **Gentle AI** for persistent memory and structured workflows in OpenCode.
+
+### What's available
+
+| Feature | How to use |
+|---------|------------|
+| **Persistent memory** | `mem_save`, `mem_search`, `mem_context` — survives across sessions |
+| **SDD (Spec-Driven Dev)** | `/sdd-init`, `/sdd-new`, `/sdd-continue`, `/sdd-apply`, `/sdd-verify` |
+| **Review agents** | `review-readability`, `review-reliability`, `review-resilience`, `review-risk` |
+| **Judgment Day** | `jd-judge-a`, `jd-judge-b`, `jd-fix-agent` — adversarial dual review |
+| **Skills** | 21 skills in `.atl/skill-registry.md` — branch-pr, chained-pr, work-unit-commits, etc. |
+| **MCP server** | Engram MCP configured in `opencode.json` — auto-loads at session start |
+
+### First time in this repo
+
+1. OpenCode detects `opencode.json` at project root — MCP starts automatically
+2. Run `/sdd-init` to detect stack and activate SDD
+3. Agent will auto-load project context from Engram (architecture, stack, conventions)
+
+### Session protocol
+
+- **Start**: Agent loads `mem_context` to recover previous session state
+- **During work**: Agent calls `mem_save` after decisions, fixes, discoveries
+- **End**: Agent calls `mem_session_summary` before closing
+- **Compaction**: Agent auto-saves checkpoint via plugin hook
+
+### Files
+
+| File | Purpose |
+|------|---------|
+| `opencode.json` | Project-level OpenCode config (MCP + Engram) |
+| `.engram/` | Synced memory chunks (git-trackable) |
+| `.atl/skill-registry.md` | Skill index (gitignored) |
+
+### Engram project: `miayudatics`
+
+Memory is organized under the `miayudatics` project in Engram. Key topics:
+
+- `sdd-init/miayudatics` — project context (stack, testing, conventions)
+- `miayudatics/architecture` — system topology, entities, surfaces
+- `miayudatics/decisions` — technical decisions and tradeoffs
+- `miayudatics/bugfix` — bug fixes with root cause
+- `miayudatics/convention` — team conventions and patterns
 
 ## Prod URLs
 

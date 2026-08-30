@@ -1,44 +1,49 @@
 import { useAuth } from '@/features/auth/auth-context';
+import { getRouteForAccess } from '@/features/auth/guards';
 import { Redirect, Stack, useSegments } from 'expo-router';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { colors } from '@/shared/theme/colors';
 
-const PUBLIC_ROUTE_NAMES = new Set([
-  'login',
-  'register',
-  'forgot-password',
-  'reset-password',
+const PUBLIC_EXCEPTIONS = new Set([
   'pending-approval',
   'lider-not-supported',
+  'session-expired',
+  'reset-password',
 ]);
 
-function isPublicAuthRoute(segments: string[]): boolean {
-  return segments.some((segment) => PUBLIC_ROUTE_NAMES.has(segment));
-}
-
-export default function AuthLayout() {
-  const { status, user } = useAuth();
+export default function AuthGroupLayout() {
+  const { session, access } = useAuth();
   const segments = useSegments() as string[];
-  const isPublicRoute = isPublicAuthRoute(segments);
+  const currentSegment = segments[segments.length - 1] ?? '';
+  const isPasswordRecoveryRoute =
+    segments.includes('reset-password') || segments.includes('forgot-password');
+  const isPublicRoute = [
+    'login',
+    'register',
+    'forgot-password',
+    'reset-password',
+    'pending-approval',
+    'lider-not-supported',
+    'session-expired',
+  ].includes(currentSegment);
+  const isExceptionRoute = PUBLIC_EXCEPTIONS.has(currentSegment);
 
-  if (status === 'loading') {
-    return (
-      <View style={styles.loading}>
-        <ActivityIndicator size="large" color={colors.brandGreen} />
-      </View>
-    );
+  if (
+    session.state === 'authenticated' &&
+    !isPasswordRecoveryRoute &&
+    isPublicRoute &&
+    !isExceptionRoute
+  ) {
+    const destination = getRouteForAccess(access);
+    if (destination) {
+      return <Redirect href={destination} />;
+    }
   }
 
-  if (status === 'unauthenticated' && segments.includes('session')) {
-    return <Redirect href="/(auth)/login" />;
-  }
-
-  if (status === 'authenticated' && isPublicRoute && !segments.includes('session')) {
-    return <Redirect href="/(auth)/session" />;
-  }
-
-  if (status === 'authenticated' && user?.rol === 'lider') {
-    return <Redirect href="/(auth)/lider-not-supported" />;
+  if (
+    session.state === 'expired' &&
+    currentSegment !== 'session-expired' &&
+    !isPasswordRecoveryRoute
+  ) {
+    return <Redirect href="/(auth)/session-expired" />;
   }
 
   return (
@@ -49,16 +54,7 @@ export default function AuthLayout() {
       <Stack.Screen name="reset-password/[token]" />
       <Stack.Screen name="pending-approval" />
       <Stack.Screen name="lider-not-supported" />
-      <Stack.Screen name="session" />
+      <Stack.Screen name="session-expired" />
     </Stack>
   );
 }
-
-const styles = StyleSheet.create({
-  loading: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff',
-  },
-});

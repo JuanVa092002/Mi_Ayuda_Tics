@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # E2E determinístico — ciclo completo de ticket MiAyudaTIC
 # Requiere: backend en BACKEND_URL, seed war-room ejecutado
+# Credenciales en entorno (no defaults en repo):
+#   WR_FUNC_EMAIL, WR_TEC_EMAIL, WR_LIDER_EMAIL, WR_PASSWORD
 
 set -euo pipefail
 
@@ -11,10 +13,14 @@ FUNC_COOKIE="$WR_TMP/mia_wr_func.txt"
 LIDER_COOKIE="$WR_TMP/mia_wr_lider.txt"
 TEC_COOKIE="$WR_TMP/mia_wr_tec.txt"
 TEC_LOGIN_JSON="$WR_TMP/mia_wr_tec_login.json"
-FUNC_EMAIL="${WR_FUNC_EMAIL:-warroom.func@test.local}"
-TEC_EMAIL="${WR_TEC_EMAIL:-warroom.tec@test.local}"
-LIDER_EMAIL="${WR_LIDER_EMAIL:-lidertest@gmail.com}"
-PASSWORD="${WR_PASSWORD:-test1234}"
+: "${WR_FUNC_EMAIL:?Define WR_FUNC_EMAIL}"
+: "${WR_TEC_EMAIL:?Define WR_TEC_EMAIL}"
+: "${WR_LIDER_EMAIL:?Define WR_LIDER_EMAIL}"
+: "${WR_PASSWORD:?Define WR_PASSWORD}"
+FUNC_EMAIL="$WR_FUNC_EMAIL"
+TEC_EMAIL="$WR_TEC_EMAIL"
+LIDER_EMAIL="$WR_LIDER_EMAIL"
+PASSWORD="$WR_PASSWORD"
 
 PASS=0
 FAIL=0

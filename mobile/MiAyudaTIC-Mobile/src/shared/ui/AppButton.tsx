@@ -1,22 +1,19 @@
-import {
-  ActivityIndicator,
-  Pressable,
-  StyleSheet,
-  Text,
-  type PressableProps,
-  type StyleProp,
-  type ViewStyle,
-} from 'react-native';
-import { colors } from '../theme/colors';
+import type { PressableProps, StyleProp, ViewStyle } from 'react-native';
+import { Button, type ButtonVariant } from './Button';
 
-type ButtonVariant = 'green' | 'blue';
+type LegacyVariant = 'green' | 'blue';
 
 interface AppButtonProps extends Omit<PressableProps, 'style'> {
   label: string;
-  variant?: ButtonVariant;
+  variant?: LegacyVariant;
   loading?: boolean;
   style?: StyleProp<ViewStyle>;
 }
+
+const variantMap: Record<LegacyVariant, ButtonVariant> = {
+  green: 'primary',
+  blue: 'secondary',
+};
 
 export function AppButton({
   label,
@@ -26,41 +23,15 @@ export function AppButton({
   style,
   ...props
 }: AppButtonProps) {
-  const backgroundColor = variant === 'green' ? colors.brandGreen : colors.brandBlue;
-
   return (
-    <Pressable
-      accessibilityRole="button"
-      disabled={disabled || loading}
-      style={({ pressed }) => [
-        styles.button,
-        { backgroundColor, opacity: pressed || disabled || loading ? 0.85 : 1 },
-        style,
-      ]}
+    <Button
+      label={label}
+      variant={variantMap[variant]}
+      loading={loading}
+      disabled={disabled}
+      fullWidth
+      style={style}
       {...props}
-    >
-      {loading ? (
-        <ActivityIndicator color={colors.white} />
-      ) : (
-        <Text style={styles.label}>{label}</Text>
-      )}
-    </Pressable>
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  button: {
-    paddingHorizontal: 50,
-    paddingVertical: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 52,
-    elevation: 2,
-  },
-  label: {
-    color: colors.white,
-    fontSize: 18,
-    fontWeight: '700',
-  },
-});

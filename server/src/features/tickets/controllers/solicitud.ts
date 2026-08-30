@@ -18,6 +18,8 @@ import { postConsecutivoCaso } from './consecutivoCaso'
 import models from '../../../core/models'
 import { Types } from 'mongoose'
 import Notificacion from '../../shared/models/notificaciones'
+import { entityIdsEqual, isFuncionarioOwner } from '../../../shared/utils/entity-id'
+import { isDuplicateKeyError } from '../../../shared/utils/mongo-duplicate'
 
 const { solicitudModel, storageModel, usuarioModel, ambienteModel } = models
 import { saveUploadedFile } from '../../../shared/services/mediaStorage'
@@ -71,26 +73,26 @@ export const getSolicitudId = async (req: Request, res: Response): Promise<void>
     }
 
     const usuario = req.usuario!
-    if (
-      usuario.rol === 'funcionario' &&
-      String(solicitud.usuario) !== String(usuario._id)
-    ) {
+    if (usuario.rol === 'funcionario' && !entityIdsEqual(solicitud.usuario, usuario._id)) {
       handleHttpError(res, 'No autorizado', 403)
       return
     }
-    if (
-      usuario.rol === 'tecnico' &&
-      String(solicitud.tecnico) !== String(usuario._id)
-    ) {
+    if (usuario.rol === 'tecnico' && !entityIdsEqual(solicitud.tecnico, usuario._id)) {
       handleHttpError(res, 'No autorizado', 403)
       return
     }
 
+    const funcionarioOwner = isFuncionarioOwner(usuario.rol, usuario._id, solicitud.usuario)
+    const detailSelect = funcionarioOwner
+      ? 'descripcion fecha estado codigoCaso tipoCaso telefono'
+      : 'descripcion fecha estado codigoCaso tipoCaso'
+
     const data = await solicitudModel
       .findById(id)
-      .select('descripcion fecha estado')
+      .select(detailSelect)
       .populate('usuario', 'nombre')
       .populate('ambiente', 'nombre activo')
+      .populate('tipoCaso', 'nombre')
       .populate('tecnico', 'nombre')
       .populate('foto', 'url filename')
       .populate({
@@ -204,6 +206,10 @@ export const crearSolicitud = async (req: Request, res: Response): Promise<void>
       res.status(415).json({ code: 'UNSUPPORTED_MEDIA', message: 'Tipo de archivo no permitido' })
       return
     }
+    if (isDuplicateKeyError(error, 'codigoCaso')) {
+      handleHttpError(res, 'No se pudo asignar un código único a la solicitud', 409, error)
+      return
+    }
     handleHttpError(res, 'Error al registrar solicitud')
   }
 }
@@ -216,6 +222,7 @@ export const historialSolicitudesCreadas = async (req: Request, res: Response): 
     const solicitudesFinalizadas = await solicitudModel
       .find({ usuario: usuarioId })
       .select('descripcion fecha estado codigoCaso')
+      .sort({ fecha: -1, _id: -1 })
       .populate('ambiente', 'nombre')
       .populate('tipoCaso', 'nombre')
       .populate('tecnico', 'nombre')

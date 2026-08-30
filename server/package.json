@@ -20,7 +20,9 @@
     "test:cloudinary": "ts-node --transpile-only src/scripts/test-cloudinary.ts",
     "smoke:mobile-client": "ts-node --transpile-only src/scripts/mobile-smoke-client.ts",
     "verify:env": "ts-node --transpile-only src/scripts/verify-env.ts",
-    "seed:war-room": "ts-node --transpile-only src/scripts/seed-war-room-e2e.ts"
+    "seed:war-room": "ts-node --transpile-only src/scripts/seed-war-room-e2e.ts",
+    "audit:codigo-caso": "ts-node --transpile-only src/scripts/audit-solicitud-codigo-caso.ts",
+    "migrate:codigo-caso-unique": "ts-node --transpile-only src/scripts/migrate-uniq-solicitud-codigo-caso.ts"
   },
   "keywords": [],
   "author": "",

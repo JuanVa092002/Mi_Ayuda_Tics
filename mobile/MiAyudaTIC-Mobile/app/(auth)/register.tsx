@@ -1,28 +1,28 @@
 import { useAuth } from '@/features/auth/auth-context';
+import { navigateForAccess } from '@/features/auth/navigation';
+import { PasswordRuleChecklist } from '@/features/auth/components/PasswordRuleChecklist';
 import { registerSchema, type RegisterFormValues } from '@/features/auth/schemas';
 import { ApiError } from '@/shared/api/client';
-import { colors } from '@/shared/theme/colors';
-import { AppButton } from '@/shared/ui/AppButton';
-import { AuthScaffold } from '@/shared/ui/AuthScaffold';
-import { FormField } from '@/shared/ui/FormField';
+import { semanticColors } from '@/shared/theme/semantic-colors';
+import { spacing } from '@/shared/theme/spacing';
+import { radius } from '@/shared/theme/radius';
+import { AuthLayout } from '@/shared/ui/AuthLayout';
+import { BrandTitle } from '@/shared/ui/BrandTitle';
+import { Button } from '@/shared/ui/Button';
+import { Icon } from '@/shared/ui/Icon';
+import { Text } from '@/shared/ui/Text';
+import { TextInput } from '@/shared/ui/TextInput';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
-import {
-  Alert,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-  type ImageStyle,
-} from 'react-native';
+import { Controller, useForm, useWatch } from 'react-hook-form';
+import { Alert, Pressable, StyleSheet, View, type ImageStyle } from 'react-native';
 
 const ROLE_OPTIONS = [
-  { label: 'Funcionario', value: 'funcionario' as const },
-  { label: 'Técnico', value: 'tecnico' as const },
+  { label: 'Funcionario', value: 'funcionario' as const, icon: 'user' as const },
+  { label: 'Técnico', value: 'tecnico' as const, icon: 'award' as const },
 ];
 
 export default function RegisterScreen() {
@@ -35,7 +35,6 @@ export default function RegisterScreen() {
     control,
     handleSubmit,
     setValue,
-    watch,
     formState: { errors },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -49,7 +48,9 @@ export default function RegisterScreen() {
     },
   });
 
-  const selectedRole = watch('rol');
+  const selectedRole = useWatch({ control, name: 'rol' });
+  const password = useWatch({ control, name: 'password' }) ?? '';
+  const confirmPassword = useWatch({ control, name: 'confirmPassword' }) ?? '';
 
   const pickPhoto = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -83,14 +84,17 @@ export default function RegisterScreen() {
       }
 
       if (result.kind === 'tecnico_pending') {
-        router.replace({
-          pathname: '/(auth)/pending-approval',
-          params: { message: result.message },
-        });
+        navigateForAccess(
+          { state: 'pending_approval', message: result.message },
+          { replace: true, pendingMessage: result.message },
+        );
         return;
       }
 
-      router.replace('/(auth)/session');
+      if (result.kind === 'funcionario_autologin') {
+        navigateForAccess(result.access, { replace: true });
+        return;
+      }
     } catch (error) {
       const message =
         error instanceof ApiError ? error.message : 'No se pudo completar el registro.';
@@ -101,22 +105,35 @@ export default function RegisterScreen() {
   });
 
   return (
-    <AuthScaffold
-      headerImage={require('../../assets/images/signup_top.png')}
-      headerImageHeight={100}
+    <AuthLayout
+      header={<BrandTitle />}
+      title="Crear cuenta"
+      subtitle="Completa tus datos para acceder al soporte técnico del CTPI"
+      footer={
+        <View style={styles.footerRow}>
+          <Text variant="p2" color="secondary">
+            ¿Ya tienes cuenta?
+          </Text>
+          <Pressable onPress={() => router.replace('/(auth)/login')} accessibilityRole="link">
+            <Text variant="p2" color="link" style={styles.footerLink}>
+              Iniciar sesión
+            </Text>
+          </Pressable>
+        </View>
+      }
     >
-      <Text style={styles.title}>REGISTRO</Text>
-
       <Controller
         control={control}
         name="nombre"
         render={({ field: { onChange, onBlur, value } }) => (
-          <FormField
-            label="Nombre"
+          <TextInput
+            label="Nombre completo"
+            placeholder="Tu nombre"
+            leftIcon="user"
             value={value}
             onBlur={onBlur}
             onChangeText={onChange}
-            error={errors.nombre?.message}
+            errorMessage={errors.nombre?.message}
           />
         )}
       />
@@ -125,53 +142,76 @@ export default function RegisterScreen() {
         control={control}
         name="correo"
         render={({ field: { onChange, onBlur, value } }) => (
-          <FormField
-            label="Correo"
+          <TextInput
+            label="Correo institucional"
+            placeholder="usuario@sena.edu.co"
             keyboardType="email-address"
             autoCapitalize="none"
+            leftIcon="mail"
             value={value}
             onBlur={onBlur}
             onChangeText={onChange}
-            error={errors.correo?.message}
+            errorMessage={errors.correo?.message}
           />
         )}
       />
 
-      <Text style={styles.label}>Rol</Text>
-      <View style={styles.roleRow}>
-        {ROLE_OPTIONS.map((option) => (
-          <Pressable
-            key={option.value}
-            onPress={() => setValue('rol', option.value, { shouldValidate: true })}
-            style={[
-              styles.roleChip,
-              selectedRole === option.value && styles.roleChipActive,
-            ]}
-          >
-            <Text
-              style={[
-                styles.roleChipText,
-                selectedRole === option.value && styles.roleChipTextActive,
-              ]}
-            >
-              {option.label}
-            </Text>
-          </Pressable>
-        ))}
+      <View style={styles.roleHeader}>
+        <Icon name="award" size={16} color="brandBlue" />
+        <Text variant="label" color="secondary">
+          Rol
+        </Text>
       </View>
-      {errors.rol?.message ? <Text style={styles.error}>{errors.rol.message}</Text> : null}
+      <View style={styles.roleRow}>
+        {ROLE_OPTIONS.map((option) => {
+          const selected = selectedRole === option.value;
+          return (
+            <Pressable
+              key={option.value}
+              onPress={() => setValue('rol', option.value, { shouldValidate: true })}
+              style={[styles.roleChip, selected && styles.roleChipActive]}
+              accessibilityRole="button"
+              accessibilityState={{ selected }}
+            >
+              <Icon
+                name={option.icon}
+                size={18}
+                color={selected ? 'inverse' : 'brandBlue'}
+              />
+              <Text variant="p2" style={selected ? styles.roleChipTextActive : styles.roleChipText}>
+                {option.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      {errors.rol?.message ? (
+        <Text variant="caption" color="error" style={styles.roleError}>
+          {errors.rol.message}
+        </Text>
+      ) : null}
+      <View style={styles.roleHintRow}>
+        <Icon name="info" size={14} color="tertiary" />
+        <Text variant="caption" color="secondary" style={styles.roleHint}>
+          {selectedRole === 'funcionario'
+            ? 'Como funcionario podrás ingresar de inmediato tras completar el registro.'
+            : 'Como técnico tu cuenta quedará pendiente de aprobación por el líder TIC.'}
+        </Text>
+      </View>
 
       <Controller
         control={control}
         name="telefono"
         render={({ field: { onChange, onBlur, value } }) => (
-          <FormField
+          <TextInput
             label="Teléfono"
+            placeholder="300 000 0000"
             keyboardType="phone-pad"
+            leftIcon="phone"
             value={value}
             onBlur={onBlur}
             onChangeText={onChange}
-            error={errors.telefono?.message}
+            errorMessage={errors.telefono?.message}
           />
         )}
       />
@@ -180,14 +220,19 @@ export default function RegisterScreen() {
         control={control}
         name="password"
         render={({ field: { onChange, onBlur, value } }) => (
-          <FormField
+          <TextInput
             label="Contraseña"
+            placeholder="Mínimo 8 caracteres"
             secureTextEntry={!showPassword}
             autoCapitalize="none"
+            leftIcon="lock"
             value={value}
             onBlur={onBlur}
             onChangeText={onChange}
-            error={errors.password?.message}
+            errorMessage={errors.password?.message}
+            showPasswordToggle
+            passwordVisible={showPassword}
+            onTogglePassword={() => setShowPassword((prev) => !prev)}
           />
         )}
       />
@@ -196,26 +241,28 @@ export default function RegisterScreen() {
         control={control}
         name="confirmPassword"
         render={({ field: { onChange, onBlur, value } }) => (
-          <FormField
+          <TextInput
             label="Confirmar contraseña"
+            placeholder="Repite tu contraseña"
             secureTextEntry={!showPassword}
             autoCapitalize="none"
+            leftIcon="lock"
             value={value}
             onBlur={onBlur}
             onChangeText={onChange}
-            error={errors.confirmPassword?.message}
+            errorMessage={errors.confirmPassword?.message}
+            showPasswordToggle
+            passwordVisible={showPassword}
+            onTogglePassword={() => setShowPassword((prev) => !prev)}
           />
         )}
       />
 
-      <Pressable onPress={() => setShowPassword((prev) => !prev)} style={styles.toggle}>
-        <Text style={styles.toggleText}>
-          {showPassword ? 'Ocultar contraseñas' : 'Mostrar contraseñas'}
-        </Text>
-      </Pressable>
+      <PasswordRuleChecklist password={password} confirmPassword={confirmPassword} />
 
-      <Pressable onPress={pickPhoto} style={styles.photoButton}>
-        <Text style={styles.photoButtonText}>
+      <Pressable onPress={pickPhoto} style={styles.photoButton} accessibilityRole="button">
+        <Icon name="camera" size={18} color="brandBlue" />
+        <Text variant="p2" color="link" style={styles.photoButtonText}>
           {fotoUri ? 'Cambiar foto de perfil (opcional)' : 'Agregar foto de perfil (opcional)'}
         </Text>
       </Pressable>
@@ -223,97 +270,94 @@ export default function RegisterScreen() {
         <Image source={{ uri: fotoUri }} style={styles.preview as ImageStyle} contentFit="cover" />
       ) : null}
 
-      <AppButton label="Registrar" loading={submitting} onPress={onSubmit} />
-
-      <View style={styles.footerRow}>
-        <Text style={styles.footerText}>¿Tienes una cuenta?</Text>
-        <Pressable onPress={() => router.replace('/(auth)/login')}>
-          <Text style={styles.link}> Iniciar sesión</Text>
-        </Pressable>
-      </View>
-    </AuthScaffold>
+      <Button label="Registrarse" variant="primary" fullWidth loading={submitting} onPress={onSubmit} />
+    </AuthLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  title: {
-    color: colors.brandGreen,
-    fontSize: 20,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 15,
-    color: colors.textDark,
-    marginBottom: 8,
+  roleHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[2],
+    marginBottom: spacing[2],
   },
   roleRow: {
     flexDirection: 'row',
-    gap: 10,
-    marginBottom: 12,
+    gap: spacing[3],
+    marginBottom: spacing[3],
   },
   roleChip: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 20,
-    backgroundColor: colors.inputWhite,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing[2],
+    paddingVertical: spacing[3],
+    paddingHorizontal: spacing[3],
+    borderRadius: radius.pill,
+    backgroundColor: semanticColors.surface.muted,
+    borderWidth: 1,
+    borderColor: semanticColors.border.default,
+    minHeight: 48,
   },
   roleChipActive: {
-    backgroundColor: colors.brandGreen,
+    backgroundColor: semanticColors.brand.green,
+    borderColor: semanticColors.brand.green,
   },
   roleChipText: {
-    color: colors.brandBlue,
+    color: semanticColors.brand.blue,
     fontWeight: '600',
   },
   roleChipTextActive: {
-    color: colors.white,
+    color: semanticColors.text.inverse,
+    fontWeight: '600',
   },
-  error: {
-    color: colors.error,
-    fontSize: 13,
-    marginBottom: 8,
+  roleError: {
+    marginBottom: spacing[2],
   },
-  toggle: {
-    alignSelf: 'flex-end',
-    marginBottom: 12,
+  roleHintRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing[2],
+    marginBottom: spacing[4],
   },
-  toggleText: {
-    color: colors.textDark,
-    fontSize: 13,
+  roleHint: {
+    flex: 1,
+    lineHeight: 18,
   },
   photoButton: {
-    backgroundColor: colors.inputWhite,
-    borderRadius: 20,
-    padding: 14,
-    marginBottom: 12,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing[2],
+    borderRadius: radius.pill,
+    padding: spacing[4],
+    marginBottom: spacing[3],
+    backgroundColor: semanticColors.surface.muted,
+    borderWidth: 1,
+    borderColor: semanticColors.border.default,
+    minHeight: 48,
   },
   photoButtonText: {
-    color: colors.brandBlue,
     fontWeight: '600',
   },
   preview: {
     width: 96,
     height: 96,
-    borderRadius: 48,
+    borderRadius: radius.full,
     alignSelf: 'center',
-    marginBottom: 16,
+    marginBottom: spacing[4],
+    borderWidth: 2,
+    borderColor: semanticColors.border.default,
   },
   footerRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 16,
+    alignItems: 'center',
+    gap: spacing[1],
   },
-  footerText: {
-    color: colors.brandBlue,
-    fontSize: 11,
-  },
-  link: {
-    color: colors.brandGreen,
-    fontSize: 11,
-    fontWeight: '700',
-    textDecorationLine: 'underline',
+  footerLink: {
+    fontWeight: '600',
   },
 });

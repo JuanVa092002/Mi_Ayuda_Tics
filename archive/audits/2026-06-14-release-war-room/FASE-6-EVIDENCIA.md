@@ -31,7 +31,7 @@ E2E_TICKET_LIFECYCLE: PASS (run 1781406633, SOL_ID=6a2e1baac5d089156262ebb2, TEC
 | Paso | Acción | Resultado |
 |------|--------|-----------|
 | 1 | `warroom.func@test.local` crea solicitud | PASS |
-| 2 | `lidertest@gmail.com` ve en `/solicitud/pendientes` | PASS |
+| 2 | cuenta líder de prueba ve en `/solicitud/pendientes` | PASS |
 | 3 | Líder asigna a `warroom.tec@test.local` (TEC_ID explícito) | PASS |
 | 4 | Técnico ve en `/solicitud/asignadas` | PASS |
 | 5 | Técnico POST `/solucionCaso/:id` finalizado | PASS |

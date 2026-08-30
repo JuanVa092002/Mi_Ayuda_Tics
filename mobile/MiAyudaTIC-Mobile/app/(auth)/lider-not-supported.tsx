@@ -1,3 +1,4 @@
+import { useAuth } from '@/features/auth/auth-context';
 import { colors } from '@/shared/theme/colors';
 import { AppButton } from '@/shared/ui/AppButton';
 import { BrandTitle } from '@/shared/ui/BrandTitle';
@@ -6,16 +7,23 @@ import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function LiderNotSupportedScreen() {
+  const { resetToGuest } = useAuth();
+
+  const handleGoHome = async () => {
+    await resetToGuest();
+    router.replace('/');
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <BrandTitle />
-        <Text style={styles.title}>Acceso web requerido</Text>
+        <Text style={styles.title}>Experiencia móvil no disponible</Text>
         <Text style={styles.message}>
-          El rol Líder TIC debe usar la versión web de MiAyudaTIC. Esta aplicación móvil está
-          diseñada para funcionarios y técnicos en campo.
+          La experiencia móvil para líder TIC aún no está disponible. Usa la versión web de
+          MiAyudaTIC para gestionar solicitudes, asignaciones y reportes.
         </Text>
-        <AppButton label="Volver al inicio" variant="blue" onPress={() => router.replace('/')} />
+        <AppButton label="Volver al inicio" variant="blue" onPress={() => void handleGoHome()} />
       </View>
     </SafeAreaView>
   );

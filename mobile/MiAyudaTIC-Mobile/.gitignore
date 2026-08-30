@@ -41,3 +41,11 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# local simulation / E2E uploads (not product assets)
+# (do not add new file-* from adb/API probes)
+
+# opencode.json is per-developer (contains user-specific paths and API keys)
+
+# opencode.json is per-developer (contains user-specific paths and API keys)
+# Protected at workspace root .gitignore (this one is a no-op for that file)

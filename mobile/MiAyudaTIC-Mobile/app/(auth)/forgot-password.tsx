@@ -1,19 +1,22 @@
-import { useAuth } from '@/features/auth/auth-context';
+import { AuthFlowPanel } from '@/features/auth/components/AuthFlowPanel';
+import { useForgotPassword } from '@/features/auth/hooks';
 import { forgotPasswordSchema, type ForgotPasswordFormValues } from '@/features/auth/schemas';
-import { ApiError } from '@/shared/api/client';
-import { colors } from '@/shared/theme/colors';
-import { AppButton } from '@/shared/ui/AppButton';
-import { AuthScaffold } from '@/shared/ui/AuthScaffold';
-import { FormField } from '@/shared/ui/FormField';
+import { spacing } from '@/shared/theme/spacing';
+import { AuthLayout } from '@/shared/ui/AuthLayout';
+import { BrandTitle } from '@/shared/ui/BrandTitle';
+import { Button } from '@/shared/ui/Button';
+import { Text } from '@/shared/ui/Text';
+import { TextInput } from '@/shared/ui/TextInput';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from 'expo-router';
-import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { Alert, Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
+
+const SUCCESS_BODY =
+  'Te enviamos un enlace para recuperar tu acceso. Si tienes MiAyudaTIC instalada, el enlace abrirá la app directamente. Revisa tu bandeja de entrada y también spam o no deseados; puede tardar unos minutos.';
 
 export default function ForgotPasswordScreen() {
-  const { forgotPassword } = useAuth();
-  const [submitting, setSubmitting] = useState(false);
+  const { submit, isSubmitting, isSuccess, successMessage, error, reset } = useForgotPassword();
 
   const {
     control,
@@ -25,74 +28,95 @@ export default function ForgotPasswordScreen() {
   });
 
   const onSubmit = handleSubmit(async (values) => {
-    setSubmitting(true);
-    try {
-      const message = await forgotPassword(values.correo.trim());
-      Alert.alert('Solicitud enviada', message, [
-        { text: 'OK', onPress: () => router.replace('/(auth)/login') },
-      ]);
-    } catch (error) {
-      const message =
-        error instanceof ApiError ? error.message : 'No se pudo enviar la solicitud.';
-      Alert.alert('Error', message);
-    } finally {
-      setSubmitting(false);
-    }
+    reset();
+    await submit(values.correo.trim());
   });
 
+  const goToLogin = () => {
+    router.replace({ pathname: '/(auth)/login' });
+  };
+
+  const tryAnotherEmail = () => {
+    reset();
+  };
+
+  if (isSuccess) {
+    return (
+      <AuthLayout header={<BrandTitle />}>
+        <AuthFlowPanel
+          tone="success"
+          title="Revisa tu correo"
+          message={successMessage ?? SUCCESS_BODY}
+          primaryLabel="Intentar con otro correo"
+          onPrimaryPress={tryAnotherEmail}
+          secondaryLabel="Volver al inicio de sesión"
+          onSecondaryPress={goToLogin}
+        />
+      </AuthLayout>
+    );
+  }
+
   return (
-    <AuthScaffold headerImage={require('../../assets/images/login_bottom.png')} headerImageHeight={80}>
-      <Text style={styles.title}>RECUPERAR CONTRASEÑA</Text>
-      <Text style={styles.subtitle}>
-        Ingresa tu correo y te enviaremos instrucciones si la cuenta está registrada.
-      </Text>
+    <AuthLayout
+      header={<BrandTitle />}
+      title="Recuperar contraseña"
+      subtitle="Ingresa tu correo institucional y te enviaremos un enlace para restablecer tu contraseña."
+    >
+      {error ? (
+        <AuthFlowPanel
+          tone={error.kind === 'rate_limited' ? 'warning' : 'error'}
+          title={error.kind === 'network' ? 'Sin conexión' : 'No se pudo enviar'}
+          message={error.message}
+          primaryLabel={error.canRetry ? 'Reintentar' : undefined}
+          onPrimaryPress={error.canRetry ? () => reset() : undefined}
+        />
+      ) : null}
 
       <Controller
         control={control}
         name="correo"
         render={({ field: { onChange, onBlur, value } }) => (
-          <FormField
+          <TextInput
             label="Correo electrónico"
+            placeholder="usuario@sena.edu.co"
             keyboardType="email-address"
             autoCapitalize="none"
+            autoComplete="email"
+            autoFocus
+            editable={!isSubmitting}
+            leftIcon="mail"
             value={value}
             onBlur={onBlur}
             onChangeText={onChange}
-            error={errors.correo?.message}
+            errorMessage={errors.correo?.message}
           />
         )}
       />
 
-      <AppButton label="Enviar" loading={submitting} onPress={onSubmit} />
+      <Button
+        label="Enviar enlace"
+        variant="primary"
+        fullWidth
+        loading={isSubmitting}
+        disabled={isSubmitting}
+        onPress={onSubmit}
+      />
 
-      <Pressable onPress={() => router.back()} style={styles.linkWrap}>
-        <Text style={styles.link}>Volver al inicio de sesión</Text>
+      <Pressable onPress={goToLogin} style={styles.linkWrap} accessibilityRole="link">
+        <Text variant="p2" color="link" align="center">
+          Volver al inicio de sesión
+        </Text>
       </Pressable>
-    </AuthScaffold>
+    </AuthLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  title: {
-    color: colors.brandGreen,
-    fontSize: 20,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  subtitle: {
-    textAlign: 'center',
-    color: colors.textDark,
-    marginBottom: 20,
-    lineHeight: 20,
-  },
   linkWrap: {
-    marginTop: 20,
+    marginTop: spacing[6],
     alignItems: 'center',
-  },
-  link: {
-    color: colors.brandGreen,
-    fontSize: 15,
-    fontWeight: '600',
+    paddingVertical: spacing[2],
+    minHeight: 44,
+    justifyContent: 'center',
   },
 });

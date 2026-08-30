@@ -248,6 +248,8 @@ Report to líder TIC via email: description, reproduction steps, estimated impac
 
 `CLIENT_URL` and `CORS_ORIGINS` must match the Vercel frontend URL. With Cloudinary configured, evidence persists across redeploys; without it, `STORAGE_PATH` is ephemeral on Render free tier.
 
+**Brevo (password reset & transactional email):** production uses the REST API (`BREVO_API_KEY`). Authorize Render’s outbound IP in [Brevo Authorized IPs](https://app.brevo.com/security/authorised_ips) (Oregon egress was `74.220.48.235` at time of incident). SMTP fallback exists in code but is not the primary path—SMTP credentials currently fail with `535`. See [incident closure](incidents/2026-06-14-forgot-password-prod.md).
+
 ### Vercel (frontend)
 
 | Setting | Value |

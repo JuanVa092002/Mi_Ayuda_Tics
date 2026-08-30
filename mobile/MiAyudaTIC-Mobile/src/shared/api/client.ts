@@ -1,12 +1,10 @@
-export class ApiError extends Error {
-  constructor(
-    message: string,
-    public status: number,
-  ) {
-    super(message);
-    this.name = 'ApiError';
-  }
-}
+import { API_REQUEST_TIMEOUT_MS, API_UPLOAD_TIMEOUT_MS, getApiBaseUrl } from '@/shared/config/env';
+import { ApiError, mapHttpStatusToCode } from '@/shared/api/errors';
+import { mapUnknownFetchError } from '@/shared/api/fetch-error';
+import { parseJsonBody, parseJsonMessage } from '@/shared/api/http';
+import { inspectFormDataPhoto, logUploadError, logUploadRequest } from '@/shared/media/upload-log';
+
+export { ApiError } from '@/shared/api/errors';
 
 export interface ApiFetchOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -14,28 +12,16 @@ export interface ApiFetchOptions {
   token?: string | null;
   formData?: FormData;
   timeoutMs?: number;
+  /** Si false, un 401 no dispara el handler global (ej. login). */
+  notifyUnauthorized?: boolean;
 }
 
-const DEFAULT_TIMEOUT_MS = 30_000;
+type UnauthorizedHandler = () => void;
 
-function getApiBaseUrl(): string {
-  const url = process.env.EXPO_PUBLIC_API_URL?.trim();
-  if (!url) {
-    throw new Error('EXPO_PUBLIC_API_URL no está configurada');
-  }
-  return `${url.replace(/\/$/, '')}/api`;
-}
+let unauthorizedHandler: UnauthorizedHandler | null = null;
 
-async function parseErrorMessage(response: Response): Promise<string> {
-  try {
-    const data = (await response.json()) as { message?: string };
-    if (typeof data.message === 'string' && data.message.length > 0) {
-      return data.message;
-    }
-  } catch {
-    // ignore parse errors
-  }
-  return `Error del servidor (${response.status})`;
+export function setUnauthorizedHandler(handler: UnauthorizedHandler | null): void {
+  unauthorizedHandler = handler;
 }
 
 export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): Promise<T> {
@@ -44,7 +30,8 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
     body,
     token,
     formData,
-    timeoutMs = DEFAULT_TIMEOUT_MS,
+    timeoutMs = formData ? API_UPLOAD_TIMEOUT_MS : API_REQUEST_TIMEOUT_MS,
+    notifyUnauthorized = true,
   } = options;
 
   const controller = new AbortController();
@@ -63,6 +50,27 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
     requestBody = JSON.stringify(body);
   }
 
+  const formKeys: string[] = [];
+  if (formData) {
+    formData.forEach((_value, key) => {
+      formKeys.push(key);
+    });
+  }
+
+  if (formData) {
+    logUploadRequest({
+      method,
+      path,
+      bodyKind: 'formdata',
+      hasAuthorization: Boolean(token),
+      formKeys,
+      formInspect: inspectFormDataPhoto(
+        formData,
+        formKeys.includes('evidencia') ? 'evidencia' : 'foto',
+      ),
+    });
+  }
+
   try {
     const response = await fetch(`${getApiBaseUrl()}${path}`, {
       method,
@@ -72,7 +80,14 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
     });
 
     if (!response.ok) {
-      throw new ApiError(await parseErrorMessage(response), response.status);
+      const message = await parseJsonMessage(response);
+      const code = mapHttpStatusToCode(response.status);
+
+      if (response.status === 401 && notifyUnauthorized) {
+        unauthorizedHandler?.();
+      }
+
+      throw new ApiError(message, code, response.status);
     }
 
     if (response.status === 204) {
@@ -84,18 +99,58 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
       return undefined as T;
     }
 
-    return JSON.parse(text) as T;
+    return parseJsonBody<T>(text);
   } catch (error) {
-    if (error instanceof ApiError) {
-      throw error;
+    if (formData || method !== 'GET') {
+      logUploadError(path, error);
     }
-    if (error instanceof Error && error.name === 'AbortError') {
-      throw new ApiError(
-        'El servidor está tardando en responder. Intenta de nuevo en unos segundos.',
-        408,
-      );
+    throw mapUnknownFetchError(error);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** Authenticated binary GET. Does not parse JSON, log bodies, or put the token in the URL. */
+export async function apiFetchBinary(
+  path: string,
+  options: Pick<ApiFetchOptions, 'token' | 'timeoutMs' | 'notifyUnauthorized'> = {},
+): Promise<Uint8Array> {
+  const {
+    token,
+    timeoutMs = API_REQUEST_TIMEOUT_MS,
+    notifyUnauthorized = true,
+  } = options;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  try {
+    const response = await fetch(`${getApiBaseUrl()}${path}`, {
+      method: 'GET',
+      headers,
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const message = await parseJsonMessage(response);
+      const code = mapHttpStatusToCode(response.status);
+
+      if (response.status === 401 && notifyUnauthorized) {
+        unauthorizedHandler?.();
+      }
+
+      throw new ApiError(message, code, response.status);
     }
-    throw new ApiError('No hay conexión con el servidor. Verifica tu internet.', 0);
+
+    const buffer = await response.arrayBuffer();
+    return new Uint8Array(buffer);
+  } catch (error) {
+    throw mapUnknownFetchError(error);
   } finally {
     clearTimeout(timer);
   }

@@ -1,127 +1,255 @@
-import { ApiError } from '@/shared/api/client';
+import type { AuthSession } from '@/shared/contracts/auth';
+import type { User } from '@/shared/contracts/user';
+import { clearSessionSnapshot, saveSessionSnapshot } from '@/shared/storage/session';
 import { clearToken, getToken, setToken } from '@/shared/storage/token';
+import {
+  ApiError,
+  isInactiveAccountMessage,
+  isPendingTechnicianMessage,
+} from '@/shared/api/errors';
+import { setUnauthorizedHandler } from '@/shared/api/client';
 import {
   createContext,
   useCallback,
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
+import { AppState, type AppStateStatus } from 'react-native';
 import {
   forgotPasswordRequest,
   loginRequest,
   logoutRequest,
   registerRequest,
   resetPasswordRequest,
-  verifyTokenRequest,
+  verifySessionRequest,
 } from './api';
+import { accessForAuthSession, resolveMobileAccess } from './guards';
+import { resolveMobilePersistDecision } from './session-policy';
 import type {
-  AuthStatus,
-  RegisterFuncionarioResponse,
+  AccessResolution,
+  LoginResult,
   RegisterInput,
-  RegisterTecnicoResponse,
-  User,
-} from './types';
-import { isInactiveAccountMessage, isPendingTechnicianMessage } from './types';
+  RegisterResult,
+  SessionStatus,
+} from './session-types';
+import { registerDeviceForPush, unregisterDeviceForPush } from '@/shared/notifications';
+import { clearAuthenticatedSessionMedia } from '@/shared/media/authenticated-media-cache';
+import {
+  resolveBackgroundRevalidateFailure,
+  resolveBootstrapFailure,
+  shouldRevalidateOnForeground,
+} from './bootstrap-session-policy';
 
-export type LoginResult =
-  | { ok: true; user: User }
-  | { ok: false; kind: 'invalid_credentials' | 'pending_approval' | 'inactive' | 'lider' | 'network'; message: string };
+export type { RegisterInput, LoginResult, RegisterResult, SessionStatus, AccessResolution };
 
-export type RegisterResult =
-  | { ok: true; kind: 'funcionario_autologin'; user: User }
-  | { ok: true; kind: 'tecnico_pending'; message: string }
-  | { ok: false; message: string };
+const LIDER_BLOCK_MESSAGE =
+  'El rol Líder TIC debe usar la versión web. Esta app es para funcionarios y técnicos.';
+
+const PENDING_APPROVAL_MESSAGE =
+  'Su registro se encuentra sujeto a aprobación por parte del Líder TIC. Una vez sea aprobado, podrá ingresar al sistema.';
+
+type CommitMobileSessionResult =
+  | { committed: true; access: AccessResolution }
+  | { committed: false; access: AccessResolution };
 
 interface AuthContextValue {
-  status: AuthStatus;
+  session: SessionStatus;
+  access: AccessResolution;
   user: User | null;
   token: string | null;
-  bootstrap: () => Promise<void>;
+  bootstrapSession: () => Promise<void>;
   login: (correo: string, password: string) => Promise<LoginResult>;
   register: (input: RegisterInput) => Promise<RegisterResult>;
   logout: () => Promise<void>;
   forgotPassword: (correo: string) => Promise<string>;
   resetPassword: (token: string, password: string, confirmPassword: string) => Promise<string>;
+  markSessionExpired: () => Promise<void>;
+  resetToGuest: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function isFuncionarioRegisterResponse(
-  response: RegisterFuncionarioResponse | RegisterTecnicoResponse,
-): response is RegisterFuncionarioResponse {
-  return 'data' in response && Boolean(response.data?.token);
+async function persistSession(session: AuthSession): Promise<void> {
+  await setToken(session.token);
+  await saveSessionSnapshot({ userId: session.user.id, role: session.user.role });
+}
+
+async function wipeSession(): Promise<void> {
+  await clearToken();
+  await clearSessionSnapshot();
+  await unregisterDeviceForPush();
+  clearAuthenticatedSessionMedia();
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [status, setStatus] = useState<AuthStatus>('loading');
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setTokenState] = useState<string | null>(null);
+  const [session, setSession] = useState<SessionStatus>({ state: 'guest' });
+  const sessionRef = useRef(session);
+  sessionRef.current = session;
 
-  const applySession = useCallback(async (nextToken: string, nextUser: User) => {
-    await setToken(nextToken);
-    setTokenState(nextToken);
-    setUser(nextUser);
-    setStatus('authenticated');
+  const access = useMemo(() => resolveMobileAccess(session), [session]);
+
+  const user = session.state === 'authenticated' ? session.session.user : null;
+  const token = session.state === 'authenticated' ? session.session.token : null;
+
+  const markSessionExpired = useCallback(async () => {
+    await wipeSession();
+    setSession({ state: 'expired' });
   }, []);
 
-  const clearSession = useCallback(async () => {
-    await clearToken();
-    setTokenState(null);
-    setUser(null);
-    setStatus('unauthenticated');
+  const resetToGuest = useCallback(async () => {
+    await wipeSession();
+    setSession({ state: 'guest' });
   }, []);
 
-  const bootstrap = useCallback(async () => {
-    setStatus('loading');
+  const commitMobileSession = useCallback(
+    async (authSession: AuthSession): Promise<CommitMobileSessionResult> => {
+      const decision = resolveMobilePersistDecision(authSession.user);
+
+      if (!decision.persist) {
+        await wipeSession();
+
+        if (decision.access.state === 'lider_blocked') {
+          setSession({ state: 'access_blocked', reason: 'lider_blocked' });
+        } else if (decision.access.state === 'pending_approval') {
+          setSession({
+            state: 'access_blocked',
+            reason: 'pending_approval',
+            message: PENDING_APPROVAL_MESSAGE,
+          });
+        } else {
+          setSession({ state: 'guest' });
+        }
+
+        return { committed: false, access: decision.access };
+      }
+
+      await persistSession(authSession);
+      setSession({ state: 'authenticated', session: authSession });
+      void registerDeviceForPush('', authSession.token);
+      return { committed: true, access: accessForAuthSession(authSession) };
+    },
+    [],
+  );
+
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      void markSessionExpired();
+    });
+    return () => setUnauthorizedHandler(null);
+  }, [markSessionExpired]);
+
+  const bootstrapSession = useCallback(async () => {
     const storedToken = await getToken();
     if (!storedToken) {
-      setStatus('unauthenticated');
+      setSession({ state: 'guest' });
       return;
     }
 
+    setSession({ state: 'bootstrapping' });
+
     try {
-      const verifiedUser = await verifyTokenRequest(storedToken);
-      setTokenState(storedToken);
-      setUser(verifiedUser);
-      setStatus('authenticated');
+      const verifiedUser = await verifySessionRequest(storedToken);
+      const nextSession: AuthSession = { token: storedToken, user: verifiedUser };
+      await commitMobileSession(nextSession);
     } catch (error) {
-      await clearSession();
-      if (error instanceof ApiError && error.status === 403) {
-        // token presente pero cuenta no permitida
+      const outcome = resolveBootstrapFailure(error);
+
+      if (outcome.kind === 'expired') {
+        await wipeSession();
+        setSession({ state: 'expired' });
         return;
       }
+
+      if (outcome.kind === 'restore_failed') {
+        setSession(outcome.session);
+        return;
+      }
+
+      await wipeSession();
+      setSession({ state: 'guest' });
     }
-  }, [clearSession]);
+  }, [commitMobileSession]);
+
+  const revalidateSessionInBackground = useCallback(async () => {
+    const current = sessionRef.current;
+    if (!shouldRevalidateOnForeground(current)) {
+      return;
+    }
+
+    const activeToken = current.session.token;
+
+    try {
+      const verifiedUser = await verifySessionRequest(activeToken);
+      const nextSession: AuthSession = { token: activeToken, user: verifiedUser };
+      await commitMobileSession(nextSession);
+    } catch (error) {
+      const outcome = resolveBackgroundRevalidateFailure(error);
+
+      if (outcome === 'expired') {
+        await markSessionExpired();
+        return;
+      }
+
+      if (outcome === 'guest') {
+        await wipeSession();
+        setSession({ state: 'guest' });
+        return;
+      }
+
+      // Red / timeout / 5xx: conservar sesión y navegación actual.
+    }
+  }, [commitMobileSession, markSessionExpired]);
 
   useEffect(() => {
-    void bootstrap();
-  }, [bootstrap]);
+    void bootstrapSession();
+  }, [bootstrapSession]);
+
+  useEffect(() => {
+    const handleAppState = (nextState: AppStateStatus) => {
+      if (nextState === 'active') {
+        void revalidateSessionInBackground();
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppState);
+    return () => subscription.remove();
+  }, [revalidateSessionInBackground]);
 
   const login = useCallback(
     async (correo: string, password: string): Promise<LoginResult> => {
       try {
-        const response = await loginRequest(correo, password);
-        const { token: nextToken, user: nextUser } = response.dataUser;
+        const authSession = await loginRequest(correo, password);
+        const result = await commitMobileSession(authSession);
 
-        if (nextUser.rol === 'lider') {
+        if (!result.committed) {
+          if (result.access.state === 'lider_blocked') {
+            return { ok: false, kind: 'lider', message: LIDER_BLOCK_MESSAGE };
+          }
+          if (result.access.state === 'pending_approval') {
+            return {
+              ok: false,
+              kind: 'pending_approval',
+              message: PENDING_APPROVAL_MESSAGE,
+            };
+          }
           return {
             ok: false,
-            kind: 'lider',
-            message: 'El rol Líder TIC debe usar la versión web. Esta app es para funcionarios y técnicos.',
+            kind: 'network',
+            message: 'No se pudo completar el inicio de sesión.',
           };
         }
 
-        await applySession(nextToken, nextUser);
-        return { ok: true, user: nextUser };
+        return { ok: true, access: result.access };
       } catch (error) {
         if (error instanceof ApiError) {
-          if (error.status === 401) {
+          if (error.code === 'UNAUTHORIZED') {
             return { ok: false, kind: 'invalid_credentials', message: error.message };
           }
-          if (error.status === 403) {
+          if (error.code === 'FORBIDDEN') {
             if (isPendingTechnicianMessage(error.message)) {
               return { ok: false, kind: 'pending_approval', message: error.message };
             }
@@ -138,7 +266,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
       }
     },
-    [applySession],
+    [commitMobileSession],
   );
 
   const register = useCallback(
@@ -146,19 +274,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const response = await registerRequest(input);
 
-        if (isFuncionarioRegisterResponse(response)) {
-          await applySession(response.data.token, response.data.user);
-          return { ok: true, kind: 'funcionario_autologin', user: response.data.user };
+        if (response.kind === 'tecnico_pending') {
+          await resetToGuest();
+          return { ok: true, kind: 'tecnico_pending', message: response.message };
         }
 
-        return { ok: true, kind: 'tecnico_pending', message: response.message };
+        if (response.session.user.role !== 'funcionario') {
+          await wipeSession();
+          return {
+            ok: false,
+            message: 'Solo funcionarios pueden iniciar sesión automáticamente tras el registro.',
+          };
+        }
+
+        const result = await commitMobileSession(response.session);
+        if (!result.committed) {
+          return {
+            ok: false,
+            message: 'No se pudo iniciar sesión automáticamente tras el registro.',
+          };
+        }
+
+        return {
+          ok: true,
+          kind: 'funcionario_autologin',
+          access: result.access,
+        };
       } catch (error) {
         const message =
           error instanceof ApiError ? error.message : 'No se pudo completar el registro.';
         return { ok: false, message };
       }
     },
-    [applySession],
+    [commitMobileSession, resetToGuest],
   );
 
   const logout = useCallback(async () => {
@@ -169,32 +317,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // limpiar sesión local aunque falle el servidor
       }
     }
-    await clearSession();
-  }, [clearSession, token]);
+    await resetToGuest();
+  }, [resetToGuest, token]);
 
   const forgotPassword = useCallback(async (correo: string) => {
     const response = await forgotPasswordRequest(correo);
     return response.message;
   }, []);
 
-  const resetPassword = useCallback(async (resetToken: string, password: string, confirmPassword: string) => {
-    const response = await resetPasswordRequest(resetToken, password, confirmPassword);
-    return response.message;
-  }, []);
+  const resetPassword = useCallback(
+    async (resetToken: string, password: string, confirmPassword: string) => {
+      const response = await resetPasswordRequest(resetToken, password, confirmPassword);
+      return response.message;
+    },
+    [],
+  );
 
   const value = useMemo(
     () => ({
-      status,
+      session,
+      access,
       user,
       token,
-      bootstrap,
+      bootstrapSession,
       login,
       register,
       logout,
       forgotPassword,
       resetPassword,
+      markSessionExpired,
+      resetToGuest,
     }),
-    [status, user, token, bootstrap, login, register, logout, forgotPassword, resetPassword],
+    [
+      session,
+      access,
+      user,
+      token,
+      bootstrapSession,
+      login,
+      register,
+      logout,
+      forgotPassword,
+      resetPassword,
+      markSessionExpired,
+      resetToGuest,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

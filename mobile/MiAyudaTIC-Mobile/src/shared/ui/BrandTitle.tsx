@@ -1,22 +1,41 @@
-import { StyleSheet, Text, View } from 'react-native';
-import { colors } from '../theme/colors';
+import { StyleSheet, View } from 'react-native';
+import { semanticColors } from '../theme/semantic-colors';
+import { spacing } from '../theme/spacing';
+import { typography } from '../theme/typography';
+import { Text } from './Text';
 
 interface BrandTitleProps {
-  size?: 'large' | 'small';
+  size?: 'large' | 'default' | 'small';
+  showSubtitle?: boolean;
 }
 
-export function BrandTitle({ size = 'large' }: BrandTitleProps) {
-  const fontSize = size === 'large' ? 24 : 18;
-  const subtitleSize = size === 'large' ? 16 : 12;
+const sizeStyles = {
+  large: { fontSize: 26, lineHeight: 32, letterSpacing: 0.6 },
+  default: { fontSize: 20, lineHeight: 26, letterSpacing: 0.4 },
+  small: { fontSize: 17, lineHeight: 22, letterSpacing: 0.3 },
+} as const;
+
+export function BrandTitle({ size = 'default', showSubtitle = false }: BrandTitleProps) {
+  const resolvedSize = size === 'small' ? 'small' : size === 'large' ? 'large' : 'default';
+  const metrics = sizeStyles[resolvedSize];
 
   return (
-    <View style={styles.container}>
-      <View style={styles.row}>
-        <Text style={[styles.brand, { fontSize, color: colors.brandGreen }]}>MI </Text>
-        <Text style={[styles.brand, { fontSize }]}>AYUDA </Text>
-        <Text style={[styles.brand, { fontSize, color: colors.brandGreen }]}>TICS </Text>
+    <View style={styles.container} accessibilityRole="header">
+      <View style={styles.wordmark}>
+        <Text
+          style={[styles.wordmarkBase, metrics]}
+          accessibilityLabel="MIAYUDATICS"
+        >
+          <Text style={[styles.segment, metrics, styles.blue]}>MI</Text>
+          <Text style={[styles.segment, metrics, styles.green]}>AYUDA</Text>
+          <Text style={[styles.segment, metrics, styles.blue]}>TICS</Text>
+        </Text>
       </View>
-      <Text style={[styles.subtitle, { fontSize: subtitleSize }]}>Regional Cauca</Text>
+      {showSubtitle ? (
+        <Text variant="caption" color="secondary" style={styles.subtitle}>
+          Regional Cauca
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -25,16 +44,23 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
   },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+  wordmark: {
+    paddingHorizontal: spacing[2],
   },
-  brand: {
-    fontWeight: '700',
-    color: '#000',
+  wordmarkBase: {
+    ...typography.h1,
+    textAlign: 'center',
+  },
+  segment: {
+    ...typography.h1,
+  },
+  blue: {
+    color: semanticColors.brand.blue,
+  },
+  green: {
+    color: semanticColors.brand.green,
   },
   subtitle: {
-    marginTop: 10,
-    color: '#333',
+    marginTop: spacing[2],
   },
 });

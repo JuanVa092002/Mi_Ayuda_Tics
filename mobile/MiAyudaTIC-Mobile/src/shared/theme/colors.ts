@@ -1,9 +1,14 @@
+import { semanticColors } from './semantic-colors';
+
+/** Legacy flat API — kept for screens not yet migrated to semantic tokens. */
 export const colors = {
-  brandGreen: 'rgb(57, 169, 0)',
-  brandBlue: 'rgb(0, 50, 77)',
-  panelGray: 'rgb(222, 217, 217)',
-  inputWhite: 'rgb(255, 254, 254)',
-  textDark: 'rgb(53, 74, 106)',
-  white: '#FFFFFF',
-  error: '#D32F2F',
+  brandGreen: semanticColors.brand.green,
+  brandBlue: semanticColors.brand.blue,
+  panelGray: semanticColors.surface.muted,
+  inputWhite: semanticColors.surface.card,
+  textDark: semanticColors.text.primary,
+  white: semanticColors.surface.default,
+  error: semanticColors.state.error,
 } as const;
+
+export { semanticColors };

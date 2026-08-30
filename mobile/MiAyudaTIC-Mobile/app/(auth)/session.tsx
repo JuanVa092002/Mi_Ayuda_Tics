@@ -28,11 +28,11 @@ export default function SessionScreen() {
         {user ? (
           <View style={styles.card}>
             <Text style={styles.label}>Nombre</Text>
-            <Text style={styles.value}>{user.nombre}</Text>
+            <Text style={styles.value}>{user.fullName}</Text>
             <Text style={styles.label}>Correo</Text>
-            <Text style={styles.value}>{user.correo}</Text>
+            <Text style={styles.value}>{user.email}</Text>
             <Text style={styles.label}>Rol</Text>
-            <Text style={styles.value}>{user.rol}</Text>
+            <Text style={styles.value}>{user.role}</Text>
           </View>
         ) : null}
         <Text style={styles.note}>Módulo principal en construcción.</Text>

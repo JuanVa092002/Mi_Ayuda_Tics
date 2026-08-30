@@ -8,6 +8,9 @@ coverage/
 !.env.production.example
 !.env.test.example
 .DS_Store
+
+# opencode.json is per-developer (contains user-specific paths and API keys)
+opencode.json
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -15,3 +18,20 @@ yarn-error.log*
 pnpm-debug.log*
 test-results/
 playwright-report/
+# Local AI runtime state
+.atl/
+
+# IDE / local deploy / agent memory (never commit)
+.idea/
+.vercel/
+.engram/
+
+# Debug dumps
+**/bugreport-*.zip
+**/__pycache__/
+
+# Flutter legacy — do not extend or add
+mobile_flutter/
+
+# Local simulation evidence from 2026-08 E2E (keep historical tracked storage/)
+/server/storage/file-178781*

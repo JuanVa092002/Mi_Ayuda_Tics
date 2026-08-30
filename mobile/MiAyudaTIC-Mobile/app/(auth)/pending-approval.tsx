@@ -14,8 +14,11 @@ export default function PendingApprovalScreen() {
         <BrandTitle />
         <Text style={styles.title}>Cuenta en revisión</Text>
         <Text style={styles.message}>
+          Tu solicitud de acceso como técnico fue enviada correctamente.
+        </Text>
+        <Text style={styles.submessage}>
           {message ??
-            'Su registro se encuentra sujeto a aprobación por parte del Líder TIC. Una vez sea aprobado, podrá ingresar al sistema.'}
+            'Podrás iniciar sesión cuando el líder TIC apruebe tu cuenta. Mientras tanto, no tendrás acceso a la app.'}
         </Text>
         <AppButton
           label="Ir a iniciar sesión"
@@ -47,6 +50,13 @@ const styles = StyleSheet.create({
   message: {
     fontSize: 16,
     lineHeight: 24,
+    color: colors.textDark,
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  submessage: {
+    fontSize: 15,
+    lineHeight: 22,
     color: colors.textDark,
     textAlign: 'center',
   },

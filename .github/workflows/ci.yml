@@ -54,3 +54,29 @@ jobs:
         run: pnpm -C client run build
         env:
           VITE_BACKEND_URL: http://localhost:8000
+
+  mobile-typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.3
+          run_install: false
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Install mobile dependencies
+        working-directory: mobile/MiAyudaTIC-Mobile
+        run: pnpm install --ignore-workspace --frozen-lockfile
+
+      - name: Mobile typecheck
+        working-directory: mobile/MiAyudaTIC-Mobile
+        run: pnpm typecheck
+
+      - name: Mobile unit tests
+        working-directory: mobile/MiAyudaTIC-Mobile
+        run: pnpm test

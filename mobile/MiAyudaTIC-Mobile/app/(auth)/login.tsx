@@ -1,14 +1,17 @@
 import { useAuth } from '@/features/auth/auth-context';
+import { navigateForAccess } from '@/features/auth/navigation';
 import { loginSchema, type LoginFormValues } from '@/features/auth/schemas';
-import { colors } from '@/shared/theme/colors';
-import { AppButton } from '@/shared/ui/AppButton';
-import { AuthScaffold } from '@/shared/ui/AuthScaffold';
-import { FormField } from '@/shared/ui/FormField';
+import { spacing } from '@/shared/theme/spacing';
+import { AuthLayout } from '@/shared/ui/AuthLayout';
+import { BrandTitle } from '@/shared/ui/BrandTitle';
+import { Button } from '@/shared/ui/Button';
+import { Text } from '@/shared/ui/Text';
+import { TextInput } from '@/shared/ui/TextInput';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 export default function LoginScreen() {
   const { login } = useAuth();
@@ -29,20 +32,20 @@ export default function LoginScreen() {
     try {
       const result = await login(values.correo.trim(), values.password);
       if (result.ok) {
-        router.replace('/(auth)/session');
+        navigateForAccess(result.access, { replace: true });
         return;
       }
 
       if (result.kind === 'pending_approval') {
-        router.push({
-          pathname: '/(auth)/pending-approval',
-          params: { message: result.message },
-        });
+        navigateForAccess(
+          { state: 'pending_approval', message: result.message },
+          { replace: true, pendingMessage: result.message },
+        );
         return;
       }
 
       if (result.kind === 'lider') {
-        router.push('/(auth)/lider-not-supported');
+        navigateForAccess({ state: 'lider_blocked' }, { replace: true });
         return;
       }
 
@@ -53,25 +56,38 @@ export default function LoginScreen() {
   });
 
   return (
-    <AuthScaffold
-      headerImage={require('../../assets/images/main_top.png')}
-      headerImageHeight={100}
+    <AuthLayout
+      header={<BrandTitle />}
+      title="¡Bienvenido de nuevo!"
+      subtitle="Ingresa a tu cuenta institucional"
+      footer={
+        <View style={styles.footerRow}>
+          <Text variant="p2" color="secondary">
+            ¿No tienes cuenta?
+          </Text>
+          <Pressable onPress={() => router.push('/(auth)/register')} accessibilityRole="link">
+            <Text variant="p2" color="link" style={styles.footerLink}>
+              Regístrate
+            </Text>
+          </Pressable>
+        </View>
+      }
     >
-      <Text style={styles.title}>INICIO DE SESIÓN</Text>
-
       <Controller
         control={control}
         name="correo"
         render={({ field: { onChange, onBlur, value } }) => (
-          <FormField
+          <TextInput
             label="Correo electrónico"
+            placeholder="usuario@sena.edu.co"
             keyboardType="email-address"
             autoCapitalize="none"
             autoComplete="email"
+            leftIcon="mail"
             value={value}
             onBlur={onBlur}
             onChangeText={onChange}
-            error={errors.correo?.message}
+            errorMessage={errors.correo?.message}
           />
         )}
       />
@@ -80,75 +96,51 @@ export default function LoginScreen() {
         control={control}
         name="password"
         render={({ field: { onChange, onBlur, value } }) => (
-          <View>
-            <FormField
-              label="Contraseña"
-              secureTextEntry={!showPassword}
-              autoCapitalize="none"
-              value={value}
-              onBlur={onBlur}
-              onChangeText={onChange}
-              error={errors.password?.message}
-            />
-            <Pressable onPress={() => setShowPassword((prev) => !prev)} style={styles.toggle}>
-              <Text style={styles.toggleText}>
-                {showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-              </Text>
-            </Pressable>
-          </View>
+          <TextInput
+            label="Contraseña"
+            placeholder="Tu contraseña"
+            secureTextEntry={!showPassword}
+            autoCapitalize="none"
+            leftIcon="lock"
+            value={value}
+            onBlur={onBlur}
+            onChangeText={onChange}
+            errorMessage={errors.password?.message}
+            showPasswordToggle
+            passwordVisible={showPassword}
+            onTogglePassword={() => setShowPassword((prev) => !prev)}
+          />
         )}
       />
 
-      <AppButton label="Ingresar" loading={submitting} onPress={onSubmit} />
-
-      <Pressable onPress={() => router.push('/(auth)/forgot-password')} style={styles.linkWrap}>
-        <Text style={styles.link}>¿Olvidaste tu contraseña?</Text>
+      <Pressable
+        onPress={() => router.push('/(auth)/forgot-password')}
+        style={styles.forgotLink}
+        accessibilityRole="link"
+      >
+        <Text variant="p2" color="link" align="center">
+          ¿Olvidaste tu contraseña?
+        </Text>
       </Pressable>
 
-      <View style={styles.footerRow}>
-        <Text style={styles.footerText}>¿No tienes una cuenta?</Text>
-        <Pressable onPress={() => router.push('/(auth)/register')}>
-          <Text style={styles.link}> Regístrate</Text>
-        </Pressable>
-      </View>
-    </AuthScaffold>
+      <Button label="Iniciar sesión" variant="primary" fullWidth loading={submitting} onPress={onSubmit} />
+    </AuthLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  title: {
-    color: colors.brandGreen,
-    fontSize: 20,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginBottom: 18,
-  },
-  toggle: {
-    alignSelf: 'flex-end',
-    marginTop: -8,
-    marginBottom: 12,
-  },
-  toggleText: {
-    color: colors.textDark,
-    fontSize: 13,
-  },
-  linkWrap: {
-    marginTop: 16,
-    alignItems: 'center',
-  },
-  link: {
-    color: colors.brandGreen,
-    fontSize: 16,
-    fontWeight: '600',
+  forgotLink: {
+    marginBottom: spacing[6],
+    minHeight: 44,
+    justifyContent: 'center',
   },
   footerRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 16,
     alignItems: 'center',
+    gap: spacing[1],
   },
-  footerText: {
-    color: colors.brandBlue,
-    fontSize: 12,
+  footerLink: {
+    fontWeight: '600',
   },
 });

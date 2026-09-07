@@ -1,4 +1,5 @@
 import apiClient from '@/shared/api/axios'
+import { clearAllWorkflowAttemptKeys } from '@/features/tickets/api/workflow-idempotency'
 import { SESSION_VERIFY_TIMEOUT_MS } from '@/shared/api/sessionVerify'
 import type {
   AuthResponse,
@@ -33,8 +34,12 @@ export const verifyToken = async (): Promise<User> => {
 }
 
 export const logout = async (): Promise<AuthResponse> => {
-  const response = await apiClient.post<AuthResponse>('auth/logout')
-  return response.data
+  try {
+    const response = await apiClient.post<AuthResponse>('auth/logout')
+    return response.data
+  } finally {
+    clearAllWorkflowAttemptKeys()
+  }
 }
 
 export const resetPassword = async (

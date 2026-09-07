@@ -11,6 +11,9 @@ describe('resolveBootstrapFailure', () => {
     expect(resolveBootstrapFailure(new ApiError('no auth', 'UNAUTHORIZED', 401))).toEqual({
       kind: 'expired',
     });
+    expect(resolveBootstrapFailure(new ApiError('bad pass', 'INVALID_CREDENTIALS', 401))).toEqual({
+      kind: 'expired',
+    });
   });
 
   it('403 → guest (cuenta sin acceso móvil)', () => {
@@ -51,6 +54,12 @@ describe('resolveBackgroundRevalidateFailure', () => {
     expect(resolveBackgroundRevalidateFailure(new ApiError('timeout', 'TIMEOUT'))).toBe('keep');
     expect(resolveBackgroundRevalidateFailure(new ApiError('red', 'NETWORK_ERROR'))).toBe('keep');
     expect(resolveBackgroundRevalidateFailure(new ApiError('srv', 'SERVER_ERROR', 503))).toBe(
+      'keep',
+    );
+    expect(
+      resolveBackgroundRevalidateFailure(new ApiError('gw', 'GATEWAY_RECOVERABLE', 503)),
+    ).toBe('keep');
+    expect(resolveBackgroundRevalidateFailure(new ApiError('conn', 'CONNECTION_ERROR'))).toBe(
       'keep',
     );
   });

@@ -1,6 +1,5 @@
-import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { segmentLabelSize } from '@/shared/layout/segment-label';
 import { semanticColors } from '@/shared/theme/semantic-colors';
 import { shadows } from '@/shared/theme/shadows';
 import { fontFamilies } from '@/shared/theme/typography';
@@ -17,11 +16,13 @@ type FilterChipsProps = {
  * and labels scale down instead of overflowing or left-hugging.
  */
 export function FilterChips({ options, selected, onSelect }: FilterChipsProps) {
-  const { width } = useWindowDimensions();
-  const fontSize = segmentLabelSize(width, options.length);
-
   return (
-    <View style={styles.track} accessibilityRole="tablist">
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.track}
+      accessibilityRole="tablist"
+    >
       {options.map((option) => {
         const isActive = option === selected;
         return (
@@ -35,23 +36,13 @@ export function FilterChips({ options, selected, onSelect }: FilterChipsProps) {
             }}
             style={[styles.segment, isActive && styles.segmentActive]}
           >
-            <Text
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.7}
-              maxFontSizeMultiplier={1.15}
-              style={[
-                styles.label,
-                { fontSize, lineHeight: fontSize + 3 },
-                isActive ? styles.labelActive : styles.labelInactive,
-              ]}
-            >
+            <Text style={[styles.label, isActive ? styles.labelActive : styles.labelInactive]}>
               {option}
             </Text>
           </Pressable>
         );
       })}
-    </View>
+    </ScrollView>
   );
 }
 
@@ -59,31 +50,33 @@ const styles = StyleSheet.create({
   track: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: semanticColors.surface.well,
-    borderRadius: 10,
-    padding: 3,
+    gap: 8,
+    paddingRight: 20,
   },
   segment: {
-    flex: 1,
-    minWidth: 0,
-    height: 32,
+    minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 8,
-    paddingHorizontal: 2,
+    borderRadius: 22,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: semanticColors.border.default,
+    backgroundColor: semanticColors.surface.card,
   },
   segmentActive: {
-    backgroundColor: semanticColors.surface.card,
+    backgroundColor: semanticColors.brand.blue,
+    borderColor: semanticColors.brand.blue,
     ...shadows.sm,
   },
   label: {
     fontFamily: fontFamilies.medium,
     fontWeight: '600',
     textAlign: 'center',
-    width: '100%',
+    fontSize: 13,
+    lineHeight: 18,
   },
   labelActive: {
-    color: semanticColors.text.primary,
+    color: semanticColors.text.inverse,
   },
   labelInactive: {
     color: semanticColors.text.secondary,

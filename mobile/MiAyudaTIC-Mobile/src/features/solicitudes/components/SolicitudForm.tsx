@@ -3,8 +3,19 @@ import {
   createSolicitudSchema,
   type CreateSolicitudFormValues,
 } from '@/features/solicitudes/schemas';
+import {
+  buildSolicitudFormDefaultValues,
+  errorsToRestore,
+  getSolicitudFormDraft,
+  snapshotSolicitudFormErrors,
+  subscribeSolicitudFormDraft,
+  writeSolicitudFormDraft,
+  type SolicitudFormDraft,
+  type SolicitudFormPhoto as DraftPhoto,
+} from '@/features/solicitudes/solicitud-form-draft';
 import { semanticColors } from '@/shared/theme/semantic-colors';
 import { radius } from '@/shared/theme/radius';
+import { shadows } from '@/shared/theme/shadows';
 import { spacing } from '@/shared/theme/spacing';
 import { typography } from '@/shared/theme/typography';
 import { Button } from '@/shared/ui/Button';
@@ -27,22 +38,9 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-export type SolicitudFormPhoto = {
-  uri: string;
-  mimeType?: string;
-  fileName?: string;
-  fileSize?: number;
-  origin?: 'camera' | 'gallery';
-};
-
-export type PersistedFormValues = {
-  environmentId: string;
-  caseTypeId: string;
-  description: string;
-  phone: string;
-  photo?: SolicitudFormPhoto;
-};
+export type SolicitudFormPhoto = DraftPhoto;
 
 export type SolicitudSubmitMeta = {
   environmentName?: string;
@@ -57,100 +55,91 @@ type SolicitudFormProps = {
     photo?: SolicitudFormPhoto,
     meta?: SolicitudSubmitMeta,
   ) => void;
-  persistedValues?: PersistedFormValues | null;
-  onValuesChange?: (values: PersistedFormValues) => void;
 };
 
 export function SolicitudForm({
   defaultPhone = '',
   submitting,
   onSubmit,
-  persistedValues,
-  onValuesChange,
 }: SolicitudFormProps) {
+  const insets = useSafeAreaInsets();
   const ambientesQuery = useAmbientes();
   const tiposQuery = useTiposCaso();
-  const [photo, setPhoto] = useState<SolicitudFormPhoto | undefined>(
-    persistedValues?.photo,
-  );
-  const lastPersistedRef = useRef<PersistedFormValues | null>(null);
+  const initialDraft = getSolicitudFormDraft();
+  const [photo, setPhoto] = useState<SolicitudFormPhoto | undefined>(initialDraft?.photo);
+  const photoRef = useRef(photo);
+  photoRef.current = photo;
+  const restoredErrorsRef = useRef(false);
 
   const {
     control,
     handleSubmit,
     formState: { errors },
-    reset,
     watch,
     getValues,
+    setError,
+    clearErrors,
   } = useForm<CreateSolicitudFormValues>({
     resolver: zodResolver(createSolicitudSchema),
-    defaultValues: {
-      environmentId: persistedValues?.environmentId ?? '',
-      caseTypeId: persistedValues?.caseTypeId ?? '',
-      description: persistedValues?.description ?? '',
-      phone: persistedValues?.phone ?? defaultPhone,
-    },
+    defaultValues: buildSolicitudFormDefaultValues(initialDraft, defaultPhone),
   });
 
-  // Restore persisted values when they change
-  useEffect(() => {
-    if (persistedValues && persistedValues !== lastPersistedRef.current) {
-      lastPersistedRef.current = persistedValues;
-      reset({
-        environmentId: persistedValues.environmentId,
-        caseTypeId: persistedValues.caseTypeId,
-        description: persistedValues.description,
-        phone: persistedValues.phone || defaultPhone,
-      });
-      if (persistedValues.photo) {
-        setPhoto(persistedValues.photo);
-      }
-    }
-  }, [persistedValues, reset, defaultPhone]);
-
-  // Persist form values on change
-  const watchedValues = watch();
-  useEffect(() => {
-    if (!onValuesChange) return;
-    const timer = setTimeout(() => {
-      onValuesChange({
-        environmentId: watchedValues.environmentId,
-        caseTypeId: watchedValues.caseTypeId,
-        description: watchedValues.description,
-        phone: watchedValues.phone,
-        photo,
-      });
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [
-    watchedValues.environmentId,
-    watchedValues.caseTypeId,
-    watchedValues.description,
-    watchedValues.phone,
-    photo,
-    onValuesChange,
-  ]);
-
-  const persistSnapshot = useCallback(
-    (nextPhoto: SolicitudFormPhoto | undefined) => {
-      if (!onValuesChange) return;
+  const captureDraft = useCallback(
+    (nextPhoto: SolicitudFormPhoto | undefined, options?: { emit?: boolean }) => {
       const values = getValues();
-      onValuesChange({
-        environmentId: values.environmentId,
-        caseTypeId: values.caseTypeId,
-        description: values.description,
-        phone: values.phone,
+      const next: SolicitudFormDraft = {
+        environmentId: values.environmentId ?? '',
+        caseTypeId: values.caseTypeId ?? '',
+        description: values.description ?? '',
+        phone: values.phone ?? '',
         photo: nextPhoto,
-      });
+        errors: snapshotSolicitudFormErrors(errors),
+      };
+      writeSolicitudFormDraft(next, options);
     },
-    [getValues, onValuesChange],
+    [errors, getValues],
   );
+
+  useEffect(() => {
+    const { unsubscribe } = watch((values) => {
+      writeSolicitudFormDraft({
+        environmentId: values.environmentId ?? '',
+        caseTypeId: values.caseTypeId ?? '',
+        description: values.description ?? '',
+        phone: values.phone ?? '',
+        photo: photoRef.current,
+        errors: snapshotSolicitudFormErrors(errors),
+      });
+    });
+    return unsubscribe;
+  }, [errors, watch]);
+
+  useEffect(() => {
+    return subscribeSolicitudFormDraft(() => {
+      setPhoto(getSolicitudFormDraft()?.photo);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (restoredErrorsRef.current) return;
+    restoredErrorsRef.current = true;
+    const toRestore = errorsToRestore(getSolicitudFormDraft(), getValues());
+    if (!toRestore) return;
+    (['environmentId', 'caseTypeId', 'description', 'phone'] as const).forEach((name) => {
+      const message = toRestore[name];
+      if (message) {
+        setError(name, { type: 'validate', message });
+      }
+    });
+  }, [getValues, setError]);
 
   const catalogsLoading = ambientesQuery.isLoading || tiposQuery.isLoading;
   const catalogsError = ambientesQuery.isError || tiposQuery.isError;
   const catalogError = ambientesQuery.error ?? tiposQuery.error ?? null;
 
   const pickPhoto = async (source: 'camera' | 'library') => {
+    captureDraft(photoRef.current);
+
     const permission =
       source === 'camera'
         ? await ImagePicker.requestCameraPermissionsAsync()
@@ -164,6 +153,8 @@ export function SolicitudForm({
       );
       return;
     }
+
+    captureDraft(photoRef.current);
 
     const pickerOptions: ImagePicker.ImagePickerOptions = {
       mediaTypes: ['images'],
@@ -179,27 +170,69 @@ export function SolicitudForm({
         ? await ImagePicker.launchCameraAsync(pickerOptions)
         : await ImagePicker.launchImageLibraryAsync(pickerOptions);
 
-    if (!result.canceled && result.assets[0]) {
-      const asset = result.assets[0];
-      const nextPhoto: SolicitudFormPhoto = {
-        uri: asset.uri,
-        mimeType: asset.mimeType ?? undefined,
-        fileName: asset.fileName ?? undefined,
-        fileSize: asset.fileSize,
-        origin: source === 'camera' ? 'camera' : 'gallery',
-      };
-      setPhoto(nextPhoto);
-      persistSnapshot(nextPhoto);
+    if (result.canceled) {
+      return;
     }
+
+    const asset = result.assets[0];
+    if (!asset) {
+      return;
+    }
+
+    const current = getSolicitudFormDraft();
+    const values = getValues();
+    const nextPhoto: SolicitudFormPhoto = {
+      uri: asset.uri,
+      mimeType: asset.mimeType ?? undefined,
+      fileName: asset.fileName ?? undefined,
+      fileSize: asset.fileSize,
+      origin: source === 'camera' ? 'camera' : 'gallery',
+    };
+    photoRef.current = nextPhoto;
+    writeSolicitudFormDraft(
+      {
+        environmentId: values.environmentId || current?.environmentId || '',
+        caseTypeId: values.caseTypeId || current?.caseTypeId || '',
+        description: values.description || current?.description || '',
+        phone: values.phone || current?.phone || '',
+        photo: nextPhoto,
+        errors: snapshotSolicitudFormErrors(errors),
+      },
+      { emit: true },
+    );
+    setPhoto(nextPhoto);
   };
 
   const openPhotoOptions = () => {
+    captureDraft(photoRef.current);
     Alert.alert('Añadir evidencia', 'Una foto ayuda al equipo a entender el incidente.', [
       { text: 'Tomar foto', onPress: () => void pickPhoto('camera') },
       { text: 'Elegir de galería', onPress: () => void pickPhoto('library') },
       { text: 'Cancelar', style: 'cancel' },
     ]);
   };
+
+  const submitForm = handleSubmit(
+    (values) => {
+      const environmentName = ambientesQuery.data?.find(
+        (item) => item.id === values.environmentId,
+      )?.name;
+      const caseTypeName = tiposQuery.data?.find(
+        (item) => item.id === values.caseTypeId,
+      )?.name;
+      onSubmit(values, photo, { environmentName, caseTypeName });
+    },
+    (formErrors) => {
+      const first =
+        formErrors.environmentId?.message ??
+        formErrors.caseTypeId?.message ??
+        formErrors.description?.message ??
+        formErrors.phone?.message;
+      if (first) {
+        Alert.alert('Revisa el formulario', first);
+      }
+    },
+  );
 
   return (
     <View style={styles.container}>
@@ -231,7 +264,7 @@ export function SolicitudForm({
           <ScrollView
             contentContainerStyle={[
               styles.form,
-              { paddingBottom: spacing[8] },
+              { paddingBottom: 136 + Math.max(insets.bottom, spacing[3]) },
             ]}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
@@ -249,7 +282,10 @@ export function SolicitudForm({
             <SelectField
               label="Ambiente de formación"
               value={value}
-              onChange={onChange}
+              onChange={(next) => {
+                onChange(next);
+                clearErrors('environmentId');
+              }}
               error={errors.environmentId?.message}
               options={(ambientesQuery.data ?? []).map((item) => ({
                 label: item.name,
@@ -266,7 +302,10 @@ export function SolicitudForm({
             <SelectField
               label="Tipo de caso"
               value={value}
-              onChange={onChange}
+              onChange={(next) => {
+                onChange(next);
+                clearErrors('caseTypeId');
+              }}
               error={errors.caseTypeId?.message}
               options={(tiposQuery.data ?? []).map((item) => ({
                 label: item.name,
@@ -283,7 +322,10 @@ export function SolicitudForm({
             <FormField
               label="Descripción del incidente"
               value={value}
-              onChangeText={onChange}
+              onChangeText={(next) => {
+                onChange(next);
+                clearErrors('description');
+              }}
               onBlur={onBlur}
               error={errors.description?.message}
               multiline
@@ -301,7 +343,10 @@ export function SolicitudForm({
             <FormField
               label="Teléfono de contacto"
               value={value}
-              onChangeText={onChange}
+              onChangeText={(next) => {
+                onChange(next);
+                clearErrors('phone');
+              }}
               onBlur={onBlur}
               error={errors.phone?.message}
               keyboardType="phone-pad"
@@ -335,8 +380,9 @@ export function SolicitudForm({
                   accessibilityRole="button"
                   accessibilityLabel="Quitar evidencia fotográfica"
                   onPress={() => {
+                    photoRef.current = undefined;
+                    captureDraft(undefined, { emit: true });
                     setPhoto(undefined);
-                    persistSnapshot(undefined);
                   }}
                   style={styles.photoAction}
                 >
@@ -365,41 +411,19 @@ export function SolicitudForm({
           ) : null}
         </View>
 
-        <View style={styles.submitSection}>
-          <Button
-            label="Enviar solicitud"
-            variant="primary"
-            fullWidth
-            loading={submitting}
-            onPress={handleSubmit(
-              (values) => {
-                const environmentName = ambientesQuery.data?.find(
-                  (item) => item.id === values.environmentId,
-                )?.name;
-                const caseTypeName = tiposQuery.data?.find(
-                  (item) => item.id === values.caseTypeId,
-                )?.name;
-                onSubmit(values, photo, { environmentName, caseTypeName });
-              },
-              (formErrors) => {
-                const first =
-                  formErrors.environmentId?.message ??
-                  formErrors.caseTypeId?.message ??
-                  formErrors.description?.message ??
-                  formErrors.phone?.message;
-                if (first) {
-                  Alert.alert('Revisa el formulario', first);
-                }
-              },
-            )}
-          />
-          <Text style={styles.submitHint}>
-            Podrás consultar el estado desde Mis solicitudes.
-          </Text>
-        </View>
           </ScrollView>
-          {/* Submit lives at the end of the scroll flow: never covers fields,
-              scrolls with content, and respects keyboard + bottom inset. */}
+          <View style={[styles.submitBar, { paddingBottom: Math.max(insets.bottom, spacing[3]) }]}>
+            <Button
+              label="Enviar solicitud"
+              variant="primary"
+              fullWidth
+              loading={submitting}
+              onPress={submitForm}
+            />
+            <Text style={styles.submitHint}>
+              Podrás consultar el estado desde Mis solicitudes.
+            </Text>
+          </View>
         </KeyboardAvoidingView>
       </QueryBoundary>
     </View>
@@ -420,9 +444,14 @@ const styles = StyleSheet.create({
     paddingBottom: spacing[6],
     gap: spacing[4],
   },
-  submitSection: {
+  submitBar: {
     gap: spacing[2],
-    paddingTop: spacing[2],
+    paddingHorizontal: spacing[5],
+    paddingTop: spacing[3],
+    backgroundColor: semanticColors.surface.card,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: semanticColors.border.default,
+    ...shadows.sm,
   },
   submitHint: {
     ...typography.caption,

@@ -1,4 +1,5 @@
 import { apiFetch } from '@/shared/api/client';
+import { runWithWorkflowAttempt } from '@/shared/api/workflow-idempotency';
 import { mapUnknownFetchError } from '@/shared/api/fetch-error';
 import { appendImageToFormData } from '@/shared/api/multipart-image';
 import {
@@ -59,6 +60,50 @@ export async function fetchHistorial(token: string): Promise<SolicitudSummary[]>
 export async function fetchSolicitudDetalle(token: string, id: string): Promise<SolicitudDetail> {
   const dto = await apiFetch<SolicitudDetailResponseDto>(`/solicitud/${id}`, { token });
   return mapSolicitudDetail(dto.data, id);
+}
+
+export async function responderSolicitud(
+  token: string,
+  id: string,
+  mensaje: string,
+): Promise<void> {
+  await runWithWorkflowAttempt(
+    'requester_reply',
+    id,
+    (idempotencyKey) =>
+      apiFetch(`/solicitud/${id}/responder`, {
+        method: 'POST',
+        token,
+        body: { mensaje },
+        idempotencyKey,
+      }),
+    { mensaje },
+  );
+}
+
+export async function confirmarSolucion(token: string, id: string): Promise<void> {
+  await runWithWorkflowAttempt('confirm', id, (idempotencyKey) =>
+    apiFetch(`/solicitud/${id}/confirmarSolucion`, {
+      method: 'POST',
+      token,
+      idempotencyKey,
+    }),
+  );
+}
+
+export async function reabrirSolicitud(token: string, id: string, motivo: string): Promise<void> {
+  await runWithWorkflowAttempt(
+    'reopen',
+    id,
+    (idempotencyKey) =>
+      apiFetch(`/solicitud/${id}/reabrir`, {
+        method: 'POST',
+        token,
+        body: { motivo },
+        idempotencyKey,
+      }),
+    { motivo },
+  );
 }
 
 export async function createSolicitud(

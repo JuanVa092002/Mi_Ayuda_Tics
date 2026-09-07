@@ -8,24 +8,41 @@ import {
   getCasosAsignados,
   getCasos,
   submitSolucionCaso,
+  iniciarAtencion,
+  agregarActualizacion,
+  solicitarInformacion,
+  registrarSolucionParcial,
+  registrarSolucionTotal,
+  WorkflowManualRetryNotice,
 } from '@/features/tickets'
+import { classifyWorkflowMutationFailure } from '@/features/tickets/api/workflow-retry-policy'
+import { clearWorkflowAttemptKey } from '@/features/tickets/api/workflow-idempotency'
 import type { CaseForResolution, Solicitud, TipoCaso, TipoSolucion } from '@/shared/types'
 
 export default function CasosPorResolverTabla(): ReactNode {
   const [cases, setCases] = useState<Solicitud[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 5
+  const itemsPerPage = 5 
   const [modalIsOpen, setModalIsOpen] = useState(false)
   const [selectedCase, setSelectedCase] = useState<CaseForResolution | null>(null)
   const [caseTypes, setCaseTypes] = useState<TipoCaso[]>([])
   const [loading, setLoading] = useState(true)
+  const [workflowTarget, setWorkflowTarget] = useState<Solicitud | null>(null)
+  const [workflowKind, setWorkflowKind] = useState<'update' | 'info' | 'partial' | 'total' | null>(null)
+  const [workflowText, setWorkflowText] = useState({ mensaje: '', queSeHizo: '', queFalta: '', siguienteAccion: '' })
+  const [workflowError, setWorkflowError] = useState<unknown>(null)
+  const [workflowLastPayload, setWorkflowLastPayload] = useState<unknown>(undefined)
+  const [startRetry, setStartRetry] = useState<{ id: string; error: unknown } | null>(null)
+  const [queueFilter, setQueueFilter] = useState<
+    'trabajo' | 'por_iniciar' | 'en_atencion' | 'esperando_funcionario' | 'esperando_confirmacion'
+  >('trabajo')
 
   useEffect(() => {
     const fetchCases = async (): Promise<void> => {
       try {
         const solicitudesAsignadas = await getCasosAsignados()
-        setCases(solicitudesAsignadas.filter(c => c.estado !== 'finalizado'))
+        setCases(solicitudesAsignadas.filter(c => c.estado !== 'finalizado' && c.estado !== 'cerrado' && c.estado !== 'cancelado'))
       } catch (error) {
         toast.error(getApiErrorMessage(error))
       }
@@ -50,7 +67,27 @@ export default function CasosPorResolverTabla(): ReactNode {
   }, [])
 
   // Search and Pagination Logic
-  const filteredData = cases.filter(row =>
+  const queueOf = (row: Solicitud): string => {
+    if (row.queue) return row.queue
+    if (row.workflowVersion === 2) {
+      if (row.estado === 'asignado') return 'por_iniciar'
+      if (row.estado === 'en_progreso') return 'en_atencion'
+      if (row.estado === 'esperando_usuario') return 'esperando_funcionario'
+      if (row.estado === 'resuelto') return 'esperando_confirmacion'
+    }
+    if (row.estado === 'asignado' || row.estado === 'pendiente') return 'en_atencion'
+    return 'en_atencion'
+  }
+
+  const queuedCases = cases.filter(row => {
+    const queue = queueOf(row)
+    if (queueFilter === 'trabajo') {
+      return queue === 'por_iniciar' || queue === 'en_atencion' || queue === 'esperando_funcionario'
+    }
+    return queue === queueFilter
+  })
+
+  const filteredData = queuedCases.filter(row =>
     (row.codigoCaso || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (row.descripcion || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (typeof row.usuario === 'object' && row.usuario?.nombre
@@ -80,6 +117,13 @@ export default function CasosPorResolverTabla(): ReactNode {
       case 'pendiente':
         return <span className="badge-base bg-orange-50 text-orange-700 border-orange-100">
           <span className="w-1.5 h-1.5 rounded-full bg-orange-500 mr-2"></span>En Proceso
+        </span>
+      case 'en_progreso':
+      case 'esperando_usuario':
+      case 'resuelto':
+      case 'nuevo':
+        return <span className="badge-base bg-orange-50 text-orange-700 border-orange-100">
+          <span className="w-1.5 h-1.5 rounded-full bg-orange-500 mr-2"></span>{estado.replace('_', ' ')}
         </span>
       default:
         return <span className="badge-base bg-slate-100 text-slate-600 border-slate-200 uppercase">{estado}</span>
@@ -126,6 +170,86 @@ export default function CasosPorResolverTabla(): ReactNode {
     }
   }
 
+  const refreshCases = async (): Promise<void> => {
+    const solicitudesAsignadas = await getCasosAsignados()
+    setCases(solicitudesAsignadas.filter(c => c.estado !== 'finalizado' && c.estado !== 'cerrado' && c.estado !== 'cancelado'))
+  }
+
+  const closeWorkflowModal = (): void => {
+    if (workflowTarget && workflowKind) {
+      const action =
+        workflowKind === 'update'
+          ? 'update'
+          : workflowKind === 'info'
+            ? 'wait_for_requester'
+            : workflowKind === 'partial'
+              ? 'partial_solution'
+              : 'resolve'
+      clearWorkflowAttemptKey(action, workflowTarget._id)
+    }
+    setWorkflowKind(null)
+    setWorkflowTarget(null)
+    setWorkflowError(null)
+    setWorkflowLastPayload(undefined)
+  }
+
+  const currentWorkflowPayload = (): unknown => {
+    if (workflowKind === 'update' || workflowKind === 'info') return { mensaje: workflowText.mensaje }
+    if (workflowKind === 'partial') {
+      return {
+        queSeHizo: workflowText.queSeHizo,
+        queFalta: workflowText.queFalta,
+        siguienteAccion: workflowText.siguienteAccion,
+      }
+    }
+    if (workflowKind === 'total') return { queSeHizo: workflowText.queSeHizo }
+    return undefined
+  }
+
+  const runStart = (solicitudId: string): void => {
+    void iniciarAtencion(solicitudId)
+      .then(() => {
+        setStartRetry(null)
+        return refreshCases()
+      })
+      .catch((error) => {
+        setStartRetry({ id: solicitudId, error })
+        toast.error(getApiErrorMessage(error))
+      })
+  }
+
+  const submitWorkflow = async (payloadOverride?: unknown): Promise<void> => {
+    if (!workflowTarget || !workflowKind) return
+    const payload = payloadOverride ?? currentWorkflowPayload()
+    try {
+      if (workflowKind === 'update') {
+        await agregarActualizacion(workflowTarget._id, (payload as { mensaje: string }).mensaje)
+      }
+      if (workflowKind === 'info') {
+        await solicitarInformacion(workflowTarget._id, (payload as { mensaje: string }).mensaje)
+      }
+      if (workflowKind === 'partial') {
+        await registrarSolucionParcial(
+          workflowTarget._id,
+          payload as { queSeHizo: string; queFalta: string; siguienteAccion: string },
+        )
+      }
+      if (workflowKind === 'total') {
+        await registrarSolucionTotal(workflowTarget._id, payload as { queSeHizo: string })
+      }
+      toast.success('Acción registrada')
+      closeWorkflowModal()
+      await refreshCases()
+    } catch (error) {
+      setWorkflowError(error)
+      setWorkflowLastPayload(payload)
+      const failure = classifyWorkflowMutationFailure(error)
+      if (!failure.offersManualRetry) {
+        toast.error(getApiErrorMessage(error))
+      }
+    }
+  }
+
   return (
     <AppLayout>
       <TecnicoLayout>
@@ -136,6 +260,33 @@ export default function CasosPorResolverTabla(): ReactNode {
             <div>
               <h2 className="text-xl font-bold text-on-surface">Casos por Resolver</h2>
               <p className="text-sm text-on-surface-variant font-medium mt-1">Gestión operativa y resolución técnica de solicitudes.</p>
+              <div className="flex flex-wrap gap-2 mt-3">
+                {(
+                  [
+                    ['trabajo', 'Trabajo técnico'],
+                    ['por_iniciar', 'Por iniciar'],
+                    ['en_atencion', 'En atención'],
+                    ['esperando_funcionario', 'Esperando al Funcionario'],
+                    ['esperando_confirmacion', 'Esperando confirmación'],
+                  ] as const
+                ).map(([id, label]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => {
+                      setQueueFilter(id)
+                      setCurrentPage(1)
+                    }}
+                    className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase border ${
+                      queueFilter === id
+                        ? 'bg-primary-container text-white border-primary-container'
+                        : 'bg-white text-slate-600 border-slate-200'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="relative w-full sm:w-80 lg:w-96 group">
               <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/60 text-[18px] group-focus-within:text-primary-container transition-colors">search</span>
@@ -236,16 +387,50 @@ export default function CasosPorResolverTabla(): ReactNode {
                         )}
                       </td>
                       <td className="premium-td">
-                        {getStatusBadge(row.estado)}
+                        {getStatusBadge(row.displayStatus ? row.estado : row.estado)}
+                        {row.displayStatus ? (
+                          <p className="text-[10px] font-semibold text-slate-500 mt-1">{row.displayStatus}</p>
+                        ) : null}
                       </td>
                       <td className="premium-td align-middle">
-                        <div className="flex items-center justify-center">
-                          <button 
-                            onClick={() => openModal(row)}
-                            className="inline-flex items-center justify-center px-3.5 py-2 rounded-xl bg-primary-container text-white text-xs font-bold uppercase tracking-[0.12em] leading-none hover:bg-primary transition-all shadow-sm active:scale-95"
-                          >
-                            Resolver
-                          </button>
+                        <div className="flex flex-col items-center gap-1">
+                          {row.workflowVersion === 2 ? (
+                            <>
+                              {row.capabilities?.canStart ? (
+                                <>
+                                  <button type="button" className="inline-flex items-center justify-center px-3 py-2 rounded-xl bg-primary-container text-white text-[10px] font-bold uppercase" onClick={() => runStart(row._id)}>
+                                    Iniciar
+                                  </button>
+                                  {startRetry?.id === row._id ? (
+                                    <WorkflowManualRetryNotice
+                                      error={startRetry.error}
+                                      pending={false}
+                                      onRetry={() => runStart(row._id)}
+                                    />
+                                  ) : null}
+                                </>
+                              ) : null}
+                              {row.capabilities?.canUpdate ? (
+                                <button type="button" className="text-[10px] font-bold uppercase text-slate-600" onClick={() => { setWorkflowError(null); setWorkflowLastPayload(undefined); setWorkflowTarget(row); setWorkflowKind('update') }}>Actualizar</button>
+                              ) : null}
+                              {row.capabilities?.canRequestInfo ? (
+                                <button type="button" className="text-[10px] font-bold uppercase text-slate-600" onClick={() => { setWorkflowError(null); setWorkflowLastPayload(undefined); setWorkflowTarget(row); setWorkflowKind('info') }}>Pedir info</button>
+                              ) : null}
+                              {row.capabilities?.canPartialSolution ? (
+                                <button type="button" className="text-[10px] font-bold uppercase text-slate-600" onClick={() => { setWorkflowError(null); setWorkflowLastPayload(undefined); setWorkflowTarget(row); setWorkflowKind('partial') }}>Parcial</button>
+                              ) : null}
+                              {row.capabilities?.canResolve ? (
+                                <button type="button" className="text-[10px] font-bold uppercase text-emerald-700" onClick={() => { setWorkflowError(null); setWorkflowLastPayload(undefined); setWorkflowTarget(row); setWorkflowKind('total') }}>Solución total</button>
+                              ) : null}
+                            </>
+                          ) : (
+                            <button 
+                              onClick={() => openModal(row)}
+                              className="inline-flex items-center justify-center px-3.5 py-2 rounded-xl bg-primary-container text-white text-xs font-bold uppercase tracking-[0.12em] leading-none hover:bg-primary transition-all shadow-sm active:scale-95"
+                            >
+                              Resolver
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -296,6 +481,41 @@ export default function CasosPorResolverTabla(): ReactNode {
             caseTypes={caseTypes}
           />
         )}
+        {workflowTarget && workflowKind ? (
+          <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-[120] p-4">
+            <div className="bg-white w-full max-w-lg rounded-3xl p-8 shadow-2xl">
+              <h2 className="text-lg font-bold mb-4">
+                {workflowKind === 'update' && 'Agregar actualización'}
+                {workflowKind === 'info' && 'Solicitar información'}
+                {workflowKind === 'partial' && 'Solución parcial'}
+                {workflowKind === 'total' && 'Solución total'}
+              </h2>
+              {workflowKind === 'update' || workflowKind === 'info' ? (
+                <textarea className="w-full min-h-24 rounded-xl border p-3" placeholder="Mensaje" value={workflowText.mensaje} onChange={(event) => setWorkflowText((prev) => ({ ...prev, mensaje: event.target.value }))} />
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <textarea className="w-full min-h-20 rounded-xl border p-3" placeholder="Qué se hizo" value={workflowText.queSeHizo} onChange={(event) => setWorkflowText((prev) => ({ ...prev, queSeHizo: event.target.value }))} />
+                  {workflowKind === 'partial' ? (
+                    <>
+                      <textarea className="w-full min-h-16 rounded-xl border p-3" placeholder="Qué falta" value={workflowText.queFalta} onChange={(event) => setWorkflowText((prev) => ({ ...prev, queFalta: event.target.value }))} />
+                      <textarea className="w-full min-h-16 rounded-xl border p-3" placeholder="Siguiente acción" value={workflowText.siguienteAccion} onChange={(event) => setWorkflowText((prev) => ({ ...prev, siguienteAccion: event.target.value }))} />
+                    </>
+                  ) : null}
+                </div>
+              )}
+              <div className="mt-4 flex justify-end gap-2">
+                <button type="button" onClick={closeWorkflowModal}>Cerrar</button>
+                <button type="button" className="px-4 py-2 rounded-xl bg-primary-container text-white font-bold" onClick={() => void submitWorkflow()}>Guardar</button>
+              </div>
+              <WorkflowManualRetryNotice
+                error={workflowError}
+                lastPayload={workflowLastPayload}
+                currentPayload={currentWorkflowPayload()}
+                onRetry={() => void submitWorkflow(workflowLastPayload)}
+              />
+            </div>
+          </div>
+        ) : null}
       </TecnicoLayout>
     </AppLayout>
   )

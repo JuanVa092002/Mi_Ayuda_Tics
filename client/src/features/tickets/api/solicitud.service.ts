@@ -6,6 +6,7 @@ import type {
   Solicitud,
   TipoCaso,
 } from '@/shared/types'
+import { runWithWorkflowAttempt } from './workflow-idempotency'
 
 interface SolicitudesAsignadasResponse {
   solicitudesAsignadas: Solicitud[]
@@ -35,11 +36,14 @@ export const asignarSolicitudTecnico = async (
   solicitudId: string,
   payload: AssignTecnicoPayload
 ): Promise<Solicitud> => {
-  const response = await apiClient.put<Solicitud>(
-    `/solicitud/${solicitudId}/asignarTecnico`,
-    payload
-  )
-  return response.data
+  return runWithWorkflowAttempt('assign', solicitudId, async (key) => {
+    const response = await apiClient.put<Solicitud>(
+      `/solicitud/${solicitudId}/asignarTecnico`,
+      payload,
+      { headers: { 'Idempotency-Key': key } }
+    )
+    return response.data
+  }, payload)
 }
 
 export const historialSolicitudesFuncionario = async (): Promise<Solicitud[]> => {

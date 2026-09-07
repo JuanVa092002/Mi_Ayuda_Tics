@@ -7,6 +7,7 @@ import {
   type SolicitudStatus,
   type SolicitudSummary,
 } from './solicitud';
+import { isClosedListStatus, getTechnicianQueue } from './solicitud-lifecycle';
 
 export type CasosAsignadosResponseDto = {
   solicitudesAsignadas: SolicitudListItemDto[];
@@ -30,6 +31,9 @@ export type CasoSummary = {
   photoUrl?: string;
   solutionDescription?: string;
   solutionEvidenceUrl?: string;
+  workflowVersion?: number;
+  displayStatus: string;
+  queue?: string;
 };
 
 export type CasoDetail = {
@@ -47,6 +51,13 @@ export type CasoDetail = {
   photoUrl?: string;
   solutionDescription?: string;
   solutionEvidenceUrl?: string;
+  workflowVersion?: number;
+  displayStatus: string;
+  headline?: string;
+  proximaAccion?: string;
+  historial?: SolicitudDetail['historial'];
+  historyNote?: string;
+  capabilities?: SolicitudDetail['capabilities'];
 };
 
 export function mapCasoSummary(dto: SolicitudListItemDto): CasoSummary {
@@ -65,6 +76,12 @@ export function mapCasoSummary(dto: SolicitudListItemDto): CasoSummary {
     photoUrl: summary.photo?.optimizedUrl ?? summary.photo?.url,
     solutionDescription: summary.solution?.description,
     solutionEvidenceUrl: summary.solution?.evidenceUrl,
+    workflowVersion: summary.workflowVersion,
+    displayStatus: summary.displayStatus,
+    queue: getTechnicianQueue({
+      estado: summary.status,
+      workflowVersion: summary.workflowVersion,
+    }),
   };
 }
 
@@ -85,6 +102,13 @@ export function mapCasoDetail(dto: SolicitudDetailDto, id: string): CasoDetail {
     photoUrl: detail.photo?.optimizedUrl ?? detail.photo?.url,
     solutionDescription: detail.solution?.description,
     solutionEvidenceUrl: detail.solution?.evidenceUrl,
+    workflowVersion: detail.workflowVersion,
+    displayStatus: detail.displayStatus,
+    headline: detail.headline,
+    proximaAccion: detail.proximaAccion,
+    historial: detail.historial,
+    historyNote: detail.historyNote,
+    capabilities: detail.capabilities,
   };
 }
 
@@ -97,11 +121,30 @@ export function mapCasosFinalizadosResponse(dto: CasosFinalizadosResponseDto): C
 }
 
 export function filterCasosPorResolver(casos: CasoSummary[]): CasoSummary[] {
-  return casos.filter((caso) => caso.status !== 'finalizado');
+  return casos.filter((caso) => getTechnicianQueue({ estado: caso.status, workflowVersion: caso.workflowVersion }) === 'por_iniciar');
 }
 
 export function filterCasosEnProgreso(casos: CasoSummary[]): CasoSummary[] {
-  return casos.filter((caso) => caso.status === 'asignado' || caso.status === 'pendiente');
+  return casos.filter((caso) => getTechnicianQueue({ estado: caso.status, workflowVersion: caso.workflowVersion }) === 'en_atencion');
+}
+
+export function filterCasosEsperandoFuncionario(casos: CasoSummary[]): CasoSummary[] {
+  return casos.filter(
+    (caso) => getTechnicianQueue({ estado: caso.status, workflowVersion: caso.workflowVersion }) === 'esperando_funcionario',
+  );
+}
+
+export function filterCasosEsperandoConfirmacion(casos: CasoSummary[]): CasoSummary[] {
+  return casos.filter(
+    (caso) => getTechnicianQueue({ estado: caso.status, workflowVersion: caso.workflowVersion }) === 'esperando_confirmacion',
+  );
+}
+
+export function filterCasosTerminados(casos: CasoSummary[]): CasoSummary[] {
+  return casos.filter((caso) => {
+    const queue = getTechnicianQueue({ estado: caso.status, workflowVersion: caso.workflowVersion });
+    return queue === 'terminados' || isClosedListStatus(caso.status);
+  });
 }
 
 export function filterCasosByQuery(casos: CasoSummary[], query: string): CasoSummary[] {
@@ -128,6 +171,7 @@ export function sortCasosByMostRecent(casos: CasoSummary[]): CasoSummary[] {
   return [...casos].reverse();
 }
 
-export function canResolveCaso(caso: Pick<CasoDetail, 'status'>): boolean {
+export function canResolveCaso(caso: Pick<CasoDetail, 'status' | 'workflowVersion'>): boolean {
+  if (caso.workflowVersion === 2) return false;
   return caso.status === 'asignado' || caso.status === 'pendiente';
 }

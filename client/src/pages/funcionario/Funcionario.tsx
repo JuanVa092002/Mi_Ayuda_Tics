@@ -120,9 +120,18 @@ export default function Funcionario(): ReactNode {
         const solicitudes: Solicitud[] = await historialSolicitudesFuncionario()
         const total = solicitudes.length
         const pendientes = solicitudes.filter(
-          s => s.estado === 'solicitado' || s.estado === 'asignado' || s.estado === 'pendiente'
+          s =>
+            s.estado === 'solicitado' ||
+            s.estado === 'nuevo' ||
+            s.estado === 'asignado' ||
+            s.estado === 'pendiente' ||
+            s.estado === 'en_progreso' ||
+            s.estado === 'esperando_usuario' ||
+            s.estado === 'resuelto'
         ).length
-        const resueltas = solicitudes.filter(s => s.estado === 'finalizado').length
+        const resueltas = solicitudes.filter(
+          s => s.estado === 'finalizado' || s.estado === 'cerrado' || s.estado === 'cancelado'
+        ).length
         setStats({ total, pendientes, resueltas })
       } catch (error) {
         toast.error(getApiErrorMessage(error))

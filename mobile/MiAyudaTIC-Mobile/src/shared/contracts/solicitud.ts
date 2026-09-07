@@ -1,3 +1,10 @@
+import {
+  getSolicitudDisplayStatus,
+  isAssignmentPendingStatus,
+  isClosedListStatus,
+  isOpenWorkListStatus,
+} from './solicitud-lifecycle';
+
 type PopulatedNameDto = { _id?: string; nombre?: string };
 type MediaDto = { url?: string; optimizedUrl?: string; filename?: string };
 type SolucionDto = { descripcionSolucion?: string; evidencia?: MediaDto };
@@ -15,6 +22,33 @@ export type SolicitudListItemDto = {
   tipoCaso?: PopulatedNameDto | string;
   foto?: MediaDto;
   solucion?: SolucionDto | string;
+  workflowVersion?: number;
+  displayStatus?: string;
+  headline?: string;
+  proximaAccion?: string;
+};
+
+export type SolicitudEventDto = {
+  _id?: string;
+  type: string;
+  message: string;
+  createdAt?: string;
+  author?: { nombre?: string };
+  metadata?: { nextAction?: string; nextActionAt?: string; resolutionType?: string };
+};
+
+export type SolicitudCapabilitiesDto = {
+  canAssign?: boolean;
+  canReassign?: boolean;
+  canCancel?: boolean;
+  canStart?: boolean;
+  canUpdate?: boolean;
+  canRequestInfo?: boolean;
+  canPartialSolution?: boolean;
+  canResolve?: boolean;
+  canReply?: boolean;
+  canConfirm?: boolean;
+  canReopen?: boolean;
 };
 
 export type SolicitudDetailDto = {
@@ -29,6 +63,15 @@ export type SolicitudDetailDto = {
   tipoCaso?: PopulatedNameDto | string;
   foto?: MediaDto;
   solucion?: SolucionDto | string;
+  workflowVersion?: number;
+  lifecycleState?: string;
+  displayStatus?: string;
+  headline?: string;
+  proximaAccion?: string;
+  proximaAccionAt?: string;
+  historial?: SolicitudEventDto[];
+  historyNote?: string;
+  capabilities?: SolicitudCapabilitiesDto;
 };
 
 export type HistorialResponseDto = {
@@ -44,7 +87,17 @@ export type CreateSolicitudResponseDto = {
   solicitud: SolicitudListItemDto & { _id: string };
 };
 
-export type SolicitudStatus = 'solicitado' | 'asignado' | 'pendiente' | 'finalizado';
+export type SolicitudStatus =
+  | 'solicitado'
+  | 'asignado'
+  | 'pendiente'
+  | 'finalizado'
+  | 'nuevo'
+  | 'en_progreso'
+  | 'esperando_usuario'
+  | 'resuelto'
+  | 'cerrado'
+  | 'cancelado';
 
 export type MediaAsset = {
   url: string;
@@ -70,6 +123,10 @@ export type SolicitudSummary = {
   caseTypeName?: string;
   photo?: MediaAsset;
   solution?: SolicitudSolution;
+  workflowVersion?: number;
+  displayStatus: string;
+  headline?: string;
+  proximaAccion?: string;
 };
 
 export type TimelineStepState = 'completed' | 'current' | 'upcoming';
@@ -80,8 +137,22 @@ export type TimelineStep = {
   state: TimelineStepState;
 };
 
+export type SolicitudEvent = {
+  id?: string;
+  type: string;
+  message: string;
+  createdAt?: string;
+  authorName?: string;
+};
+
 export type SolicitudDetail = SolicitudSummary & {
   environmentIsActive?: boolean;
+  historial?: SolicitudEvent[];
+  historyNote?: string;
+  capabilities?: SolicitudCapabilitiesDto;
+  canReply?: boolean;
+  canConfirm?: boolean;
+  canReopen?: boolean;
 };
 
 export type SolicitudStats = {
@@ -90,7 +161,15 @@ export type SolicitudStats = {
   resolved: number;
 };
 
-const PENDING_STATUSES: SolicitudStatus[] = ['solicitado', 'asignado', 'pendiente'];
+const PENDING_STATUSES: SolicitudStatus[] = [
+  'solicitado',
+  'asignado',
+  'pendiente',
+  'nuevo',
+  'en_progreso',
+  'esperando_usuario',
+  'resuelto',
+];
 
 function resolvePopulatedName(value: PopulatedNameDto | string | undefined | null): string | undefined {
   if (!value) return undefined;
@@ -117,7 +196,13 @@ function normalizeStatus(raw: string): SolicitudStatus {
     raw === 'solicitado' ||
     raw === 'asignado' ||
     raw === 'pendiente' ||
-    raw === 'finalizado'
+    raw === 'finalizado' ||
+    raw === 'nuevo' ||
+    raw === 'en_progreso' ||
+    raw === 'esperando_usuario' ||
+    raw === 'resuelto' ||
+    raw === 'cerrado' ||
+    raw === 'cancelado'
   ) {
     return raw;
   }
@@ -229,29 +314,21 @@ export function filterSolicitudesByHistorialChip(
 ): SolicitudSummary[] {
   switch (chip) {
     case 'Pendientes de asignación':
-      return items.filter((item) => item.status === 'solicitado');
+      return items.filter((item) => isAssignmentPendingStatus(item.status, item.workflowVersion));
     case 'En proceso':
-      return items.filter((item) => item.status === 'asignado' || item.status === 'pendiente');
+      return items.filter((item) => isOpenWorkListStatus(item.status, item.workflowVersion));
     case 'Resueltas':
-      return items.filter((item) => item.status === 'finalizado');
+      return items.filter((item) => isClosedListStatus(item.status));
     default:
       return items;
   }
 }
 
-export function getStatusLabel(status: SolicitudStatus): string {
-  switch (status) {
-    case 'solicitado':
-      return 'Pendiente de asignación';
-    case 'asignado':
-      return 'Asignado';
-    case 'pendiente':
-      return 'Requiere información';
-    case 'finalizado':
-      return 'Resuelta';
-    default:
-      return status;
-  }
+export function getStatusLabel(
+  status: SolicitudStatus | string,
+  workflowVersion?: number | null,
+): string {
+  return getSolicitudDisplayStatus({ estado: status, workflowVersion }).label;
 }
 
 export function isPendingStatus(status: SolicitudStatus): boolean {
@@ -279,6 +356,10 @@ export function mapSolicitudSummary(dto: SolicitudListItemDto): SolicitudSummary
     ),
     photo: mapMedia(dto.foto),
     solution: mapSolution(dto.solucion),
+    workflowVersion: dto.workflowVersion,
+    displayStatus: dto.displayStatus ?? getStatusLabel(dto.estado, dto.workflowVersion),
+    headline: dto.headline,
+    proximaAccion: dto.proximaAccion,
   };
 }
 
@@ -300,6 +381,22 @@ export function mapSolicitudDetail(dto: SolicitudDetailDto, id: string): Solicit
     ),
     photo: mapMedia(dto.foto),
     solution: mapSolution(dto.solucion),
+    workflowVersion: dto.workflowVersion,
+    displayStatus: dto.displayStatus ?? getStatusLabel(dto.estado, dto.workflowVersion),
+    headline: dto.headline,
+    proximaAccion: dto.proximaAccion,
+    historial: (dto.historial ?? []).map((event) => ({
+      id: event._id,
+      type: event.type,
+      message: event.message,
+      createdAt: event.createdAt,
+      authorName: event.author?.nombre,
+    })),
+    historyNote: dto.historyNote,
+    capabilities: dto.capabilities,
+    canReply: dto.capabilities?.canReply === true,
+    canConfirm: dto.capabilities?.canConfirm === true,
+    canReopen: dto.capabilities?.canReopen === true,
   };
 }
 
@@ -311,6 +408,6 @@ export function computeSolicitudStats(items: SolicitudSummary[]): SolicitudStats
   return {
     total: items.length,
     pending: items.filter((item) => isPendingStatus(item.status)).length,
-    resolved: items.filter((item) => item.status === 'finalizado').length,
+    resolved: items.filter((item) => isClosedListStatus(item.status)).length,
   };
 }

@@ -37,9 +37,31 @@ export interface TipoCaso extends SelectOption {
   descripcion?: string
 }
 
-export type SolicitudEstado = 'solicitado' | 'asignado' | 'finalizado'
+export type SolicitudEstado = string
 
 export type TipoSolucion = 'pendiente' | 'finalizado'
+
+export interface SolicitudCapabilities {
+  canAssign?: boolean
+  canReassign?: boolean
+  canCancel?: boolean
+  canStart?: boolean
+  canUpdate?: boolean
+  canRequestInfo?: boolean
+  canPartialSolution?: boolean
+  canResolve?: boolean
+  canReply?: boolean
+  canConfirm?: boolean
+  canReopen?: boolean
+}
+
+export interface SolicitudHistorialEvent {
+  _id?: string
+  type: string
+  message: string
+  createdAt?: string
+  author?: { nombre?: string }
+}
 
 export interface SolucionCaso {
   descripcionSolucion?: string
@@ -61,6 +83,14 @@ export interface Solicitud {
   solucion?: SolucionCaso | string
   foto?: MediaFile
   tipoSolucion?: TipoSolucion
+  workflowVersion?: number
+  displayStatus?: string
+  headline?: string
+  proximaAccion?: string
+  capabilities?: SolicitudCapabilities
+  historial?: SolicitudHistorialEvent[]
+  queue?: string
+  historyNote?: string
 }
 
 export interface CaseForResolution extends Solicitud {

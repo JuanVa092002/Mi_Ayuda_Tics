@@ -1,6 +1,13 @@
 import { useAuth } from '@/features/auth/auth-context';
 import { navigateForAccess } from '@/features/auth/navigation';
 import { loginSchema, type LoginFormValues } from '@/features/auth/schemas';
+import {
+  createSubmitLock,
+  LOGIN_CONNECTING_BODY,
+  LOGIN_CONNECTING_TITLE,
+  loginControlLog,
+  runLoginWithSingleRetry,
+} from '@/features/auth/login-retry';
 import { spacing } from '@/shared/theme/spacing';
 import { AuthLayout } from '@/shared/ui/AuthLayout';
 import { BrandTitle } from '@/shared/ui/BrandTitle';
@@ -9,14 +16,18 @@ import { Text } from '@/shared/ui/Text';
 import { TextInput } from '@/shared/ui/TextInput';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 export default function LoginScreen() {
   const { login } = useAuth();
   const [submitting, setSubmitting] = useState(false);
+  const [connecting, setConnecting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const lock = useMemo(() => createSubmitLock(), []);
+  const cancelledRef = useRef(false);
+  const skipDelayRef = useRef(false);
 
   const {
     control,
@@ -28,9 +39,31 @@ export default function LoginScreen() {
   });
 
   const onSubmit = handleSubmit(async (values) => {
+    if (!lock.tryAcquire()) {
+      return;
+    }
+    cancelledRef.current = false;
+    skipDelayRef.current = false;
     setSubmitting(true);
     try {
-      const result = await login(values.correo.trim(), values.password);
+      const result = await runLoginWithSingleRetry(
+        () => login(values.correo.trim(), values.password),
+        {
+          isCancelled: () => cancelledRef.current,
+          skipRemaining: () => skipDelayRef.current,
+          onBeforeRetry: () => {
+            setConnecting(true);
+            if (typeof __DEV__ !== 'undefined' && __DEV__) {
+              console.info('[login-retry]', loginControlLog({ phase: 'retry', route: 'login' }));
+            }
+          },
+        },
+      );
+
+      if (cancelledRef.current) {
+        return;
+      }
+
       if (result.ok) {
         navigateForAccess(result.access, { replace: true });
         return;
@@ -51,9 +84,13 @@ export default function LoginScreen() {
 
       Alert.alert('No se pudo ingresar', result.message);
     } finally {
+      setConnecting(false);
       setSubmitting(false);
+      lock.release();
     }
   });
+
+  const busy = submitting || connecting;
 
   return (
     <AuthLayout
@@ -123,7 +160,39 @@ export default function LoginScreen() {
         </Text>
       </Pressable>
 
-      <Button label="Iniciar sesión" variant="primary" fullWidth loading={submitting} onPress={onSubmit} />
+      {connecting ? (
+        <View style={styles.connectingBox}>
+          <Text variant="p1">{LOGIN_CONNECTING_TITLE}</Text>
+          <Text variant="p2" color="secondary">
+            {LOGIN_CONNECTING_BODY}
+          </Text>
+          <View style={styles.connectingActions}>
+            <Button
+              label="Cancelar"
+              variant="outline"
+              onPress={() => {
+                cancelledRef.current = true;
+                skipDelayRef.current = true;
+              }}
+            />
+            <Button
+              label="Reintentar ahora"
+              variant="secondary"
+              onPress={() => {
+                skipDelayRef.current = true;
+              }}
+            />
+          </View>
+        </View>
+      ) : null}
+
+      <Button
+        label="Iniciar sesión"
+        variant="primary"
+        fullWidth
+        loading={busy}
+        onPress={onSubmit}
+      />
     </AuthLayout>
   );
 }
@@ -142,5 +211,14 @@ const styles = StyleSheet.create({
   },
   footerLink: {
     fontWeight: '600',
+  },
+  connectingBox: {
+    marginBottom: spacing[4],
+    gap: spacing[2],
+  },
+  connectingActions: {
+    flexDirection: 'row',
+    gap: spacing[2],
+    marginTop: spacing[2],
   },
 });

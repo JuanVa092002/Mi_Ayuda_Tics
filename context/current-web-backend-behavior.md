@@ -44,7 +44,7 @@
 - **Auth real: cookie, bearer, socket**: [Verificado] El middleware `extractAuthToken.ts` busca el token en este orden: 1) Header `Authorization: Bearer ...`, 2) Cookie `token`, 3) Handshake de Socket.io.
 - **RBAC real por endpoint**: [Verificado] Middleware `checkRol(['lider', 'tecnico', 'funcionario'])` aplicado a nivel de ruta en Express.
 - **Resource-level permissions**: [Verificado] En `GET /api/solicitud/:id`, se verifica que si el usuario es funcionario, solo pueda ver su propia solicitud, y si es técnico, solo las asignadas a él.
-- **Uploads/evidencias**: [Verificado] Se usa `multer` (`uploadMiddleware.single()`). Los archivos se guardan localmente y se registra un documento en `storageModel`. Se sirven estáticamente a través de `/api/media/local/:filename`.
+- **Uploads/evidencias**: [Verificado] Se usa `multer` (`uploadMiddleware.single()`). MIME/size en `handleStorage`. `GET /api/storage/:id` y `GET /api/media/local/:filename` autorizan por acceso actual al ticket (dueño, técnico asignado, líder), no por autor del archivo.
 - **Notificaciones persistidas + realtime**: [Verificado] Se guardan en MongoDB (`Notificacion.create`) y se emiten por Socket.io (`emitNotificacion`, `emitSolicitudUpdate`).
 - **Gráficas/estadísticas**: [Verificado] Endpoints dedicados `/graficaSolicitudesPorAmbiente` y `/graficaSolicitudesPorMes` para el dashboard del líder.
 - **Qué endpoints son seguros y cuáles son sensibles**: [Verificado] Las mutaciones de estado de tickets (`asignarTecnico`, `solucionCaso`) validan estrictamente el estado actual del ticket (ej. no se puede resolver un ticket ya finalizado).
@@ -54,7 +54,7 @@
 
 - **Qué consume web hoy del backend**: [Verificado] Endpoints REST estándar con JSON. FormData para subida de imágenes.
 - **Qué asume la web que NO se debe romper**: [Verificado] La estructura de los objetos anidados (ej. `row.ambiente.nombre`, `row.usuario.nombre`). Si el backend deja de hacer `.populate()`, la web fallará al intentar renderizar las tablas.
-- **Qué campos/flows son invariantes**: [Verificado] El flujo de estados del ticket: `solicitado` -> `asignado` -> `pendiente` (opcional) -> `finalizado`.
+- **Qué campos/flows son invariantes**: [Verificado] Hay dos máquinas. Legacy v1: `solicitado` → `asignado` → `pendiente` (opcional) → `finalizado` (`SolucionCaso`). Workflow v2 (`workflowVersion: 2`): `nuevo` → `asignado` → `en_progreso` ⇄ `esperando_usuario` → `resuelto` → `cerrado` (o `cancelado`). Ausencia de `workflowVersion` = v1. Contratos en `docs/contracts.md`.
 - **Qué partes admiten extensión segura para mobile**: [Verificado] Se pueden agregar nuevos endpoints o nuevos campos en las respuestas JSON sin romper la web, siempre que no se eliminen o renombren los existentes.
 - **Qué requeriría versionado o nuevo endpoint**: [Inferido] Si mobile requiere paginación por cursor (infinite scroll) en lugar de traer todos los datos de golpe como hace la web actualmente (ej. `getCasosAsignados` trae todo el array sin paginar desde el backend).
 

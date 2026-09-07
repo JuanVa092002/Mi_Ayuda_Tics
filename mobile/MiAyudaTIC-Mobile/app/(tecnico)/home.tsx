@@ -1,11 +1,17 @@
 import { useAuth } from '@/features/auth/auth-context';
 import {
-  useCasosPorResolver,
+  useCasosAsignados,
   useCasosResueltos,
-  useMisCasos,
 } from '@/features/casos/hooks';
-import type { CasoSummary } from '@/shared/contracts/caso';
-import { filterCasosByQuery } from '@/shared/contracts/caso';
+import {
+  filterCasosByQuery,
+  filterCasosEnProgreso,
+  filterCasosEsperandoConfirmacion,
+  filterCasosEsperandoFuncionario,
+  filterCasosPorResolver,
+  sortCasosByMostRecent,
+  type CasoSummary,
+} from '@/shared/contracts/caso';
 import { colors } from '@/shared/theme/colors';
 import { CasoListItem } from '@/shared/ui/CasoListItem';
 import { QueryBoundary } from '@/shared/ui/QueryBoundary';
@@ -15,7 +21,11 @@ import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-type TecnicoTab = 'por_resolver' | 'mis_casos';
+type TecnicoTab =
+  | 'por_iniciar'
+  | 'en_atencion'
+  | 'esperando_funcionario'
+  | 'esperando_confirmacion';
 
 function navigateToCaso(item: CasoSummary) {
   router.push({
@@ -29,17 +39,24 @@ function navigateToCaso(item: CasoSummary) {
 
 export default function TecnicoHomeScreen() {
   const { user, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<TecnicoTab>('por_resolver');
+  const [activeTab, setActiveTab] = useState<TecnicoTab>('por_iniciar');
   const [search, setSearch] = useState('');
-  const porResolverQuery = useCasosPorResolver();
-  const misCasosQuery = useMisCasos();
+  const asignadosQuery = useCasosAsignados();
   const resueltosQuery = useCasosResueltos();
 
-  const activeQuery = activeTab === 'por_resolver' ? porResolverQuery : misCasosQuery;
+  const queuedItems = useMemo(() => {
+    const all = asignadosQuery.data ?? [];
+    if (activeTab === 'por_iniciar') return sortCasosByMostRecent(filterCasosPorResolver(all));
+    if (activeTab === 'en_atencion') return sortCasosByMostRecent(filterCasosEnProgreso(all));
+    if (activeTab === 'esperando_funcionario') {
+      return sortCasosByMostRecent(filterCasosEsperandoFuncionario(all));
+    }
+    return sortCasosByMostRecent(filterCasosEsperandoConfirmacion(all));
+  }, [asignadosQuery.data, activeTab]);
 
   const filteredActiveItems = useMemo(
-    () => filterCasosByQuery(activeQuery.data ?? [], search),
-    [activeQuery.data, search],
+    () => filterCasosByQuery(queuedItems, search),
+    [queuedItems, search],
   );
 
   const handleLogout = async () => {
@@ -47,16 +64,13 @@ export default function TecnicoHomeScreen() {
   };
 
   const handleRefresh = () => {
-    void porResolverQuery.refetch();
-    void misCasosQuery.refetch();
+    void asignadosQuery.refetch();
     void resueltosQuery.refetch();
   };
 
   const isRefreshing =
-    (porResolverQuery.isFetching ||
-      misCasosQuery.isFetching ||
-      resueltosQuery.isFetching) &&
-    !(porResolverQuery.isLoading || misCasosQuery.isLoading || resueltosQuery.isLoading);
+    (asignadosQuery.isFetching || resueltosQuery.isFetching) &&
+    !(asignadosQuery.isLoading || resueltosQuery.isLoading);
 
   if (!user) {
     return null;
@@ -72,26 +86,24 @@ export default function TecnicoHomeScreen() {
       onLogout={() => void handleLogout()}
     >
       <View style={styles.tabs}>
-        <Pressable
-          accessibilityRole="tab"
-          accessibilityState={{ selected: activeTab === 'por_resolver' }}
-          style={[styles.tab, activeTab === 'por_resolver' && styles.tabActive]}
-          onPress={() => setActiveTab('por_resolver')}
-        >
-          <Text style={[styles.tabText, activeTab === 'por_resolver' && styles.tabTextActive]}>
-            Por resolver
-          </Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole="tab"
-          accessibilityState={{ selected: activeTab === 'mis_casos' }}
-          style={[styles.tab, activeTab === 'mis_casos' && styles.tabActive]}
-          onPress={() => setActiveTab('mis_casos')}
-        >
-          <Text style={[styles.tabText, activeTab === 'mis_casos' && styles.tabTextActive]}>
-            En progreso
-          </Text>
-        </Pressable>
+        {(
+          [
+            ['por_iniciar', 'Por iniciar'],
+            ['en_atencion', 'En atención'],
+            ['esperando_funcionario', 'Esperando al Funcionario'],
+            ['esperando_confirmacion', 'Esperando confirmación'],
+          ] as const
+        ).map(([id, label]) => (
+          <Pressable
+            key={id}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: activeTab === id }}
+            style={[styles.tab, activeTab === id && styles.tabActive]}
+            onPress={() => setActiveTab(id)}
+          >
+            <Text style={[styles.tabText, activeTab === id && styles.tabTextActive]}>{label}</Text>
+          </Pressable>
+        ))}
       </View>
 
       <SearchField
@@ -108,25 +120,27 @@ export default function TecnicoHomeScreen() {
       >
         <View style={styles.sectionCard}>
           <QueryBoundary
-            isLoading={activeQuery.isLoading}
-            isError={activeQuery.isError}
-            error={activeQuery.error}
-            hasData={activeQuery.dataUpdatedAt > 0}
-            onRetry={() => void activeQuery.refetch()}
+            isLoading={asignadosQuery.isLoading}
+            isError={asignadosQuery.isError}
+            error={asignadosQuery.error}
+            hasData={asignadosQuery.dataUpdatedAt > 0}
+            onRetry={() => void asignadosQuery.refetch()}
             isEmpty={filteredActiveItems.length === 0}
             emptyTitle={
               search
                 ? 'Sin coincidencias'
-                : activeTab === 'por_resolver'
-                  ? 'No tienes casos por resolver'
-                  : 'Sin casos en progreso'
+                : activeTab === 'por_iniciar'
+                  ? 'No tienes casos por iniciar'
+                  : activeTab === 'en_atencion'
+                    ? 'Sin casos en atención'
+                    : activeTab === 'esperando_funcionario'
+                      ? 'Nada esperando al Funcionario'
+                      : 'Nada esperando confirmación'
             }
             emptyDescription={
               search
                 ? 'Prueba con otro término de búsqueda.'
-                : activeTab === 'por_resolver'
-                  ? 'Cuando el líder TIC te asigne un ticket, lo verás aquí para atenderlo.'
-                  : 'Los casos asignados o pendientes de cierre aparecerán aquí.'
+                : 'Los tickets de esta cola aparecerán aquí.'
             }
           >
             {filteredActiveItems.map((item) => (
@@ -136,7 +150,7 @@ export default function TecnicoHomeScreen() {
         </View>
 
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Resueltos recientes</Text>
+          <Text style={styles.sectionTitle}>Terminados</Text>
           <QueryBoundary
             isLoading={resueltosQuery.isLoading}
             isError={resueltosQuery.isError}
@@ -160,6 +174,7 @@ export default function TecnicoHomeScreen() {
 const styles = StyleSheet.create({
   tabs: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     backgroundColor: colors.white,
     borderRadius: 12,
     padding: 4,
@@ -170,8 +185,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   tab: {
-    flex: 1,
+    flexGrow: 1,
+    flexBasis: '40%',
     paddingVertical: 10,
+    paddingHorizontal: 8,
     borderRadius: 10,
     alignItems: 'center',
   },
@@ -179,7 +196,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brandBlue,
   },
   tabText: {
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: '700',
     color: colors.brandBlue,
   },

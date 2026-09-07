@@ -2,6 +2,7 @@
 /**
  * USB adb reverse for a PHYSICAL phone only.
  * Not used by the emulator loop (AVD → 10.0.2.2:8081, no reverse).
+ * API daily is Render HTTPS — do not reverse :18080.
  */
 import { ANDROID_SERIAL } from './_paths.mjs';
 import { adbReversePorts, fail, parseOnlineDevices } from './_devices.mjs';
@@ -32,4 +33,4 @@ if (!target) {
 }
 
 adbReversePorts(serial);
-console.log('\n✓ USB reverse listo (Metro 8081, inspector 8097) — solo físico.');
+console.log('\n✓ USB reverse listo (Metro 8081, inspector 8097) — solo físico. API = Render HTTPS.');

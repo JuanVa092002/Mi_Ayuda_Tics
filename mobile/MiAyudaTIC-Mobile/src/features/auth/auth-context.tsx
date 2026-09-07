@@ -6,6 +6,7 @@ import {
   ApiError,
   isInactiveAccountMessage,
   isPendingTechnicianMessage,
+  isUnauthorizedError,
 } from '@/shared/api/errors';
 import { setUnauthorizedHandler } from '@/shared/api/client';
 import {
@@ -38,6 +39,8 @@ import type {
 } from './session-types';
 import { registerDeviceForPush, unregisterDeviceForPush } from '@/shared/notifications';
 import { clearAuthenticatedSessionMedia } from '@/shared/media/authenticated-media-cache';
+import { clearAllWorkflowAttemptKeys } from '@/shared/api/workflow-idempotency';
+import { clearSolicitudFormDraft } from '@/features/solicitudes/solicitud-form-draft';
 import {
   resolveBackgroundRevalidateFailure,
   resolveBootstrapFailure,
@@ -83,6 +86,8 @@ async function wipeSession(): Promise<void> {
   await clearSessionSnapshot();
   await unregisterDeviceForPush();
   clearAuthenticatedSessionMedia();
+  clearSolicitudFormDraft();
+  clearAllWorkflowAttemptKeys();
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -243,21 +248,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           };
         }
 
+        clearSolicitudFormDraft();
         return { ok: true, access: result.access };
       } catch (error) {
         if (error instanceof ApiError) {
-          if (error.code === 'UNAUTHORIZED') {
-            return { ok: false, kind: 'invalid_credentials', message: error.message };
+          if (isUnauthorizedError(error)) {
+            return {
+              ok: false,
+              kind: 'invalid_credentials',
+              message: error.message,
+              code: error.code,
+            };
           }
           if (error.code === 'FORBIDDEN') {
             if (isPendingTechnicianMessage(error.message)) {
-              return { ok: false, kind: 'pending_approval', message: error.message };
+              return {
+                ok: false,
+                kind: 'pending_approval',
+                message: error.message,
+                code: error.code,
+              };
             }
             if (isInactiveAccountMessage(error.message)) {
-              return { ok: false, kind: 'inactive', message: error.message };
+              return { ok: false, kind: 'inactive', message: error.message, code: error.code };
             }
           }
-          return { ok: false, kind: 'network', message: error.message };
+          return { ok: false, kind: 'network', message: error.message, code: error.code };
         }
         return {
           ok: false,
@@ -295,6 +311,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           };
         }
 
+        clearSolicitudFormDraft();
         return {
           ok: true,
           kind: 'funcionario_autologin',

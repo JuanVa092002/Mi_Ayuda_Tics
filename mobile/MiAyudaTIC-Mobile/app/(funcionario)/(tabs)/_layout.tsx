@@ -1,11 +1,17 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
+import {
+  applyFuncionarioTabPress,
+  nestedStackIndex,
+  planFuncionarioTabPress,
+} from '@/features/funcionario/tab-root';
 import { useSystemNavInset } from '@/shared/layout/useSystemNavInset';
 import { semanticColors } from '@/shared/theme/semantic-colors';
 import { spacing } from '@/shared/theme/spacing';
+import { Text } from '@/shared/ui/Text';
+import { Ionicons } from '@expo/vector-icons';
+import { Tabs } from 'expo-router';
 import type { ComponentProps } from 'react';
 import type { ColorValue } from 'react-native';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 const TAB_ICON_SIZE = 24;
 
@@ -43,9 +49,20 @@ function FuncionarioTabBar({ state, descriptors, navigation }: FuncionarioTabBar
             target: route.key,
             canPreventDefault: true,
           });
-          if (!focused && !event.defaultPrevented) {
-            navigation.navigate(route.name, route.params);
+          if (event.defaultPrevented) {
+            return;
           }
+
+          const tabRoute = state.routes[index];
+          applyFuncionarioTabPress(
+            navigation,
+            planFuncionarioTabPress({
+              focused,
+              routeName: route.name,
+              nestedIndex: nestedStackIndex(tabRoute),
+              nestedStateKey: tabRoute.state?.key,
+            }),
+          );
         };
 
         return (
@@ -54,11 +71,12 @@ function FuncionarioTabBar({ state, descriptors, navigation }: FuncionarioTabBar
             accessibilityRole="button"
             accessibilityState={{ selected: focused }}
             accessibilityLabel={options.tabBarAccessibilityLabel ?? label}
+            accessibilityHint={`Abre la sección ${label}`}
             onPress={onPress}
-            style={styles.item}
+            style={({ pressed }) => [styles.item, pressed && styles.itemPressed]}
           >
             {options.tabBarIcon?.({ focused, color, size: TAB_ICON_SIZE })}
-            <Text style={[styles.label, { color }]}>{label}</Text>
+            <Text variant="caption" style={[styles.label, { color }]}>{label}</Text>
           </Pressable>
         );
       })}
@@ -72,6 +90,10 @@ function FuncionarioTabBar({ state, descriptors, navigation }: FuncionarioTabBar
  * Custom tab bar owns WindowInsets padding so 3-button nav lifts the tabs
  * and gesture nav lets them sit lower — without a fixed `tabBarStyle.height`
  * that fights React Navigation and can loop layout.
+ *
+ * A tab is a destination (Inicio, el listado de Casos, Cuenta), not a
+ * back-stack. Tapping Casos always shows every solicitud, never the last
+ * opened detalle.
  */
 export default function FuncionarioTabsLayout() {
   return (
@@ -94,18 +116,9 @@ export default function FuncionarioTabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="(crear)"
-        options={{
-          title: 'Crear',
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon name="add-circle" color={color} focused={focused} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="(historial)"
         options={{
-          title: 'Solicitudes',
+          title: 'Casos',
           tabBarIcon: ({ color, focused }) => (
             <TabIcon name="time" color={color} focused={focused} />
           ),
@@ -145,8 +158,10 @@ const styles = StyleSheet.create({
     gap: 2,
     paddingTop: spacing[1],
   },
+  itemPressed: {
+    opacity: 0.72,
+  },
   label: {
-    fontSize: 11,
     fontWeight: '600',
   },
 });

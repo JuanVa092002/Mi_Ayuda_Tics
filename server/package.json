@@ -22,7 +22,9 @@
     "verify:env": "ts-node --transpile-only src/scripts/verify-env.ts",
     "seed:war-room": "ts-node --transpile-only src/scripts/seed-war-room-e2e.ts",
     "audit:codigo-caso": "ts-node --transpile-only src/scripts/audit-solicitud-codigo-caso.ts",
-    "migrate:codigo-caso-unique": "ts-node --transpile-only src/scripts/migrate-uniq-solicitud-codigo-caso.ts"
+    "migrate:codigo-caso-unique": "ts-node --transpile-only src/scripts/migrate-uniq-solicitud-codigo-caso.ts",
+    "migrate:historial-operation-id": "ts-node --transpile-only src/scripts/migrate-uniq-historial-operation-id.ts",
+    "migrate:historial-operation-id:remote": "ts-node --transpile-only src/scripts/migrate-uniq-historial-operation-id.remote.ts"
   },
   "keywords": [],
   "author": "",

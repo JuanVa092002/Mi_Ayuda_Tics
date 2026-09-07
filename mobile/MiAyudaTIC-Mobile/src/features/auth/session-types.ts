@@ -1,5 +1,6 @@
 import type { AuthSession } from '@/shared/contracts/auth';
 import type { User } from '@/shared/contracts/user';
+import type { ApiErrorCode } from '@/shared/api/errors';
 
 export type RestoreFailedReason = 'network' | 'timeout' | 'server';
 
@@ -39,6 +40,7 @@ export type LoginResult =
       ok: false;
       kind: 'invalid_credentials' | 'pending_approval' | 'inactive' | 'lider' | 'network';
       message: string;
+      code?: ApiErrorCode;
     };
 
 export type RegisterResult =

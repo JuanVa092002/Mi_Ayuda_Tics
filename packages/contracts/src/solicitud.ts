@@ -17,3 +17,23 @@ export const solucionCasoFieldsSchema = z.object({
 
 export type SolicitudCreateFields = z.infer<typeof solicitudCreateFieldsSchema>
 export type SolucionCasoFields = z.infer<typeof solucionCasoFieldsSchema>
+
+export const solicitudWorkflowActionFields = {
+  assign: z.object({ tecnico: z.string().regex(/^[0-9a-fA-F]{24}$/) }),
+  reassign: z.object({
+    tecnico: z.string().regex(/^[0-9a-fA-F]{24}$/),
+    motivo: z.string().trim().min(3),
+  }),
+  message: z.object({ mensaje: z.string().trim().min(3) }),
+  partialSolution: z.object({
+    queSeHizo: z.string().trim().min(3),
+    queFalta: z.string().trim().min(3),
+    siguienteAccion: z.string().trim().min(3),
+    fechaEsperada: z.string().optional(),
+  }),
+  totalSolution: z.object({
+    queSeHizo: z.string().trim().min(3),
+    causaIdentificada: z.string().trim().optional(),
+  }),
+  motivo: z.object({ motivo: z.string().trim().min(3) }),
+}

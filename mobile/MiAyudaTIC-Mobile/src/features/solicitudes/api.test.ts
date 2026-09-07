@@ -135,6 +135,14 @@ describe('createSolicitud', () => {
     });
   });
 
+  it('timeout de crear solicitud no reintenta apiFetch', async () => {
+    vi.mocked(apiFetch).mockRejectedValue(
+      new ApiError('El servicio está tardando en responder. Intenta nuevamente en unos segundos.', 'TIMEOUT', 408),
+    );
+    await expect(createSolicitud('tok', payload)).rejects.toMatchObject({ code: 'TIMEOUT' });
+    expect(apiFetch).toHaveBeenCalledTimes(1);
+  });
+
   it('falla con error específico si el helper de upload rechaza el archivo', async () => {
     vi.mocked(appendImageToFormData).mockRejectedValue(
       new UploadFileError('Tipo de archivo no permitido', 'UNSUPPORTED_MIME'),

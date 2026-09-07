@@ -4,29 +4,34 @@ import { semanticColors } from '@/shared/theme/semantic-colors';
 import { StyleSheet, Text, View } from 'react-native';
 
 type StatusBadgeProps = {
-  status: SolicitudStatus;
+  status: SolicitudStatus | string;
+  label?: string;
+  workflowVersion?: number | null;
 };
 
-/** Dark warning text per mobile-color-spec.md for accessible contrast on warningBg. */
 const WARNING_TEXT = semanticColors.state.warningText;
 
-const STATUS_COLORS: Record<SolicitudStatus, { bg: string; text: string }> = {
-  solicitado: { bg: semanticColors.state.infoBg, text: semanticColors.state.info },
-  asignado: { bg: semanticColors.state.infoBg, text: semanticColors.state.info },
-  pendiente: { bg: semanticColors.state.warningBg, text: WARNING_TEXT },
-  finalizado: { bg: semanticColors.state.successBg, text: semanticColors.state.success },
-};
+function paletteFor(status: string): { bg: string; text: string } {
+  if (status === 'finalizado' || status === 'cerrado' || status === 'cancelado') {
+    return { bg: semanticColors.state.successBg, text: semanticColors.state.success };
+  }
+  if (status === 'pendiente' || status === 'esperando_usuario' || status === 'resuelto') {
+    return { bg: semanticColors.state.warningBg, text: WARNING_TEXT };
+  }
+  return { bg: semanticColors.state.infoBg, text: semanticColors.state.info };
+}
 
-export function StatusBadge({ status }: StatusBadgeProps) {
-  const palette = STATUS_COLORS[status] ?? STATUS_COLORS.solicitado;
+export function StatusBadge({ status, label, workflowVersion }: StatusBadgeProps) {
+  const text = label ?? getStatusLabel(status, workflowVersion);
+  const palette = paletteFor(status);
 
   return (
     <View
       style={[styles.badge, { backgroundColor: palette.bg }]}
-      accessibilityLabel={'Estado: ' + getStatusLabel(status)}
+      accessibilityLabel={'Estado: ' + text}
       accessibilityRole="text"
     >
-      <Text style={[styles.text, { color: palette.text }]}>{getStatusLabel(status)}</Text>
+      <Text style={[styles.text, { color: palette.text }]}>{text}</Text>
     </View>
   );
 }

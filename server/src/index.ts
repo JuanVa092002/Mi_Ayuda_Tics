@@ -4,6 +4,7 @@ import { dbConnect } from './shared/config/mongo'
 import { validateEnvOnBoot } from './shared/config/env'
 import { assertJwtSecretOnBoot } from './shared/config/jwt'
 import { setupSocketAdapterIfConfigured } from './shared/config/socketAdapter'
+import { assertWorkflowV2RuntimeReady } from './features/tickets/domain/workflow-runtime'
 
 const port = process.env.PORT || 8000
 
@@ -13,9 +14,10 @@ async function startServer(): Promise<void> {
 
   try {
     await dbConnect()
+    await assertWorkflowV2RuntimeReady()
     await setupSocketAdapterIfConfigured()
   } catch (error) {
-    console.error('Error de conexión a la base de datos:', error)
+    console.error('Error de conexión o requisitos de workflow v2:', error)
     process.exit(1)
   }
 

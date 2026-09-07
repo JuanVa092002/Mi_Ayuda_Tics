@@ -8,21 +8,23 @@ import {
 import { layout, spacing } from '@/shared/theme/spacing';
 import { semanticColors } from '@/shared/theme/semantic-colors';
 import { radius } from '@/shared/theme/radius';
-import { typography } from '@/shared/theme/typography';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { FilterChips } from '@/shared/ui/FilterChips';
 import { QueryBoundary } from '@/shared/ui/QueryBoundary';
 import { SearchField } from '@/shared/ui/SearchField';
 import { SolicitudListItem } from '@/shared/ui/SolicitudListItem';
-import { router, Stack } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
-import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { Text } from '@/shared/ui/Text';
+import { router, Stack, useScrollToTop } from 'expo-router';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const FILTER_OPTIONS = HISTORIAL_FILTER_CHIPS;
 
 export default function HistorialScreen() {
   const historialQuery = useMisSolicitudes();
+  const listRef = useRef<FlatList>(null);
+  useScrollToTop(listRef);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState<HistorialChip>('Todas');
@@ -51,9 +53,14 @@ export default function HistorialScreen() {
       <SafeAreaView style={styles.safe} edges={['top']}>
         <View style={styles.header}>
           <View style={styles.titleRow}>
-            <Text style={styles.title}>Mis solicitudes</Text>
+            <View style={styles.titleCopy}>
+              <Text variant="h1">Mis solicitudes</Text>
+              <Text variant="p2" color="secondary">Consulta el estado de cada reporte.</Text>
+            </View>
             {!historialQuery.isLoading ? (
-              <Text style={styles.count}>{countLabel}</Text>
+              <View style={styles.countPill}>
+                <Text variant="caption" color="brandBlue" style={styles.count}>{countLabel}</Text>
+              </View>
             ) : null}
           </View>
         </View>
@@ -98,7 +105,7 @@ export default function HistorialScreen() {
                 }
                 actionLabel={debouncedSearch ? undefined : 'Crear solicitud'}
                 onAction={
-                  debouncedSearch ? undefined : () => router.push('../(crear)')
+                  debouncedSearch ? undefined : () => router.push('/(funcionario)/nueva-solicitud')
                 }
               />
             }
@@ -106,6 +113,7 @@ export default function HistorialScreen() {
             skeletonVariant="listItem"
           >
             <FlatList
+              ref={listRef}
               data={filteredItems}
               keyExtractor={(item) => item.id}
               keyboardShouldPersistTaps="handled"
@@ -157,27 +165,26 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: layout.screenPaddingX,
-    paddingTop: spacing[3],
-    paddingBottom: spacing[2],
+    paddingTop: spacing[4],
+    paddingBottom: spacing[4],
   },
   titleRow: {
     flexDirection: 'row',
-    alignItems: 'baseline',
+    alignItems: 'center',
     justifyContent: 'space-between',
     gap: spacing[3],
   },
-  title: {
-    fontFamily: typography.h2.fontFamily,
-    fontSize: 28,
-    lineHeight: 34,
-    letterSpacing: -0.4,
-    fontWeight: '700',
-    color: semanticColors.text.primary,
+  titleCopy: {
     flexShrink: 1,
+    gap: spacing[1],
+  },
+  countPill: {
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[1],
+    backgroundColor: semanticColors.state.infoBg,
   },
   count: {
-    ...typography.caption,
-    color: semanticColors.text.tertiary,
     fontWeight: '600',
   },
   toolbar: {
@@ -191,6 +198,7 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: layout.screenPaddingX,
     paddingBottom: spacing[8],
+    paddingTop: spacing[1],
   },
   groupItem: {
     backgroundColor: semanticColors.surface.card,

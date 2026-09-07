@@ -10,5 +10,7 @@ export const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
     },
+    // Do not set a global mutation retry. Workflow v2 mutations set retry: 0
+    // explicitly. Login retry stays in login-retry.ts.
   },
 });

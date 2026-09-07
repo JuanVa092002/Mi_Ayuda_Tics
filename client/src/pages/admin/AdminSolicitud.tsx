@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
-import { asignarSolicitudTecnico } from '@/features/tickets'
-import { getSolicitudesPendientes } from '@/features/tickets'
+import { asignarSolicitudTecnico, cancelarSolicitud, getSolicitudesPendientes, WorkflowManualRetryNotice } from '@/features/tickets'
 import { getTecnicosAprobados } from '@/features/users'
 import AppLayout from '@/app/layouts/AppLayout'
 import AdminLayout from '@/app/layouts/AdminLayout'
 import { toast } from 'react-toastify'
 import { getApiErrorMessage } from '@/shared/api/apiError'
+import { classifyWorkflowMutationFailure } from '@/features/tickets/api/workflow-retry-policy'
+import { clearWorkflowAttemptKey } from '@/features/tickets/api/workflow-idempotency'
 import AdminSolicitudLayout from '@/app/layouts/AdminSolicitudLayout'
 import type { Solicitud, User } from '@/shared/types'
 
@@ -18,6 +19,12 @@ export default function AdminSolicitud() {
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const [cancelTarget, setCancelTarget] = useState<Solicitud | null>(null)
+  const [cancelMotivo, setCancelMotivo] = useState('')
+  const [cancelError, setCancelError] = useState<unknown>(null)
+  const [cancelLastPayload, setCancelLastPayload] = useState<{ motivo: string } | undefined>(undefined)
+  const [assignError, setAssignError] = useState<unknown>(null)
+  const [assignLastPayload, setAssignLastPayload] = useState<{ tecnico: string } | undefined>(undefined)
   const itemsPerPage = 5
 
   useEffect(() => {
@@ -46,25 +53,59 @@ export default function AdminSolicitud() {
       const response = await getTecnicosAprobados()
       const tecnicosAprobados = response.tecnicos
       setTecnicos(tecnicosAprobados)
+      setAssignError(null)
+      setAssignLastPayload(undefined)
       setShowModal(true)
     } catch (error) {
       toast.error(getApiErrorMessage(error))
     }
   }
 
-  const handleAssignClick = async (tecnicoId: User) => {
-    if (!selectedSolicitud || !tecnicoId) return
+  const handleCancelClick = async (payloadOverride?: { motivo: string }): Promise<void> => {
+    if (!cancelTarget) return
+    const motivo = (payloadOverride?.motivo ?? cancelMotivo).trim()
+    if (motivo.length < 3) {
+      toast.error('El motivo de cancelación es obligatorio.')
+      return
+    }
     try {
-      await asignarSolicitudTecnico(selectedSolicitud._id, {
-        tecnico: tecnicoId._id,
-      })
+      await cancelarSolicitud(cancelTarget._id, motivo)
+      toast.success('Solicitud cancelada')
+      setSolicitudes(prev => prev.filter(solicitud => solicitud._id !== cancelTarget._id))
+      clearWorkflowAttemptKey('cancel', cancelTarget._id)
+      setCancelTarget(null)
+      setCancelMotivo('')
+      setCancelError(null)
+      setCancelLastPayload(undefined)
+    } catch (error) {
+      setCancelError(error)
+      setCancelLastPayload({ motivo })
+      const failure = classifyWorkflowMutationFailure(error)
+      if (!failure.offersManualRetry) {
+        toast.error(getApiErrorMessage(error))
+      }
+    }
+  }
+
+  const handleAssignClick = async (tecnicoId: User, payloadOverride?: { tecnico: string }) => {
+    if (!selectedSolicitud) return
+    const tecnico = payloadOverride?.tecnico ?? tecnicoId._id
+    try {
+      await asignarSolicitudTecnico(selectedSolicitud._id, { tecnico })
       toast.success('Solicitud asignada con éxito')
       setSolicitudes(prevSolicitudes =>
         prevSolicitudes.filter(solicitud => solicitud._id !== selectedSolicitud._id)
       )
       setShowModal(false)
+      setAssignError(null)
+      setAssignLastPayload(undefined)
     } catch (error) {
-      toast.error(getApiErrorMessage(error))
+      setAssignError(error)
+      setAssignLastPayload({ tecnico })
+      const failure = classifyWorkflowMutationFailure(error)
+      if (!failure.offersManualRetry) {
+        toast.error(getApiErrorMessage(error))
+      }
     }
   }
 
@@ -164,6 +205,7 @@ export default function AdminSolicitud() {
                             )}
                           </td>
                           <td className="premium-td text-center">
+                            <div className="flex items-center justify-center gap-2">
                             <button 
                               onClick={() => handleShareClick(row)}
                               className="group inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-100 hover:bg-emerald-500 hover:text-white transition-all shadow-sm active:scale-95"
@@ -171,6 +213,19 @@ export default function AdminSolicitud() {
                               <span className="text-[11px] font-black uppercase tracking-widest">Asignar</span>
                               <span className="material-symbols-outlined !text-[16px] group-hover:rotate-12 transition-transform">person_add</span>
                             </button>
+                            {row.capabilities?.canCancel ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setCancelTarget(row)
+                                  setCancelMotivo('')
+                                }}
+                                className="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-red-50 text-red-700 border border-red-100 text-[11px] font-black uppercase tracking-widest"
+                              >
+                                Cancelar
+                              </button>
+                            ) : null}
+                            </div>
                           </td>
                         </tr>
                       ))
@@ -219,7 +274,7 @@ export default function AdminSolicitud() {
                     <h2 id="assign-tech-title" className="text-xl font-bold text-on-surface">Seleccionar Técnico</h2>
                     <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Personal calificado disponible</p>
                   </div>
-                  <button onClick={() => setShowModal(false)} aria-label="Cerrar modal" className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-100 transition-colors">
+                  <button onClick={() => { if (selectedSolicitud) clearWorkflowAttemptKey('assign', selectedSolicitud._id); setShowModal(false); setAssignError(null) }} aria-label="Cerrar modal" className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-100 transition-colors">
                     <span className="material-symbols-outlined text-slate-400">close</span>
                   </button>
                 </div>
@@ -266,10 +321,57 @@ export default function AdminSolicitud() {
                 
                 <div className="p-4 bg-slate-50/50 border-t hairline-border border-slate-100 text-center">
                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Protocolo de asignación AyudaTIC 2026</p>
+                   <WorkflowManualRetryNotice
+                     error={assignError}
+                     lastPayload={assignLastPayload}
+                     currentPayload={assignLastPayload}
+                     onRetry={() => {
+                       if (!assignLastPayload || !selectedSolicitud) return
+                       const tecnico = tecnicos.find((item) => item._id === assignLastPayload.tecnico)
+                       if (tecnico) void handleAssignClick(tecnico, assignLastPayload)
+                     }}
+                   />
                 </div>
               </div>
             </div>
           )}
+          {cancelTarget ? (
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-[110] p-4">
+              <div className="bg-white w-full max-w-lg rounded-3xl p-8 shadow-2xl" role="dialog" aria-modal="true">
+                <h2 className="text-xl font-bold mb-2">Cancelar solicitud</h2>
+                <p className="text-sm text-slate-500 mb-4">#{cancelTarget.codigoCaso}. El ticket se conserva en el historial.</p>
+                <textarea
+                  className="w-full min-h-28 rounded-2xl border border-slate-200 p-3 text-sm"
+                  placeholder="Motivo obligatorio"
+                  value={cancelMotivo}
+                  onChange={(event) => setCancelMotivo(event.target.value)}
+                />
+                <div className="mt-4 flex justify-end gap-2">
+                  <button type="button" className="px-4 py-2 text-sm font-bold" onClick={() => {
+                    if (cancelTarget) clearWorkflowAttemptKey('cancel', cancelTarget._id)
+                    setCancelTarget(null)
+                    setCancelError(null)
+                    setCancelLastPayload(undefined)
+                  }}>
+                    Cerrar
+                  </button>
+                  <button
+                    type="button"
+                    className="px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-bold"
+                    onClick={() => void handleCancelClick()}
+                  >
+                    Confirmar cancelación
+                  </button>
+                </div>
+                <WorkflowManualRetryNotice
+                  error={cancelError}
+                  lastPayload={cancelLastPayload}
+                  currentPayload={{ motivo: cancelMotivo.trim() }}
+                  onRetry={() => void handleCancelClick(cancelLastPayload)}
+                />
+              </div>
+            </div>
+          ) : null}
         </AdminSolicitudLayout>
       </AdminLayout>
     </AppLayout>

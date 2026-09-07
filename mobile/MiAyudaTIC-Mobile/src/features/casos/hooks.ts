@@ -5,6 +5,7 @@ import {
   sortCasosByMostRecent,
 } from '@/shared/contracts/caso';
 import type { ResolveCasoInput } from '@/shared/contracts/solucion';
+import { WORKFLOW_V2_MUTATION_AUTO_RETRY } from '@/shared/api/workflow-retry-policy';
 import { queryKeys } from '@/shared/query/keys';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
@@ -13,6 +14,11 @@ import {
   fetchCasosResueltos,
   fetchCasoDetalle,
   resolverCaso,
+  iniciarAtencion,
+  agregarActualizacion,
+  solicitarInformacion,
+  registrarSolucionParcial,
+  registrarSolucionTotal,
 } from './api';
 
 export function useCasosAsignados() {
@@ -87,6 +93,7 @@ export function useResolverCaso(solicitudId: string) {
 
   return useMutation({
     mutationFn: (input: ResolveCasoInput) => resolverCaso(token!, solicitudId, input),
+    retry: false,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.casos.all });
       if (userId) {
@@ -104,5 +111,75 @@ export function useResolverCaso(solicitudId: string) {
         queryKey: queryKeys.solicitudes.detail(solicitudId),
       });
     },
+  });
+}
+
+function useInvalidateCaso(solicitudId: string) {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const userId = user?.id ?? '';
+  return async () => {
+    await queryClient.invalidateQueries({ queryKey: queryKeys.casos.all });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.casos.detail(solicitudId) });
+    if (userId) {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.casos.asignados(userId) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.casos.resueltos(userId) });
+    }
+  };
+}
+
+export function useIniciarAtencion(solicitudId: string) {
+  const { token } = useAuth();
+  const invalidate = useInvalidateCaso(solicitudId);
+  return useMutation({
+    mutationFn: () => iniciarAtencion(token!, solicitudId),
+    retry: WORKFLOW_V2_MUTATION_AUTO_RETRY,
+    onSuccess: invalidate,
+  });
+}
+
+export function useActualizacionCaso(solicitudId: string) {
+  const { token } = useAuth();
+  const invalidate = useInvalidateCaso(solicitudId);
+  return useMutation({
+    mutationFn: (mensaje: string) => agregarActualizacion(token!, solicitudId, mensaje),
+    retry: WORKFLOW_V2_MUTATION_AUTO_RETRY,
+    onSuccess: invalidate,
+  });
+}
+
+export function useSolicitarInformacion(solicitudId: string) {
+  const { token } = useAuth();
+  const invalidate = useInvalidateCaso(solicitudId);
+  return useMutation({
+    mutationFn: (mensaje: string) => solicitarInformacion(token!, solicitudId, mensaje),
+    retry: WORKFLOW_V2_MUTATION_AUTO_RETRY,
+    onSuccess: invalidate,
+  });
+}
+
+export function useSolucionParcial(solicitudId: string) {
+  const { token } = useAuth();
+  const invalidate = useInvalidateCaso(solicitudId);
+  return useMutation({
+    mutationFn: (payload: {
+      queSeHizo: string;
+      queFalta: string;
+      siguienteAccion: string;
+      fechaEsperada?: string;
+      }) => registrarSolucionParcial(token!, solicitudId, payload),
+    retry: WORKFLOW_V2_MUTATION_AUTO_RETRY,
+    onSuccess: invalidate,
+  });
+}
+
+export function useSolucionTotal(solicitudId: string) {
+  const { token } = useAuth();
+  const invalidate = useInvalidateCaso(solicitudId);
+  return useMutation({
+    mutationFn: (payload: { queSeHizo: string; causaIdentificada?: string }) =>
+      registrarSolucionTotal(token!, solicitudId, payload),
+    retry: WORKFLOW_V2_MUTATION_AUTO_RETRY,
+    onSuccess: invalidate,
   });
 }

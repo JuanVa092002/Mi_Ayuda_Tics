@@ -1,5 +1,5 @@
 import type { SolicitudSummary } from '@/shared/contracts/solicitud';
-import { formatSolicitudDate, getStatusLabel } from '@/shared/contracts/solicitud';
+import { formatSolicitudDate } from '@/shared/contracts/solicitud';
 import { semanticColors } from '@/shared/theme/semantic-colors';
 import { radius } from '@/shared/theme/radius';
 import { spacing } from '@/shared/theme/spacing';
@@ -9,6 +9,7 @@ import { StatusBadge } from './StatusBadge';
 import * as Haptics from 'expo-haptics';
 import { Feather } from '@expo/vector-icons';
 import { useRef } from 'react';
+import { motion } from '@/shared/theme/motion';
 
 type SolicitudListItemProps = {
   item: SolicitudSummary;
@@ -28,7 +29,7 @@ export function SolicitudListItem({
   const handlePressIn = () => {
     Animated.timing(scaleValue, {
       toValue: 0.98,
-      duration: 150,
+      duration: motion.duration.fast,
       useNativeDriver: true,
     }).start();
   };
@@ -36,18 +37,23 @@ export function SolicitudListItem({
   const handlePressOut = () => {
     Animated.timing(scaleValue, {
       toValue: 1,
-      duration: 150,
+      duration: motion.duration.fast,
       useNativeDriver: true,
     }).start();
+  };
+
+  const handlePress = () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
+    onPress();
   };
 
   return (
     <Animated.View style={{ transform: [{ scale: scaleValue }] }}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`Solicitud ${item.caseCode}, ${getStatusLabel(item.status)}`}
-        onPress={onPress}
+        accessibilityLabel={`Solicitud ${item.caseCode}, ${item.displayStatus}`}
+        accessibilityHint="Abre el detalle y el seguimiento de la solicitud"
+        onPress={handlePress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         style={({ pressed }) => [
@@ -60,7 +66,7 @@ export function SolicitudListItem({
         <View style={styles.body}>
           <View style={styles.header}>
             <Text style={styles.code}>{item.caseCode}</Text>
-            <StatusBadge status={item.status} />
+            <StatusBadge status={item.status} label={item.displayStatus} workflowVersion={item.workflowVersion} />
           </View>
           <Text style={styles.description} numberOfLines={2}>
             {item.description}

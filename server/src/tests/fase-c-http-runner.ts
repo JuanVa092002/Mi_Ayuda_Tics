@@ -225,7 +225,7 @@ async function main(): Promise<void> {
     telefono: sol1?.telefono ? 'si' : 'no',
     codigoCaso: sol1?.codigoCaso || '',
     resultado:
-      create1.status === 201 && sol1?._id && code1Ok && sol1.estado === 'solicitado' && sol1.telefono && !sol1.foto
+      create1.status === 201 && sol1?._id && code1Ok && sol1.estado === 'nuevo' && sol1.telefono && !sol1.foto
         ? 'PASS'
         : 'FAIL',
   })

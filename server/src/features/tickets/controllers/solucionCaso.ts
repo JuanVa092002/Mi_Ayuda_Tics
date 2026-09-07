@@ -29,6 +29,13 @@ export const solucionCaso = async (req: Request, res: Response): Promise<void> =
       return
     }
 
+    if (solicitud.workflowVersion === 2) {
+      res.status(409).send({
+        message: 'Esta solicitud usa el flujo actual. Registra la solución parcial o total desde las acciones del ticket.',
+      })
+      return
+    }
+
     if (solicitud.estado === 'finalizado') {
       res.status(409).send({ message: 'La solicitud ya está finalizada' })
       return

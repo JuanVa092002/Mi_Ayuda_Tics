@@ -1,10 +1,17 @@
 import { Request, Response } from 'express'
+import { Types } from 'mongoose'
 import { handleHttpError } from '../../../shared/utils/handleError'
 import models from '../../../core/models'
 import { deleteStoredMedia, saveUploadedFile } from '../../../shared/services/mediaStorage'
 import { isDefaultAvatar } from '../../../shared/constants/media'
+import { actorCanAccessStorage } from '../../tickets/domain/storage-access'
+import type { ActorRole } from '../../tickets/domain/solicitud-lifecycle'
 
 const { storageModel } = models
+
+function isExactObjectId(id: string | undefined): id is string {
+  return Boolean(id && Types.ObjectId.isValid(id) && String(new Types.ObjectId(id)) === id)
+}
 
 export const createStorage = async (req: Request, res: Response): Promise<void> => {
   const { file } = req
@@ -32,11 +39,30 @@ export const getStorage = async (_req: Request, res: Response): Promise<void> =>
 }
 
 export const getStorageId = async (req: Request, res: Response): Promise<void> => {
-  const id = req.params.id
+  const rawId = req.params.id
+  const id = Array.isArray(rawId) ? rawId[0] : rawId
+  if (!isExactObjectId(id)) {
+    handleHttpError(res, 'Archivo no encontrado', 404)
+    return
+  }
   try {
     const data = await storageModel.findById(id)
     if (!data) {
       handleHttpError(res, 'Archivo no encontrado', 404)
+      return
+    }
+    const usuario = req.usuario
+    if (!usuario) {
+      handleHttpError(res, 'No autorizado', 401)
+      return
+    }
+    const allowed = await actorCanAccessStorage(
+      { id: String(usuario._id), rol: usuario.rol as ActorRole },
+      String(data._id),
+      data.filename,
+    )
+    if (!allowed) {
+      handleHttpError(res, 'No autorizado', 403)
       return
     }
     res.send({ data })

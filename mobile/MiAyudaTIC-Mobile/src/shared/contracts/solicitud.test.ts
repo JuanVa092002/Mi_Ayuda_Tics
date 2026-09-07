@@ -126,10 +126,11 @@ describe('helpers', () => {
   });
 
   it('getStatusLabel mapea estados UX', () => {
-    expect(getStatusLabel('solicitado')).toBe('Pendiente de asignación');
-    expect(getStatusLabel('asignado')).toBe('Asignado');
-    expect(getStatusLabel('pendiente')).toBe('Requiere información');
-    expect(getStatusLabel('finalizado')).toBe('Resuelta');
+    expect(getStatusLabel('solicitado')).toBe('Enviada');
+    expect(getStatusLabel('asignado')).toBe('En atención');
+    expect(getStatusLabel('pendiente')).toBe('Seguimiento pendiente del equipo TIC');
+    expect(getStatusLabel('finalizado')).toBe('Cerrada');
+    expect(getStatusLabel('asignado', 2)).toBe('Técnico asignado');
   });
 
   it('filterSolicitudesByHistorialChip agrupa estados de proceso', () => {

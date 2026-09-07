@@ -3,9 +3,11 @@ import { apiFetchBinary } from './client';
 
 describe('apiFetchBinary', () => {
   const originalUrl = process.env.EXPO_PUBLIC_API_URL;
+  const originalAllow = process.env.EXPO_PUBLIC_ALLOW_LOCAL_API;
 
   beforeEach(() => {
     process.env.EXPO_PUBLIC_API_URL = 'http://10.0.2.2:18080';
+    process.env.EXPO_PUBLIC_ALLOW_LOCAL_API = '1';
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
@@ -18,6 +20,7 @@ describe('apiFetchBinary', () => {
 
   afterEach(() => {
     process.env.EXPO_PUBLIC_API_URL = originalUrl;
+    process.env.EXPO_PUBLIC_ALLOW_LOCAL_API = originalAllow;
     vi.unstubAllGlobals();
   });
 

@@ -364,7 +364,17 @@ stateDiagram-v2
   - **Archivo:** `server/src/features/tickets/controllers/solucionCaso.ts`
   - **Símbolo:** `solucionCasoModel.create`, `findByIdAndUpdate`
   - **Ruta/endpoint:** `POST /api/solucionCaso/:id`
-  - **Comportamiento:** múltiples registros `pendiente` posibles; bloquea segundo `finalizado` si `solicitud.solucion` ya existe (L44-47).
+  - **Comportamiento:** múltiples registros `pendiente` posibles; bloquea segundo `finalizado` si `solicitud.solucion` ya existe (L44-47). **Solo tickets legacy v1.** Tickets `workflowVersion: 2` usan acciones v2 + `HistorialSolicitud`, no `SolucionCaso`.
+
+### Workflow v2 (código actual, no migrado)
+
+- **Decisión:** `workflowVersion` ausente = v1; `2` = flujo nuevo. Altas nuevas: `estado: 'nuevo'`.
+- **Estados v2:** `nuevo`, `asignado`, `en_progreso`, `esperando_usuario`, `resuelto`, `cerrado`, `cancelado`.
+- **List vs detalle:** listas nunca llevan `historial`. Detalle y `GET /api/solicitud/:id/historial` usan `historialLimit` / `historialBefore` / `historialNextCursor`.
+- **Idempotency-Key:** header obligatorio. Sin key → 400 `IDEMPOTENCY_KEY_REQUIRED`. El servidor no genera UUID. Índice unique sparse solo vía migrate, no autoIndex. Clientes: una UUID por intención; retry automático de mutaciones v2 = 0; CTA manual `Reintentar acción` reutiliza key y payload. Login retry permanece aparte.
+- **Atomicidad:** producción exige transacciones + índice; si faltan, no arranca workflow v2. Standalone local = update + insert con rollback condicionado a `workflowRevision` + `lastWorkflowOperationId`.
+- **E2E remoto:** sin deploy, Render actual no valida v2. No bloquear el reporte solo en `e2e/.env.e2e`.
+- **Contrato canónico:** `docs/contracts.md` y skill `ticket-lifecycle`.
 
 ### Auth real: cookie, bearer, socket
 

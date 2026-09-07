@@ -56,27 +56,35 @@ export default function HistorialFuncionario({ refreshKey }: HistorialFuncionari
     if (currentPage > 1) setCurrentPage(currentPage - 1)
   }
 
-  const getStatusBadge = (estado: string): ReactNode => {
+  const getStatusBadge = (row: Solicitud): ReactNode => {
+    const estado = row.estado
+    const label = row.displayStatus
     const baseClasses = "inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold border hairline-border transition-all";
     switch (estado) {
       case 'solicitado':
+      case 'nuevo':
         return <span className={`${baseClasses} bg-blue-50 text-blue-700 border-blue-100`}>
-          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2"></span>Solicitado
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2"></span>{label || 'Enviada'}
         </span>
       case 'asignado':
         return <span className={`${baseClasses} bg-amber-50 text-amber-700 border-amber-100`}>
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mr-2"></span>Asignado
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mr-2"></span>{label || 'Asignado'}
         </span>
       case 'pendiente':
+      case 'en_progreso':
+      case 'esperando_usuario':
+      case 'resuelto':
         return <span className={`${baseClasses} bg-orange-50 text-orange-700 border-orange-100`}>
-          <span className="w-1.5 h-1.5 rounded-full bg-orange-500 mr-2"></span>En Proceso
+          <span className="w-1.5 h-1.5 rounded-full bg-orange-500 mr-2"></span>{label || 'En Proceso'}
         </span>
       case 'finalizado':
+      case 'cerrado':
+      case 'cancelado':
         return <span className={`${baseClasses} bg-green-50 text-green-700 border-green-100`}>
-          <span className="material-symbols-outlined !text-[12px] mr-1">verified</span>Completado
+          <span className="material-symbols-outlined !text-[12px] mr-1">verified</span>{label || 'Completado'}
         </span>
       default:
-        return <span className={`${baseClasses} bg-slate-100 text-slate-600 border-slate-200`}>{estado}</span>
+        return <span className={`${baseClasses} bg-slate-100 text-slate-600 border-slate-200`}>{label || estado}</span>
     }
   }
 
@@ -241,7 +249,7 @@ export default function HistorialFuncionario({ refreshKey }: HistorialFuncionari
                   {/* Estado - Align Top */}
                   <td className="py-6 px-6 align-top">
                     <div className="flex flex-col gap-2">
-                       {getStatusBadge(row.estado)}
+                       {getStatusBadge(row)}
                     </div>
                   </td>
 

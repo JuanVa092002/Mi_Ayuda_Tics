@@ -1,11 +1,11 @@
 import { useAuth } from '@/features/auth/auth-context';
 import {
   SolicitudForm,
-  type PersistedFormValues,
+  type SolicitudSubmitMeta,
 } from '@/features/solicitudes/components/SolicitudForm';
 import { useCreateSolicitud } from '@/features/solicitudes/hooks';
-import type { SolicitudSubmitMeta } from '@/features/solicitudes/components/SolicitudForm';
 import type { CreateSolicitudFormValues } from '@/features/solicitudes/schemas';
+import { clearSolicitudFormDraft } from '@/features/solicitudes/solicitud-form-draft';
 import { ApiError } from '@/shared/api/client';
 import {
   formatSolicitudDate,
@@ -13,51 +13,41 @@ import {
   type SolicitudSummary,
 } from '@/shared/contracts/solicitud';
 import { semanticColors } from '@/shared/theme/semantic-colors';
-import { typography } from '@/shared/theme/typography';
 import { SuccessCard } from '@/shared/ui/SuccessCard';
-import { Text } from '@/shared/ui/Text';
 import * as Haptics from 'expo-haptics';
-import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { router, useNavigation } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Alert, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// Module-level storage for form persistence
-let persistedFormValues: PersistedFormValues | null = null;
-
 /**
- * Crear tab — nueva solicitud.
+ * Nueva solicitud — full-screen modal at the funcionario group level.
  *
- * Rendered as a TAB (no push), so it owns its inline header and must NOT
- * toggle native headers via `Stack.Screen`: doing so re-enables the root
- * stack header for the whole tabs group (stray title + floating overflow
- * menu over the content).
+ * Lives outside `(tabs)`. Opening camera/gallery does not remove this route,
+ * so the in-memory draft survives picker remounts. `beforeRemove` runs when
+ * the modal is actually dismissed (header close, Android back, replace),
+ * not when the app backgrounds for the picker.
  */
 export default function NuevaSolicitudScreen() {
   const { user } = useAuth();
+  const navigation = useNavigation();
   const createMutation = useCreateSolicitud();
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [successPayload, setSuccessPayload] = useState<
     (SolicitudSummary & SolicitudSubmitMeta) | null
   >(null);
-  const [persistedValues, setPersistedValues] = useState<PersistedFormValues | null>(null);
 
-  // Restore persisted values when screen regains focus
-  useFocusEffect(
-    useCallback(() => {
-      if (persistedFormValues && !submitted) {
-        setPersistedValues(persistedFormValues);
-      }
-      return () => {
-        // Clear persisted values when leaving screen (but not on submit)
-      };
-    }, [submitted]),
-  );
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', () => {
+      clearSolicitudFormDraft();
+    });
+    return unsubscribe;
+  }, [navigation]);
 
-  const handleValuesChange = useCallback((values: PersistedFormValues) => {
-    persistedFormValues = values;
-  }, []);
+  useEffect(() => {
+    navigation.setOptions({ headerShown: !submitted });
+  }, [navigation, submitted]);
 
   const handleSubmit = async (
     values: CreateSolicitudFormValues,
@@ -80,8 +70,7 @@ export default function NuevaSolicitudScreen() {
         photo,
       });
 
-      // Clear persisted form after successful submission
-      persistedFormValues = null;
+      clearSolicitudFormDraft();
       setSuccessPayload({ ...created, ...meta });
       setSubmitted(true);
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
@@ -109,8 +98,7 @@ export default function NuevaSolicitudScreen() {
             const solicitudId = successPayload.id;
             setSubmitted(false);
             setSuccessPayload(null);
-            setPersistedValues(null);
-            persistedFormValues = null;
+            clearSolicitudFormDraft();
             router.replace({
               pathname: '/(funcionario)/(tabs)/(historial)/solicitud/[id]',
               params: { id: solicitudId },
@@ -119,8 +107,7 @@ export default function NuevaSolicitudScreen() {
           onVolverInicio={() => {
             setSubmitted(false);
             setSuccessPayload(null);
-            setPersistedValues(null);
-            persistedFormValues = null;
+            clearSolicitudFormDraft();
             router.replace('/(funcionario)/(tabs)/(home)');
           }}
         />
@@ -129,18 +116,11 @@ export default function NuevaSolicitudScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <View style={styles.header}>
-        <Text variant="h2" color="primary">
-          Nueva solicitud
-        </Text>
-      </View>
+    <SafeAreaView style={styles.safe} edges={['bottom']}>
       <SolicitudForm
         defaultPhone={user?.telefono ?? ''}
         submitting={submitting}
         onSubmit={handleSubmit}
-        persistedValues={persistedValues}
-        onValuesChange={handleValuesChange}
       />
     </SafeAreaView>
   );
@@ -150,14 +130,5 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: semanticColors.surface.muted,
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 4,
-  },
-  headerTitle: {
-    ...typography.h2,
-    color: semanticColors.text.primary,
   },
 });

@@ -1,4 +1,5 @@
 import { apiFetch } from '@/shared/api/client';
+import { runWithWorkflowAttempt } from '@/shared/api/workflow-idempotency';
 import { mapUnknownFetchError } from '@/shared/api/fetch-error';
 import { appendImageToFormData } from '@/shared/api/multipart-image';
 import {
@@ -31,6 +32,73 @@ export async function fetchCasosResueltos(token: string): Promise<CasoSummary[]>
 export async function fetchCasoDetalle(token: string, id: string): Promise<CasoDetail> {
   const dto = await apiFetch<SolicitudDetailResponseDto>(`/solicitud/${id}`, { token });
   return mapCasoDetail(dto.data, id);
+}
+
+export async function iniciarAtencion(token: string, id: string): Promise<void> {
+  await runWithWorkflowAttempt(
+    'start',
+    id,
+    (idempotencyKey) =>
+      apiFetch(`/solicitud/${id}/iniciarAtencion`, { method: 'POST', token, idempotencyKey }),
+  );
+}
+
+export async function agregarActualizacion(token: string, id: string, mensaje: string): Promise<void> {
+  await runWithWorkflowAttempt(
+    'update',
+    id,
+    (idempotencyKey) =>
+      apiFetch(`/solicitud/${id}/actualizacion`, {
+        method: 'POST',
+        token,
+        body: { mensaje },
+        idempotencyKey,
+      }),
+    { mensaje },
+  );
+}
+
+export async function solicitarInformacion(token: string, id: string, mensaje: string): Promise<void> {
+  await runWithWorkflowAttempt(
+    'wait_for_requester',
+    id,
+    (idempotencyKey) =>
+      apiFetch(`/solicitud/${id}/solicitarInformacion`, {
+        method: 'POST',
+        token,
+        body: { mensaje },
+        idempotencyKey,
+      }),
+    { mensaje },
+  );
+}
+
+export async function registrarSolucionParcial(
+  token: string,
+  id: string,
+  payload: { queSeHizo: string; queFalta: string; siguienteAccion: string; fechaEsperada?: string },
+): Promise<void> {
+  await runWithWorkflowAttempt(
+    'partial_solution',
+    id,
+    (idempotencyKey) =>
+      apiFetch(`/solicitud/${id}/solucionParcial`, { method: 'POST', token, body: payload, idempotencyKey }),
+    payload,
+  );
+}
+
+export async function registrarSolucionTotal(
+  token: string,
+  id: string,
+  payload: { queSeHizo: string; causaIdentificada?: string },
+): Promise<void> {
+  await runWithWorkflowAttempt(
+    'resolve',
+    id,
+    (idempotencyKey) =>
+      apiFetch(`/solicitud/${id}/solucionTotal`, { method: 'POST', token, body: payload, idempotencyKey }),
+    payload,
+  );
 }
 
 async function buildSolucionFormData(input: ResolveCasoInput): Promise<FormData> {

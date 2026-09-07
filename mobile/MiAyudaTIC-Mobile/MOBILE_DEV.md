@@ -31,6 +31,19 @@ Release, huellas y App Links de producción: [`mobile-android-dev-build.md`](./m
 
 Un solo proceso Metro en el PC, bindeado a IPv4 (`127.0.0.1`). El emulador y el físico **no** se comparan si uno está en Metro y el otro abre un ícono sin bundler.
 
+### Backend diario (Render HTTPS)
+
+Mobile diario = Render HTTPS (`https://miayudatics-v1-0.onrender.com`).  
+Local `18080` = server integration/smoke/simulation aislada, **no** el backend normal de la development build.
+
+Emulador y A30s usan **el mismo** `EXPO_PUBLIC_API_URL` remoto. No uses `127.0.0.1:18080` ni `10.0.2.2:18080` como API de la app.
+
+`adb reverse` del teléfono es solo Metro (`8081`) e inspector (`8097`). **No** se reversea `:18080`.
+
+Cambiar `EXPO_PUBLIC_*` requiere **reiniciar Metro**. Fast Refresh no garantiza recargar variables de entorno públicas.
+
+Loopback está bloqueado en `getApiBaseUrl` salvo `EXPO_PUBLIC_ALLOW_LOCAL_API=1`. Ese opt-in no es el comando diario y no hay perfil `dev:simulation` en el loop normal.
+
 ---
 
 ## B. Flujo diario: emulador (principal)
@@ -46,7 +59,7 @@ emulator -avd Samsung_26_Ultra -no-snapshot-load -skin 1344x2992
 En `mobile/MiAyudaTIC-Mobile` (Git Bash):
 
 ```bash
-pnpm dev:emulator     # un solo Metro; si ya corre en :8081, no abre otro
+pnpm dev              # un solo Metro IPv4; API = Render HTTPS; si ya corre en :8081, no abre otro
 pnpm open:emulator    # development build → mismo Metro
 ```
 
@@ -54,7 +67,7 @@ Edita `app/` o `src/`, guarda, confirma Fast Refresh en 1–3 s.
 
 Si Fast Refresh no responde: sección E (recuperación por niveles). No limpies caché como primer reflejo.
 
-`pnpm start` es alias de `pnpm dev:emulator`.
+`pnpm start` es alias de `pnpm dev`.
 
 ---
 
@@ -63,7 +76,7 @@ Si Fast Refresh no responde: sección E (recuperación por niveles). No limpies 
 Mismo Metro. USB + `adb reverse tcp:8081 tcp:8081`. Desde el teléfono el **bundler** es `127.0.0.1:8081` (loopback IPv4). `10.0.2.2` no existe en el teléfono. El Intent es el URI de expo-dev-client (`/_expo/open`), no `http://127.0.0.1:8081`.
 
 1. Samsung A30s por USB, depuración aceptada (`adb devices` → `device`, no `unauthorized`).
-2. **No mates** `pnpm dev:emulator`.
+2. **No mates** `pnpm dev`.
 3. `pnpm open:physical`  
    Detecta **un** teléfono (ignora emuladores). Si hay varios físicos: `ANDROID_SERIAL=<serial> pnpm open:physical`.
 4. Prueba cámara, galería, permisos, teclado Samsung, custom scheme, App Links (firma **debug**), notificaciones cuando existan, RAM/OEM.
@@ -110,7 +123,7 @@ Windows: no uses `expo prebuild` ni `expo run:android` desde el repo (rutas `.pn
 1. Guardar → Fast Refresh.
 2. Reload de la app (menú dev: agitar o `adb shell input keyevent 82`).
 3. Menú dev → Fast Refresh On → Reload.
-4. Reiniciar Metro (`Ctrl+C` en la terminal de `dev:emulator`, luego `pnpm dev:emulator`).
+4. Reiniciar Metro (`Ctrl+C` en la terminal de `pnpm dev`, luego `pnpm dev`).
 5. Typed routes: al reiniciar Metro se regenera `.expo/types/router.d.ts`.
 6. Clear app data **solo** si el Dev Launcher o la URL persistida quedó corrupta.
 7. Limpiar `.expo` / `--clear` **solo** con evidencia de caché corrupta.
@@ -159,7 +172,8 @@ Windows: no uses `expo prebuild` ni `expo run:android` desde el repo (rutas `.pn
 
 | Comando | Uso |
 |---------|-----|
-| `pnpm dev:emulator` | **Daily** — un Metro IPv4 en :8081 |
+| `pnpm dev` | **Daily** — un Metro IPv4 en :8081; API = Render HTTPS |
+| `pnpm dev:emulator` | Alias de `pnpm dev` |
 | `pnpm open:emulator` | URI de expo-dev-client; Metro en `10.0.2.2:8081` |
 | `pnpm open:physical` | Un teléfono USB, `adb reverse`; Metro en `127.0.0.1:8081` |
 | `pnpm native:build:dev` | Rebuild nativo debug (no TSX) |
@@ -221,10 +235,9 @@ Copy de validación local (no es red): `FILE_TOO_LARGE` → **“La imagen super
 ## Setup inicial
 
 ```bash
-cp .env.example .env
 pnpm install --ignore-workspace
 ANDROID_SERIAL=<emulador-o-telefono> pnpm native:build:dev
-pnpm dev:emulator
+pnpm dev
 pnpm open:emulator   # y/o pnpm open:physical
 ```
 

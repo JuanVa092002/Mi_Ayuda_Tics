@@ -95,4 +95,30 @@ describe('Ticket lifecycle — state guards', () => {
     findByIdSpy.mockRestore()
     vi.restoreAllMocks()
   })
+
+  it('solucionCaso rechaza tickets workflow v2 (409)', async () => {
+    const findByIdSpy = vi.spyOn(models.usuarioModel, 'findById')
+    findByIdSpy.mockResolvedValue(tecnicoUser as never)
+
+    vi.spyOn(models.solicitudModel, 'findById').mockResolvedValue({
+      _id: 'sol1',
+      estado: 'en_progreso',
+      workflowVersion: 2,
+      tecnico: tecnicoUser._id,
+    } as never)
+
+    const token = await tokenSign(tecnicoUser)
+    const response = await request(app)
+      .post('/api/solucionCaso/sol1')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        tipoSolucion: 'finalizado',
+        descripcionSolucion: 'Listo',
+        tipoCaso: '60d0fe4f5311236168a109cd',
+      })
+
+    expect(response.status).toBe(409)
+    findByIdSpy.mockRestore()
+    vi.restoreAllMocks()
+  })
 })

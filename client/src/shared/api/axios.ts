@@ -1,5 +1,6 @@
-import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
+import axios, { type AxiosError } from 'axios'
 import { getApiErrorMessage, notifyUnauthorized } from './apiError'
+import { clearAllWorkflowAttemptKeys } from '@/features/tickets/api/workflow-idempotency'
 
 function resolveApiBaseUrl(): string {
   const raw = (import.meta.env.VITE_BACKEND_URL ||
@@ -24,16 +25,13 @@ const axiosConfig = axios.create({
     Accept: 'application/json',
   },
 })
-
-axiosConfig.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => config,
-  (error: AxiosError) => Promise.reject(error)
-)
+// No axios retry adapter. Workflow v2 mutations must not auto-retry.
 
 axiosConfig.interceptors.response.use(
   response => response,
   (error: AxiosError) => {
     if (error.response?.status === 401 && !error.config?.url?.includes('auth/verify-token')) {
+      clearAllWorkflowAttemptKeys()
       notifyUnauthorized()
     }
 

@@ -1,4 +1,5 @@
 import { useAuth } from '@/features/auth/auth-context';
+import { WORKFLOW_V2_MUTATION_AUTO_RETRY } from '@/shared/api/workflow-retry-policy';
 import { queryKeys } from '@/shared/query/keys';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
@@ -9,6 +10,9 @@ import {
   fetchHistorial,
   fetchSolicitudDetalle,
   fetchTiposCaso,
+  confirmarSolucion,
+  reabrirSolicitud,
+  responderSolicitud,
   type CreateSolicitudPayload,
 } from './api';
 
@@ -75,6 +79,7 @@ export function useCreateSolicitud() {
   return useMutation({
     mutationFn: (payload: Omit<CreateSolicitudPayload, 'userId'>) =>
       createSolicitud(token!, { ...payload, userId }),
+    retry: false,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.solicitudes.all });
       if (userId) {
@@ -83,5 +88,48 @@ export function useCreateSolicitud() {
         });
       }
     },
+  });
+}
+
+function useInvalidateSolicitud(id: string) {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const userId = user?.id ?? '';
+  return async () => {
+    await queryClient.invalidateQueries({ queryKey: queryKeys.solicitudes.detail(id) });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.solicitudes.all });
+    if (userId) {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.solicitudes.historial(userId) });
+    }
+  };
+}
+
+export function useResponderSolicitud(id: string) {
+  const { token } = useAuth();
+  const invalidate = useInvalidateSolicitud(id);
+  return useMutation({
+    mutationFn: (mensaje: string) => responderSolicitud(token!, id, mensaje),
+    retry: WORKFLOW_V2_MUTATION_AUTO_RETRY,
+    onSuccess: invalidate,
+  });
+}
+
+export function useConfirmarSolucion(id: string) {
+  const { token } = useAuth();
+  const invalidate = useInvalidateSolicitud(id);
+  return useMutation({
+    mutationFn: () => confirmarSolucion(token!, id),
+    retry: WORKFLOW_V2_MUTATION_AUTO_RETRY,
+    onSuccess: invalidate,
+  });
+}
+
+export function useReabrirSolicitud(id: string) {
+  const { token } = useAuth();
+  const invalidate = useInvalidateSolicitud(id);
+  return useMutation({
+    mutationFn: (motivo: string) => reabrirSolicitud(token!, id, motivo),
+    retry: WORKFLOW_V2_MUTATION_AUTO_RETRY,
+    onSuccess: invalidate,
   });
 }

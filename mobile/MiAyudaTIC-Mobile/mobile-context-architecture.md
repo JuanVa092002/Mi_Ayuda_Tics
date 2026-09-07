@@ -1,9 +1,7 @@
 # MiAyudaTIC-Mobile — Context Architecture
 
-> **STALE (2026-06-14, post-Fase 2A).** No usar como verdad actual.
-> Estado canónico para agentes: [`../../context/current-mobile-agent-context.md`](../../context/current-mobile-agent-context.md)
->
-> **Código gana** si este archivo y el repo divergen.
+> **Versión:** post-Fase 2A · **Última actualización:** 2026-06-14
+> **Código fuente inspeccionado directamente.** Donde exista divergencia entre este documento y un handoff anterior, el código manda.
 
 ---
 

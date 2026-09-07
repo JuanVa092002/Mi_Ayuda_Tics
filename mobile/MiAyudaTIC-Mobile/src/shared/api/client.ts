@@ -1,5 +1,5 @@
 import { API_REQUEST_TIMEOUT_MS, API_UPLOAD_TIMEOUT_MS, getApiBaseUrl } from '@/shared/config/env';
-import { ApiError, mapHttpStatusToCode } from '@/shared/api/errors';
+import { ApiError, mapHttpStatusToCode, resolveErrorMessage } from '@/shared/api/errors';
 import { mapUnknownFetchError } from '@/shared/api/fetch-error';
 import { parseJsonBody, parseJsonMessage } from '@/shared/api/http';
 import { inspectFormDataPhoto, logUploadError, logUploadRequest } from '@/shared/media/upload-log';
@@ -12,6 +12,8 @@ export interface ApiFetchOptions {
   token?: string | null;
   formData?: FormData;
   timeoutMs?: number;
+  headers?: Record<string, string>;
+  idempotencyKey?: string;
   /** Si false, un 401 no dispara el handler global (ej. login). */
   notifyUnauthorized?: boolean;
 }
@@ -19,6 +21,26 @@ export interface ApiFetchOptions {
 type UnauthorizedHandler = () => void;
 
 let unauthorizedHandler: UnauthorizedHandler | null = null;
+
+type ApiRouteClass = 'health' | 'login' | 'verify-token' | 'other';
+
+function classifyApiRoute(path: string): ApiRouteClass {
+  if (path === '/health') return 'health';
+  if (path === '/auth/login') return 'login';
+  if (path === '/auth/verify-token') return 'verify-token';
+  return 'other';
+}
+
+function logApiTiming(info: {
+  method: string;
+  route: ApiRouteClass;
+  status: number;
+  durationMs: number;
+  errorCode?: string;
+}): void {
+  if (typeof __DEV__ === 'undefined' || !__DEV__) return;
+  console.info('[api-timing]', info);
+}
 
 export function setUnauthorizedHandler(handler: UnauthorizedHandler | null): void {
   unauthorizedHandler = handler;
@@ -32,14 +54,19 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
     formData,
     timeoutMs = formData ? API_UPLOAD_TIMEOUT_MS : API_REQUEST_TIMEOUT_MS,
     notifyUnauthorized = true,
+    headers: extraHeaders,
+    idempotencyKey,
   } = options;
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = { ...(extraHeaders ?? {}) };
   if (token) {
     headers.Authorization = `Bearer ${token}`;
+  }
+  if (idempotencyKey) {
+    headers['Idempotency-Key'] = idempotencyKey;
   }
 
   let requestBody: BodyInit | undefined;
@@ -71,6 +98,9 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
     });
   }
 
+  const startedAt = Date.now();
+  const route = classifyApiRoute(path);
+
   try {
     const response = await fetch(`${getApiBaseUrl()}${path}`, {
       method,
@@ -80,15 +110,25 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
     });
 
     if (!response.ok) {
-      const message = await parseJsonMessage(response);
+      const serverMessage = await parseJsonMessage(response);
       const code = mapHttpStatusToCode(response.status);
+      const retryAfter = response.headers.get('Retry-After') ?? undefined;
 
       if (response.status === 401 && notifyUnauthorized) {
         unauthorizedHandler?.();
       }
 
-      throw new ApiError(message, code, response.status);
+      throw new ApiError(resolveErrorMessage(code, serverMessage), code, response.status, {
+        retryAfter,
+      });
     }
+
+    logApiTiming({
+      method,
+      route,
+      status: response.status,
+      durationMs: Date.now() - startedAt,
+    });
 
     if (response.status === 204) {
       return undefined as T;
@@ -104,7 +144,15 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
     if (formData || method !== 'GET') {
       logUploadError(path, error);
     }
-    throw mapUnknownFetchError(error);
+    const mapped = mapUnknownFetchError(error);
+    logApiTiming({
+      method,
+      route,
+      status: mapped.status ?? 0,
+      durationMs: Date.now() - startedAt,
+      errorCode: mapped.code,
+    });
+    throw mapped;
   } finally {
     clearTimeout(timer);
   }
@@ -129,6 +177,8 @@ export async function apiFetchBinary(
     headers.Authorization = `Bearer ${token}`;
   }
 
+  const startedAt = Date.now();
+
   try {
     const response = await fetch(`${getApiBaseUrl()}${path}`, {
       method: 'GET',
@@ -137,20 +187,35 @@ export async function apiFetchBinary(
     });
 
     if (!response.ok) {
-      const message = await parseJsonMessage(response);
+      const serverMessage = await parseJsonMessage(response);
       const code = mapHttpStatusToCode(response.status);
 
       if (response.status === 401 && notifyUnauthorized) {
         unauthorizedHandler?.();
       }
 
-      throw new ApiError(message, code, response.status);
+      throw new ApiError(resolveErrorMessage(code, serverMessage), code, response.status);
     }
+
+    logApiTiming({
+      method: 'GET',
+      route: 'other',
+      status: response.status,
+      durationMs: Date.now() - startedAt,
+    });
 
     const buffer = await response.arrayBuffer();
     return new Uint8Array(buffer);
   } catch (error) {
-    throw mapUnknownFetchError(error);
+    const mapped = mapUnknownFetchError(error);
+    logApiTiming({
+      method: 'GET',
+      route: 'other',
+      status: mapped.status ?? 0,
+      durationMs: Date.now() - startedAt,
+      errorCode: mapped.code,
+    });
+    throw mapped;
   } finally {
     clearTimeout(timer);
   }

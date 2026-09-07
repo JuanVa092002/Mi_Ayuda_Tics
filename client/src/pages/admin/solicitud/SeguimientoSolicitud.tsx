@@ -2,9 +2,13 @@ import { useEffect, useState } from 'react'
 import AppLayout from '@/app/layouts/AppLayout'
 import AdminLayout from '@/app/layouts/AdminLayout'
 import AdminSolicitudLayout from '@/app/layouts/AdminSolicitudLayout'
-import { historialSolicitudesLider } from '@/features/tickets'
+import { historialSolicitudesLider, reasignarTecnico, cancelarSolicitud, WorkflowManualRetryNotice } from '@/features/tickets'
+import { classifyWorkflowMutationFailure } from '@/features/tickets/api/workflow-retry-policy'
+import { clearWorkflowAttemptKey } from '@/features/tickets/api/workflow-idempotency'
+import { getTecnicosAprobados } from '@/features/users'
 import { getApiErrorMessage } from '@/shared/api/apiError'
-import type { Solicitud } from '@/shared/types'
+import { toast } from 'react-toastify'
+import type { Solicitud, User } from '@/shared/types'
 
 export default function SeguimientoSolicitud() {
   const [solicitudes, setSolicitudes] = useState<Solicitud[]>([])
@@ -12,6 +16,12 @@ export default function SeguimientoSolicitud() {
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const [action, setAction] = useState<{ type: 'reassign' | 'cancel'; solicitud: Solicitud } | null>(null)
+  const [tecnicos, setTecnicos] = useState<User[]>([])
+  const [selectedTecnico, setSelectedTecnico] = useState('')
+  const [motivo, setMotivo] = useState('')
+  const [actionError, setActionError] = useState<unknown>(null)
+  const [actionLastPayload, setActionLastPayload] = useState<unknown>(undefined)
   const itemsPerPage = 5
 
   useEffect(() => {
@@ -55,27 +65,96 @@ export default function SeguimientoSolicitud() {
     if (currentPage > 1) setCurrentPage(currentPage - 1)
   }
 
-  const getStatusBadge = (estado: string) => {
+  const getStatusBadge = (solicitud: Solicitud) => {
+    const estado = solicitud.estado
+    const label = solicitud.displayStatus
     const baseClasses = "inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold border hairline-border transition-all";
     switch (estado) {
       case 'solicitado':
+      case 'nuevo':
         return <span className={`${baseClasses} bg-blue-50 text-blue-700 border-blue-100`}>
-          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2"></span>Solicitado
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2"></span>{label || 'Enviada'}
         </span>
       case 'asignado':
         return <span className={`${baseClasses} bg-amber-50 text-amber-700 border-amber-100`}>
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mr-2"></span>Asignado
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mr-2"></span>{label || 'Asignado'}
         </span>
       case 'pendiente':
+      case 'en_progreso':
+      case 'esperando_usuario':
         return <span className={`${baseClasses} bg-orange-50 text-orange-700 border-orange-100`}>
-          <span className="w-1.5 h-1.5 rounded-full bg-orange-500 mr-2"></span>En Proceso
+          <span className="w-1.5 h-1.5 rounded-full bg-orange-500 mr-2"></span>{label || 'En Proceso'}
         </span>
       case 'finalizado':
+      case 'resuelto':
+      case 'cerrado':
+      case 'cancelado':
         return <span className={`${baseClasses} bg-green-50 text-green-700 border-green-100`}>
-          <span className="material-symbols-outlined !text-[12px] mr-1">verified</span>Completado
+          <span className="material-symbols-outlined !text-[12px] mr-1">verified</span>{label || 'Completado'}
         </span>
       default:
-        return <span className={`${baseClasses} bg-slate-100 text-slate-600 border-slate-200`}>{estado}</span>
+        return <span className={`${baseClasses} bg-slate-100 text-slate-600 border-slate-200`}>{label || estado}</span>
+    }
+  }
+
+  const openReassign = async (solicitud: Solicitud): Promise<void> => {
+    try {
+      const response = await getTecnicosAprobados()
+      setTecnicos(response.tecnicos)
+      setSelectedTecnico('')
+      setMotivo('')
+      setActionError(null)
+      setActionLastPayload(undefined)
+      setAction({ type: 'reassign', solicitud })
+    } catch (error) {
+      toast.error(getApiErrorMessage(error))
+    }
+  }
+
+  const closeAction = (): void => {
+    if (action) {
+      clearWorkflowAttemptKey(action.type === 'cancel' ? 'cancel' : 'reassign', action.solicitud._id)
+    }
+    setAction(null)
+    setActionError(null)
+    setActionLastPayload(undefined)
+  }
+
+  const currentActionPayload = (): unknown => {
+    if (!action) return undefined
+    if (action.type === 'cancel') return { motivo: motivo.trim() }
+    return { tecnico: selectedTecnico, motivo: motivo.trim() }
+  }
+
+  const submitAction = async (payloadOverride?: unknown): Promise<void> => {
+    if (!action) return
+    const payload = (payloadOverride ?? currentActionPayload()) as { motivo?: string; tecnico?: string }
+    if ((payload.motivo ?? '').length < 3) {
+      toast.error('El motivo es obligatorio.')
+      return
+    }
+    try {
+      if (action.type === 'cancel') {
+        await cancelarSolicitud(action.solicitud._id, payload.motivo ?? '')
+        toast.success('Solicitud cancelada')
+      } else {
+        if (!payload.tecnico) {
+          toast.error('Selecciona un técnico.')
+          return
+        }
+        await reasignarTecnico(action.solicitud._id, { tecnico: payload.tecnico, motivo: payload.motivo ?? '' })
+        toast.success('Técnico reasignado')
+      }
+      const data = await historialSolicitudesLider()
+      setSolicitudes(data)
+      closeAction()
+    } catch (error) {
+      setActionError(error)
+      setActionLastPayload(payload)
+      const failure = classifyWorkflowMutationFailure(error)
+      if (!failure.offersManualRetry) {
+        toast.error(getApiErrorMessage(error))
+      }
     }
   }
 
@@ -180,7 +259,19 @@ export default function SeguimientoSolicitud() {
                             </p>
                           </td>
                           <td className="py-6 px-6 align-top">
-                            {getStatusBadge(row.estado)}
+                            {getStatusBadge(row)}
+                            <div className="mt-2 flex flex-col gap-1">
+                              {row.capabilities?.canReassign ? (
+                                <button type="button" className="text-[10px] font-bold uppercase text-amber-700" onClick={() => void openReassign(row)}>
+                                  Reasignar
+                                </button>
+                              ) : null}
+                              {row.capabilities?.canCancel ? (
+                                <button type="button" className="text-[10px] font-bold uppercase text-red-700" onClick={() => { setMotivo(''); setActionError(null); setActionLastPayload(undefined); setAction({ type: 'cancel', solicitud: row }) }}>
+                                  Cancelar
+                                </button>
+                              ) : null}
+                            </div>
                           </td>
                         </tr>
                       ))
@@ -215,6 +306,34 @@ export default function SeguimientoSolicitud() {
               </div>
             </section>
           </main>
+          {action ? (
+            <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-[110] p-4">
+              <div className="bg-white w-full max-w-lg rounded-3xl p-8 shadow-2xl">
+                <h2 className="text-xl font-bold mb-4">{action.type === 'cancel' ? 'Cancelar solicitud' : 'Reasignar técnico'}</h2>
+                {action.type === 'reassign' ? (
+                  <select className="w-full mb-3 rounded-xl border p-2" value={selectedTecnico} onChange={(event) => setSelectedTecnico(event.target.value)}>
+                    <option value="">Selecciona técnico</option>
+                    {tecnicos.map((tecnico) => (
+                      <option key={tecnico._id} value={tecnico._id}>{tecnico.nombre}</option>
+                    ))}
+                  </select>
+                ) : null}
+                <textarea className="w-full min-h-24 rounded-xl border p-3" placeholder="Motivo obligatorio" value={motivo} onChange={(event) => setMotivo(event.target.value)} />
+                <div className="mt-4 flex justify-end gap-2">
+                  <button type="button" onClick={closeAction}>Cerrar</button>
+                  <button type="button" className="px-4 py-2 rounded-xl bg-primary-container text-white font-bold" onClick={() => void submitAction()}>
+                    Confirmar
+                  </button>
+                </div>
+                <WorkflowManualRetryNotice
+                  error={actionError}
+                  lastPayload={actionLastPayload}
+                  currentPayload={currentActionPayload()}
+                  onRetry={() => void submitAction(actionLastPayload)}
+                />
+              </div>
+            </div>
+          ) : null}
         </AdminSolicitudLayout>
       </AdminLayout>
     </AppLayout>

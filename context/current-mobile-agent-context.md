@@ -73,7 +73,10 @@ Persistencia de sesión mobile (`session-policy.ts`): solo `funcionario` aprobad
 
 Estados de solicitud (backend, no traducir en API):
 
-`solicitado` → `asignado` → `pendiente` (opcional) → `finalizado`
+- **Legacy v1** (`workflowVersion` ausente): `solicitado` → `asignado` → `pendiente` (opcional) → `finalizado`
+- **Workflow v2** (`workflowVersion: 2`): `nuevo` → `asignado` → `en_progreso` ⇄ `esperando_usuario` → `resuelto` → `cerrado` (o `cancelado` desde `nuevo`/`asignado`)
+
+Tickets nuevos usan v2. `SolucionCaso` es solo v1. P1B: el badge no debe tratar `solicitado`/`nuevo` como el mismo copy que `resuelto`.
 
 `codigoCaso` se acuña en `POST /api/solicitud` vía `postConsecutivoCaso()` formato `yyyy-MM-00000`. Collection Mongo: `solicituds`.
 
@@ -99,7 +102,7 @@ No reintroducir loops de `Redirect` en layouts de tabs (ya hubo P0 “Maximum up
 
 | Invariante | Dónde |
 |------------|--------|
-| `GET /api/media/local/:filename` exige `authMiddleware` | `server/src/features/shared/routes/media.ts` |
+| `GET /api/media/local/:filename` exige `authMiddleware` **y** acceso actual al ticket | `serveLocalMedia.ts` + `storage-access.ts` |
 | No hacer públicas las evidencias | tests `server/src/tests/media-access.test.ts` |
 | Image de detalle **no** apunta a URL local remota | `AuthenticatedImage` + `classifyMediaUrl` |
 | Preview de picker (`file://`, `content://`) no pasa por fetch | `isLocalPreviewUri` |

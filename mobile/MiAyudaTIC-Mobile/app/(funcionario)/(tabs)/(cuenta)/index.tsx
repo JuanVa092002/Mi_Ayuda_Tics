@@ -3,9 +3,12 @@ import { semanticColors } from '@/shared/theme/semantic-colors';
 import { spacing } from '@/shared/theme/spacing';
 import { radius } from '@/shared/theme/radius';
 import { typography } from '@/shared/theme/typography';
+import { shadows } from '@/shared/theme/shadows';
 import { Text } from '@/shared/ui/Text';
 import { Button } from '@/shared/ui/Button';
 import { Feather } from '@expo/vector-icons';
+import { useScrollToTop } from 'expo-router';
+import { useRef } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -22,6 +25,8 @@ function getFirstName(fullName: string): string {
 
 export default function CuentaScreen() {
   const { user, logout } = useAuth();
+  const scrollRef = useRef<ScrollView>(null);
+  useScrollToTop(scrollRef);
   const fullName = user?.fullName ?? 'Funcionario';
   const firstName = getFirstName(fullName);
   const initials = getInitials(fullName);
@@ -29,6 +34,7 @@ export default function CuentaScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={[
           styles.content,
           { paddingBottom: spacing[8] },
@@ -53,7 +59,7 @@ export default function CuentaScreen() {
               style={styles.roleChip}
               accessibilityLabel="Rol: Funcionario"
             >
-              <Text style={styles.roleChipText}>FUNCIONARIO</Text>
+            <Text style={styles.roleChipText}>Funcionario</Text>
             </View>
           </View>
         </View>
@@ -70,7 +76,7 @@ export default function CuentaScreen() {
           <View style={styles.infoCard}>
             <InfoRow icon="mail" label="Correo institucional" value={user?.email ?? '—'} />
             <InfoRow icon="briefcase" label="Rol" value="Funcionario" />
-            <InfoRow icon="map-pin" label="Centro" value="CTPI · Cauca" />
+            <InfoRow icon="map-pin" label="Centro" value="CTPI · Cauca" last />
           </View>
           <View style={styles.sessionNote}>
             <Feather name="shield" size={18} color={semanticColors.brand.blue} />
@@ -99,7 +105,7 @@ export default function CuentaScreen() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: semanticColors.surface.default,
+    backgroundColor: semanticColors.surface.muted,
   },
   content: {
     flexGrow: 1,
@@ -139,15 +145,16 @@ const styles = StyleSheet.create({
   },
   roleChip: {
     alignSelf: 'flex-start',
-    backgroundColor: semanticColors.surface.muted,
+    backgroundColor: semanticColors.state.successBg,
     borderRadius: radius.pill,
     paddingHorizontal: spacing[3],
     paddingVertical: spacing[1],
   },
   roleChipText: {
     ...typography.badge,
-    color: semanticColors.text.secondary,
+    color: semanticColors.brand.green,
     fontWeight: '700',
+    letterSpacing: 0.4,
   },
   body: {
     flex: 1,
@@ -164,6 +171,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: semanticColors.border.default,
     paddingHorizontal: spacing[4],
+    ...shadows.sm,
   },
   infoRow: {
     minHeight: 76,
@@ -172,6 +180,9 @@ const styles = StyleSheet.create({
     gap: spacing[3],
     borderBottomWidth: 1,
     borderBottomColor: semanticColors.border.default,
+  },
+  infoRowLast: {
+    borderBottomWidth: 0,
   },
   infoIcon: {
     width: 40,
@@ -231,13 +242,15 @@ function InfoRow({
   icon,
   label,
   value,
+  last = false,
 }: {
   icon: keyof typeof Feather.glyphMap;
   label: string;
   value: string;
+  last?: boolean;
 }) {
   return (
-    <View style={styles.infoRow}>
+    <View style={[styles.infoRow, last && styles.infoRowLast]}>
       <View style={styles.infoIcon}>
         <Feather name={icon} size={18} color={semanticColors.brand.blue} />
       </View>

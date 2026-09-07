@@ -8,7 +8,7 @@
   },
   "main": "expo-router/entry",
   "scripts": {
-    "dev": "expo start --dev-client",
+    "dev": "node scripts/dev-emulator.mjs",
     "dev:emulator": "node scripts/dev-emulator.mjs",
     "open:emulator": "node scripts/open-emulator-app.mjs",
     "open:physical": "node scripts/open-physical-app.mjs",
@@ -27,7 +27,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "validate": "node scripts/validate.mjs",
-    "start": "pnpm dev:emulator"
+    "start": "pnpm dev"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.2",

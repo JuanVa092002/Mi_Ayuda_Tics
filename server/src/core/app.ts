@@ -8,7 +8,12 @@ import helmet from 'helmet'
 import { app, server } from '../shared/utils/handleSocket'
 import { healthCheck } from './health'
 import router from './routes'
-import { createCorsOriginValidator, parseAllowedOrigins } from '../shared/config/cors'
+import {
+  CORS_ALLOWED_HEADERS,
+  CORS_ALLOWED_METHODS,
+  createCorsOriginValidator,
+  parseAllowedOrigins,
+} from '../shared/config/cors'
 import { handleUploadError } from '../shared/middleware/uploadError'
 
 // Liveness probe — antes de CORS/helmet para probes de Render (sin Origin)
@@ -28,9 +33,9 @@ app.use(
   cors({
     origin: createCorsOriginValidator(allowedProdOrigins),
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    optionsSuccessStatus: 200,
+    methods: [...CORS_ALLOWED_METHODS],
+    allowedHeaders: [...CORS_ALLOWED_HEADERS],
+    optionsSuccessStatus: 204,
   })
 )
 

@@ -1,3 +1,22 @@
+/** Headers the web actually sends (plus Authorization for Bearer clients). */
+export const CORS_ALLOWED_HEADERS = [
+  'Content-Type',
+  'Accept',
+  'Authorization',
+  'Idempotency-Key',
+] as const
+
+export const CORS_ALLOWED_METHODS = [
+  'GET',
+  'POST',
+  'PUT',
+  'PATCH',
+  'DELETE',
+  'OPTIONS',
+] as const
+
+export const WEB_PROD_ORIGIN = 'https://miayudatics.vercel.app'
+
 export function parseAllowedOrigins(): string[] {
   const origins = new Set<string>()
 

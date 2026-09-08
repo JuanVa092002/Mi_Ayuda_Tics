@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 
 const backendUrl = process.env.E2E_BACKEND_URL ?? 'https://miayudatics-v1-0.onrender.com'
+const frontendUrl = process.env.E2E_FRONTEND_URL ?? 'https://miayudatics.vercel.app'
 
 test('health responde desde contexto browser con CORS', async ({ page }) => {
   await page.goto('/loginMain')
@@ -30,4 +31,21 @@ test('SPA deep link no devuelve 404 de plataforma', async ({ page }) => {
   const response = await page.goto('/adminSolicitud')
   expect(response?.status()).toBe(200)
   await expect(page.locator('#root')).toBeVisible()
+})
+
+test('preflight de asignarTecnico permite Idempotency-Key', async ({ request }) => {
+  const response = await request.fetch(`${backendUrl}/api/solicitud/preflight-probe/asignarTecnico`, {
+    method: 'OPTIONS',
+    headers: {
+      Origin: frontendUrl,
+      'Access-Control-Request-Method': 'PUT',
+      'Access-Control-Request-Headers': 'content-type,idempotency-key',
+    },
+  })
+  expect([200, 204]).toContain(response.status())
+  const allowHeaders = (response.headers()['access-control-allow-headers'] ?? '').toLowerCase()
+  expect(response.headers()['access-control-allow-origin']).toBe(frontendUrl)
+  expect(response.headers()['access-control-allow-credentials']).toBe('true')
+  expect(allowHeaders).toContain('idempotency-key')
+  expect(response.headers()['access-control-allow-methods'] ?? '').toMatch(/PUT/)
 })

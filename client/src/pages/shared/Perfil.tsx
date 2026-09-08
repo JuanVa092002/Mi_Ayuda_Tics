@@ -2,13 +2,7 @@ import type { ReactNode } from 'react'
 import AppLayout from '@/app/layouts/AppLayout'
 import AdminLayout from '@/app/layouts/AdminLayout'
 import { useAuth } from '@/features/auth'
-import type { MediaFile } from '@/shared/types'
-
-function getFotoUrl(foto: MediaFile | string | undefined): string | undefined {
-  if (!foto) return undefined
-  if (typeof foto === 'string') return foto
-  return foto.url
-}
+import { resolveUserPhotoUrl, userInitials } from '@/shared/media/user-photo'
 
 export default function Perfil(): ReactNode {
   const { user } = useAuth()
@@ -21,7 +15,7 @@ export default function Perfil(): ReactNode {
   }
 
   const getInitials = (name: string | undefined): string => {
-    return name ? name.charAt(0).toUpperCase() : 'U'
+    return userInitials(name)
   }
 
   // Determine which layout to wrap with based on role
@@ -35,8 +29,8 @@ export default function Perfil(): ReactNode {
           {/* Header section with avatar */}
           <div className="relative mb-8">
             <div className="w-24 h-24 rounded-full bg-[#EEF0F5] flex items-center justify-center border-4 border-white shadow-md overflow-hidden">
-              {getFotoUrl(user?.foto) ? (
-                <img src={getFotoUrl(user?.foto)} alt="Avatar" className="w-full h-full object-cover" />
+              {resolveUserPhotoUrl(user?.foto) ? (
+                <img src={resolveUserPhotoUrl(user?.foto)} alt="Avatar" className="w-full h-full object-cover" />
               ) : (
                 <span className="text-3xl font-black text-[#1B2A4A]">{getInitials(user?.nombre)}</span>
               )}

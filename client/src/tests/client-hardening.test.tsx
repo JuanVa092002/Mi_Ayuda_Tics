@@ -4,6 +4,7 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { getApiErrorMessage } from '@/shared/api/apiError'
 import { getRoleHome } from '@/app/router/roleHome'
 import RequireRole from '@/app/router/RequireRole'
+import { shouldClearSessionOnUnauthorized } from '@/shared/api/axios'
 import { AxiosError, AxiosHeaders } from 'axios'
 
 const mockUseAuth = vi.fn()
@@ -19,16 +20,30 @@ describe('client hardening helpers', () => {
     expect(getRoleHome('tecnico')).toBe('/casos-por-resolver')
   })
 
-  it('getApiErrorMessage extrae message del backend', () => {
-    const error = new AxiosError('fail')
-    error.response = {
-      status: 400,
-      data: { message: 'Credenciales inválidas' },
-      statusText: 'Bad Request',
+  it('getApiErrorMessage extrae 403 y 409 del backend', () => {
+    const forbidden = new AxiosError('fail')
+    forbidden.response = {
+      status: 403,
+      data: { message: 'No autorizado' },
+      statusText: 'Forbidden',
       headers: {},
       config: { headers: new AxiosHeaders() },
     }
-    expect(getApiErrorMessage(error)).toBe('Credenciales inválidas')
+    const conflict = new AxiosError('fail')
+    conflict.response = {
+      status: 409,
+      data: { message: 'Solo se pueden asignar solicitudes en estado solicitado' },
+      statusText: 'Conflict',
+      headers: {},
+      config: { headers: new AxiosHeaders() },
+    }
+    expect(getApiErrorMessage(forbidden)).toBe('No autorizado')
+    expect(getApiErrorMessage(conflict)).toBe('Solo se pueden asignar solicitudes en estado solicitado')
+  })
+
+  it('401 de verify-token no cierra sesión; 401 de mutación sí', () => {
+    expect(shouldClearSessionOnUnauthorized('auth/verify-token', 401)).toBe(false)
+    expect(shouldClearSessionOnUnauthorized('/solicitud/s1/asignarTecnico', 401)).toBe(true)
   })
 
   it('RequireRole permite al líder entrar a sus rutas', () => {

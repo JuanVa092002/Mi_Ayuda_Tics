@@ -18,6 +18,13 @@ describe('AuthProvider bootstrap contract', () => {
     })
   })
 
+  it('si verify-token responde 401, guest usable y no autenticado', async () => {
+    const verify = vi.fn().mockRejectedValue({ response: { status: 401 } })
+    const outcome = await resolveWebAuthBootstrap(verify)
+    expect(outcome).toEqual({ kind: 'guest' })
+    expect(applyWebBootstrapOutcome(outcome).isAuthenticated).toBe(false)
+  })
+
   it('si verify-token responde, sesión queda autenticada', async () => {
     const user = {
       _id: '1',

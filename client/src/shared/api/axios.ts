@@ -17,6 +17,10 @@ if (!apiBaseUrl && import.meta.env.DEV) {
   console.warn('[api] Define VITE_BACKEND_URL (local) o VITE_API_URL (producción)')
 }
 
+export function shouldClearSessionOnUnauthorized(url?: string, status?: number): boolean {
+  return status === 401 && !url?.includes('auth/verify-token')
+}
+
 const axiosConfig = axios.create({
   baseURL: apiBaseUrl,
   withCredentials: true,
@@ -30,7 +34,7 @@ const axiosConfig = axios.create({
 axiosConfig.interceptors.response.use(
   response => response,
   (error: AxiosError) => {
-    if (error.response?.status === 401 && !error.config?.url?.includes('auth/verify-token')) {
+    if (shouldClearSessionOnUnauthorized(error.config?.url, error.response?.status)) {
       clearAllWorkflowAttemptKeys()
       notifyUnauthorized()
     }

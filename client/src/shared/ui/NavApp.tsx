@@ -3,13 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth, logout as logoutService } from '@/features/auth'
 import { useNotificaciones } from '@/features/notifications'
 import { getRoleHome } from '@/app/router/roleHome'
-import type { MediaFile } from '@/shared/types'
-
-function getFotoUrl(foto: MediaFile | string | undefined): string | undefined {
-  if (!foto) return undefined
-  if (typeof foto === 'string') return foto
-  return foto.url
-}
+import { resolveUserPhotoUrl, userInitials } from '@/shared/media/user-photo'
 
 export default function NavApp(): ReactNode {
   const { user, setUser, setIsAuthenticated, isAuthenticated } = useAuth()
@@ -61,7 +55,7 @@ export default function NavApp(): ReactNode {
   }
 
   const getInitials = (name: string | undefined): string => {
-    return name ? name.charAt(0).toUpperCase() : 'U'
+    return userInitials(name)
   }
 
   const formatRelativeTime = (dateString: string | undefined): string => {
@@ -78,7 +72,7 @@ export default function NavApp(): ReactNode {
     return date.toLocaleDateString()
   }
 
-  const fotoUrl = getFotoUrl(user?.foto)
+  const fotoUrl = resolveUserPhotoUrl(user?.foto)
 
   return (
     <header className="w-full bg-white border-b hairline-border border-slate-200 sticky top-0 z-50">

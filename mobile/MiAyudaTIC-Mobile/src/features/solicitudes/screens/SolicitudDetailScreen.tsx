@@ -10,6 +10,7 @@ import { semanticColors } from '@/shared/theme/semantic-colors';
 import { shadows } from '@/shared/theme/shadows';
 import { spacing } from '@/shared/theme/spacing';
 import { AuthenticatedImage } from '@/shared/ui/AuthenticatedImage';
+import { TicketHistory } from '@/shared/ui/ticket-history';
 import { QueryBoundary } from '@/shared/ui/QueryBoundary';
 import { StatusBadge } from '@/shared/ui/StatusBadge';
 import { Text } from '@/shared/ui/Text';
@@ -60,6 +61,7 @@ export default function SolicitudDetailScreen() {
                   status={detalleQuery.data.status}
                   label={detalleQuery.data.displayStatus}
                   workflowVersion={detalleQuery.data.workflowVersion}
+                  size="medium"
                 />
               </View>
               <Text variant="h1" color="primary" style={styles.caseCode}>
@@ -122,23 +124,12 @@ export default function SolicitudDetailScreen() {
             ) : null}
 
             <DetailSection title="Historial">
-              {detalleQuery.data.historial && detalleQuery.data.historial.length > 0 ? (
-                <View style={styles.copyCard}>
-                  {detalleQuery.data.historial.map((event) => (
-                    <View key={event.id ?? `${event.type}-${event.createdAt}`} style={styles.historyRow}>
-                      <Text variant="caption" color="secondary">{event.authorName ?? 'Sistema'}</Text>
-                      <Text variant="p2" color="primary">{event.message}</Text>
-                    </View>
-                  ))}
-                </View>
-              ) : (
-                <View style={styles.copyCard}>
-                  <Text variant="p2" color="secondary">
-                    {detalleQuery.data.historyNote ??
-                      'El historial detallado está disponible para solicitudes creadas desde esta actualización.'}
-                  </Text>
-                </View>
-              )}
+              <TicketHistory
+                events={detalleQuery.data.historial}
+                emptyNote={detalleQuery.data.historyNote}
+                incidentPhotoUrl={detalleQuery.data.photo?.optimizedUrl ?? detalleQuery.data.photo?.url}
+                solutionEvidenceUrl={detalleQuery.data.solution?.evidenceUrl}
+              />
             </DetailSection>
 
             {detalleQuery.data.canReply ? (
@@ -273,7 +264,6 @@ const styles = StyleSheet.create({
   solutionCard: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing[3], borderRadius: radius.md, padding: spacing[4], backgroundColor: semanticColors.state.successBg },
   solutionIcon: { width: 28, height: 28, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center', backgroundColor: semanticColors.surface.card },
   solutionText: { flex: 1, lineHeight: 24 },
-  historyRow: { gap: spacing[1], paddingVertical: spacing[2] },
   input: {
     minHeight: 88,
     borderRadius: radius.md,

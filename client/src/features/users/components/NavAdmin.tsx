@@ -16,7 +16,9 @@ export default function NavAdmin(): ReactNode {
     <nav className="w-full border-b border-azul-sena bg-white px-3 py-3 lg:max-w-[13%] lg:border-b-0 lg:border-r lg:py-8 lg:h-screen">
       <ol className="flex flex-row flex-wrap gap-2 lg:flex-col lg:gap-4">
         {links.map(link => {
-          const active = location.pathname === link.to
+          const active =
+            location.pathname === link.to ||
+            (link.to === '/adminSolicitud' && location.pathname === '/seguimiento')
           return (
             <li key={link.to}>
               <Link

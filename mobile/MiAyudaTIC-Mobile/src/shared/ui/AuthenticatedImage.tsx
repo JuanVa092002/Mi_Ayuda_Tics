@@ -3,7 +3,7 @@ import { radius } from '@/shared/theme/radius';
 import { semanticColors } from '@/shared/theme/semantic-colors';
 import { spacing } from '@/shared/theme/spacing';
 import { Text } from '@/shared/ui/Text';
-import { Image } from 'expo-image';
+import { Image, type ImageProps } from 'expo-image';
 import {
   ActivityIndicator,
   Pressable,
@@ -18,9 +18,15 @@ type AuthenticatedImageProps = {
   url: string | null | undefined;
   accessibilityLabel: string;
   style?: StyleProp<ImageStyle | ViewStyle>;
+  contentFit?: ImageProps['contentFit'];
 };
 
-export function AuthenticatedImage({ url, accessibilityLabel, style }: AuthenticatedImageProps) {
+export function AuthenticatedImage({
+  url,
+  accessibilityLabel,
+  style,
+  contentFit = 'cover',
+}: AuthenticatedImageProps) {
   const { uri, status, refetch } = useAuthenticatedImageUri(url);
 
   if (status === 'empty') {
@@ -54,7 +60,7 @@ export function AuthenticatedImage({ url, accessibilityLabel, style }: Authentic
     <Image
       source={{ uri }}
       style={style as StyleProp<ImageStyle>}
-      contentFit="cover"
+      contentFit={contentFit}
       accessibilityLabel={accessibilityLabel}
     />
   );

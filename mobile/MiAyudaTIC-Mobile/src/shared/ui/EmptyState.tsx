@@ -1,5 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import { semanticColors } from '@/shared/theme/semantic-colors';
+import { radius } from '@/shared/theme/radius';
 import { spacing } from '@/shared/theme/spacing';
 import { typography } from '@/shared/theme/typography';
 import { StyleSheet, Text, View } from 'react-native';
@@ -41,6 +42,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing[3],
     backgroundColor: semanticColors.surface.card,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: semanticColors.border.default,
+    overflow: 'hidden',
   },
   iconCircle: {
     width: 64,

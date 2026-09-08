@@ -46,6 +46,20 @@ describe('mapSolicitudSummary', () => {
     expect(summary.solution?.description).toBe('Se reinició el switch');
   });
 
+  it('no copia historial del listado aunque el DTO lo traiga', () => {
+    const summary = mapSolicitudSummary({
+      ...listDto,
+      workflowVersion: 2,
+      lifecycleState: 'asignado',
+      displayStatus: 'Asignada',
+      historial: [{ type: 'created', message: 'no debe ir en lista' }],
+    } as typeof listDto & { historial: unknown[]; lifecycleState: string });
+    expect(summary.workflowVersion).toBe(2);
+    expect(summary.lifecycleState).toBe('asignado');
+    expect(summary.displayStatus).toBe('Asignada');
+    expect(summary).not.toHaveProperty('historial');
+  });
+
   it('tolera refs como string id', () => {
     const summary = mapSolicitudSummary({
       ...listDto,
@@ -75,6 +89,46 @@ describe('mapSolicitudDetail', () => {
     expect(detail.id).toBe('s2');
     expect(detail.status).toBe('pendiente');
     expect(detail.environmentIsActive).toBe(true);
+  });
+
+  it('pasa workflowVersion, lifecycleState, capabilities e historial', () => {
+    const detail = mapSolicitudDetail(
+      {
+        descripcion: 'Detalle v2',
+        estado: 'en_progreso',
+        fecha: '07-09-2026 00:00',
+        codigoCaso: '2026-09-00003',
+        workflowVersion: 2,
+        lifecycleState: 'en_progreso',
+        displayStatus: 'En atención',
+        capabilities: { canUpdate: true, canReply: false },
+        historial: [
+          {
+            _id: 'e1',
+            type: 'started',
+            message: 'El técnico inició la atención.',
+            attachment: { url: 'https://cdn.example/foto.jpg', filename: 'foto.jpg' },
+            metadata: { nextAction: 'Revisar cableado' },
+          },
+        ],
+      },
+      's3',
+    );
+    expect(detail.workflowVersion).toBe(2);
+    expect(detail.lifecycleState).toBe('en_progreso');
+    expect(detail.displayStatus).toBe('En atención');
+    expect(detail.capabilities?.canUpdate).toBe(true);
+    expect(detail.historial).toEqual([
+      {
+        id: 'e1',
+        type: 'started',
+        message: 'El técnico inició la atención.',
+        createdAt: undefined,
+        authorName: undefined,
+        attachment: { url: 'https://cdn.example/foto.jpg', filename: 'foto.jpg' },
+        nextAction: 'Revisar cableado',
+      },
+    ]);
   });
 });
 

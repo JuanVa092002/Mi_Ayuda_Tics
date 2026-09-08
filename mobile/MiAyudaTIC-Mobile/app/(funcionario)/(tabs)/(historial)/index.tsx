@@ -1,3 +1,4 @@
+import { takeQueuedHistorialChip } from '@/features/funcionario/historial-intent';
 import { useMisSolicitudes } from '@/features/solicitudes/hooks';
 import {
   filterSolicitudesByHistorialChip,
@@ -14,8 +15,8 @@ import { QueryBoundary } from '@/shared/ui/QueryBoundary';
 import { SearchField } from '@/shared/ui/SearchField';
 import { SolicitudListItem } from '@/shared/ui/SolicitudListItem';
 import { Text } from '@/shared/ui/Text';
-import { router, Stack, useScrollToTop } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { router, Stack, useFocusEffect, useScrollToTop } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -28,6 +29,13 @@ export default function HistorialScreen() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState<HistorialChip>('Todas');
+
+  useFocusEffect(
+    useCallback(() => {
+      const chip = takeQueuedHistorialChip();
+      if (chip) setActiveFilter(chip);
+    }, []),
+  );
 
   useEffect(() => {
     const timer = setTimeout(() => {

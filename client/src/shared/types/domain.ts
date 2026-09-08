@@ -84,6 +84,7 @@ export interface Solicitud {
   foto?: MediaFile
   tipoSolucion?: TipoSolucion
   workflowVersion?: number
+  lifecycleState?: string
   displayStatus?: string
   headline?: string
   proximaAccion?: string

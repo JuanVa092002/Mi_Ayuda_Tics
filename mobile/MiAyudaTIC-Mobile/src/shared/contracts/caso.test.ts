@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   canResolveCaso,
+  casoDetailFromSummary,
   filterCasosEnProgreso,
   filterCasosEsperandoConfirmacion,
   filterCasosByQuery,
@@ -122,5 +123,26 @@ describe('canResolveCaso', () => {
     expect(canResolveCaso({ status: 'pendiente' })).toBe(true);
     expect(canResolveCaso({ status: 'solicitado' })).toBe(false);
     expect(canResolveCaso({ status: 'finalizado' })).toBe(false);
+  });
+});
+
+describe('casoDetailFromSummary', () => {
+  it('hidrata detalle offline con acciones v2 de la cola', () => {
+    const detail = casoDetailFromSummary({
+      id: 'c1',
+      caseCode: '2026-09-00009',
+      description: 'Teclado',
+      status: 'en_progreso',
+      createdAtRaw: '07-09-2026 21:00',
+      displayStatus: 'En atención',
+      workflowVersion: 2,
+    });
+    expect(detail.capabilities).toMatchObject({
+      canUpdate: true,
+      canRequestInfo: true,
+      canPartialSolution: true,
+      canResolve: true,
+    });
+    expect(detail.historyNote).toMatch(/reconectar/i);
   });
 });

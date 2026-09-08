@@ -59,6 +59,17 @@ describe('workflow v2 retry policy', () => {
     expect(getWorkflowAttemptKey('update', 'ticket-1', { mensaje: 'dos' })).not.toBe(first);
   });
 
+  it('emite una key aunque crypto.randomUUID no exista', () => {
+    const original = globalThis.crypto;
+    Object.defineProperty(globalThis, 'crypto', { configurable: true, value: undefined });
+    try {
+      const key = getWorkflowAttemptKey('update', 'ticket-no-crypto', { mensaje: 'campo' });
+      expect(key).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+    } finally {
+      Object.defineProperty(globalThis, 'crypto', { configurable: true, value: original });
+    }
+  });
+
   it('429 no ejecuta retry automático', async () => {
     const execute = vi.fn(async () => {
       throw { status: 429, code: 'RATE_LIMITED', details: { retryAfter: '20' } };

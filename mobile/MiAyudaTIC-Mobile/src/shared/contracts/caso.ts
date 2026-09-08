@@ -32,6 +32,7 @@ export type CasoSummary = {
   solutionDescription?: string;
   solutionEvidenceUrl?: string;
   workflowVersion?: number;
+  lifecycleState?: string;
   displayStatus: string;
   queue?: string;
 };
@@ -52,6 +53,7 @@ export type CasoDetail = {
   solutionDescription?: string;
   solutionEvidenceUrl?: string;
   workflowVersion?: number;
+  lifecycleState?: string;
   displayStatus: string;
   headline?: string;
   proximaAccion?: string;
@@ -77,11 +79,45 @@ export function mapCasoSummary(dto: SolicitudListItemDto): CasoSummary {
     solutionDescription: summary.solution?.description,
     solutionEvidenceUrl: summary.solution?.evidenceUrl,
     workflowVersion: summary.workflowVersion,
+    lifecycleState: summary.lifecycleState,
     displayStatus: summary.displayStatus,
     queue: getTechnicianQueue({
       estado: summary.status,
       workflowVersion: summary.workflowVersion,
     }),
+  };
+}
+
+export function casoDetailFromSummary(summary: CasoSummary): CasoDetail {
+  const queue = getTechnicianQueue({ estado: summary.status, workflowVersion: summary.workflowVersion });
+  const v2 = summary.workflowVersion === 2;
+  return {
+    id: summary.id,
+    caseCode: summary.caseCode,
+    description: summary.description,
+    status: summary.status,
+    createdAtRaw: summary.createdAtRaw,
+    phone: summary.phone,
+    requesterName: summary.requesterName,
+    environmentName: summary.environmentName,
+    caseTypeId: summary.caseTypeId,
+    caseTypeName: summary.caseTypeName,
+    photoUrl: summary.photoUrl,
+    solutionDescription: summary.solutionDescription,
+    solutionEvidenceUrl: summary.solutionEvidenceUrl,
+    workflowVersion: summary.workflowVersion,
+    lifecycleState: summary.lifecycleState,
+    displayStatus: summary.displayStatus,
+    historyNote: 'El historial detallado se actualizará al reconectar.',
+    capabilities: v2
+      ? {
+          canStart: queue === 'por_iniciar',
+          canUpdate: queue === 'en_atencion',
+          canRequestInfo: queue === 'en_atencion',
+          canPartialSolution: queue === 'en_atencion',
+          canResolve: queue === 'en_atencion',
+        }
+      : undefined,
   };
 }
 
@@ -103,6 +139,7 @@ export function mapCasoDetail(dto: SolicitudDetailDto, id: string): CasoDetail {
     solutionDescription: detail.solution?.description,
     solutionEvidenceUrl: detail.solution?.evidenceUrl,
     workflowVersion: detail.workflowVersion,
+    lifecycleState: detail.lifecycleState,
     displayStatus: detail.displayStatus,
     headline: detail.headline,
     proximaAccion: detail.proximaAccion,

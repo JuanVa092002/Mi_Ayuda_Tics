@@ -1,9 +1,11 @@
 import { useAuth } from '@/features/auth/auth-context';
 import { shouldRenderRoleStack } from '@/features/auth/role-layout-policy';
+import { useTecnicoSync } from '@/features/tecnico/use-tecnico-sync';
 import { Stack } from 'expo-router';
 
 export default function TecnicoGroupLayout() {
   const { access } = useAuth();
+  useTecnicoSync();
 
   if (!shouldRenderRoleStack(access, 'tecnico')) {
     return null;

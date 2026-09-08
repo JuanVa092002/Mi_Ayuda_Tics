@@ -6,10 +6,12 @@ import { spacing } from '@/shared/theme/spacing';
 import { typography } from '@/shared/theme/typography';
 import { Pressable, StyleSheet, Text, View, Animated } from 'react-native';
 import { StatusBadge } from './StatusBadge';
+import { getStatusToneColors } from './status-visual';
 import * as Haptics from 'expo-haptics';
 import { Feather } from '@expo/vector-icons';
 import { useRef } from 'react';
 import { motion } from '@/shared/theme/motion';
+import { useReduceMotion } from '@/shared/hooks/useReduceMotion';
 
 type SolicitudListItemProps = {
   item: SolicitudSummary;
@@ -25,10 +27,13 @@ export function SolicitudListItem({
   showDivider = true,
 }: SolicitudListItemProps) {
   const scaleValue = useRef(new Animated.Value(1)).current;
+  const reduceMotion = useReduceMotion();
+  const tone = getStatusToneColors(item.status, item.workflowVersion);
 
   const handlePressIn = () => {
+    if (reduceMotion) return;
     Animated.timing(scaleValue, {
-      toValue: 0.98,
+      toValue: motion.cardPressScale,
       duration: motion.duration.fast,
       useNativeDriver: true,
     }).start();
@@ -63,10 +68,11 @@ export function SolicitudListItem({
           pressed && styles.pressed,
         ]}
       >
+        {variant === 'card' ? <View style={[styles.statusAccent, { backgroundColor: tone.dot }]} /> : null}
         <View style={styles.body}>
           <View style={styles.header}>
             <Text style={styles.code}>{item.caseCode}</Text>
-            <StatusBadge status={item.status} label={item.displayStatus} workflowVersion={item.workflowVersion} />
+            <StatusBadge status={item.status} workflowVersion={item.workflowVersion} />
           </View>
           <Text style={styles.description} numberOfLines={2}>
             {item.description}
@@ -103,6 +109,15 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: semanticColors.border.default,
+    overflow: 'hidden',
+    paddingLeft: spacing[4] + 4,
+  },
+  statusAccent: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
   },
   pressed: {
     backgroundColor: semanticColors.surface.muted,

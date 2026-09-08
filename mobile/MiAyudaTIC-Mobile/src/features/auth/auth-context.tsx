@@ -39,6 +39,7 @@ import type {
 } from './session-types';
 import { registerDeviceForPush, unregisterDeviceForPush } from '@/shared/notifications';
 import { clearAuthenticatedSessionMedia } from '@/shared/media/authenticated-media-cache';
+import { clearTecnicoOffline } from '@/features/tecnico/offline-store';
 import { clearAllWorkflowAttemptKeys } from '@/shared/api/workflow-idempotency';
 import { clearSolicitudFormDraft } from '@/features/solicitudes/solicitud-form-draft';
 import {
@@ -86,6 +87,7 @@ async function wipeSession(): Promise<void> {
   await clearSessionSnapshot();
   await unregisterDeviceForPush();
   clearAuthenticatedSessionMedia();
+  await clearTecnicoOffline();
   clearSolicitudFormDraft();
   clearAllWorkflowAttemptKeys();
 }

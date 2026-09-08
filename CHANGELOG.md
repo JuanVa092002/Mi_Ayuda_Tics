@@ -1,6 +1,24 @@
 # Changelog
 Todos los cambios notables en el proyecto **AyudaTIC** serán documentados en este archivo.
 
+## [2026-09-07] - Workflow v2 en Render
+
+Release cerrado. Notas completas: [RELEASE_NOTES.md](./RELEASE_NOTES.md).
+
+### Added
+- Workflow v2: historial append-only, solución parcial (ticket abierto), solución total con confirmación, reasignación y cancelación trazable.
+- `Idempotency-Key` obligatorio en mutaciones v2 (sin UUID inventado por el servidor).
+- Índice Atlas `uniq_historial_solicitud_operationId` (unique + sparse, migrate explícito).
+- Mobile: timeline de historial por fecha, iconos/colores por tipo, evidencia inline con lightbox.
+
+### Changed
+- Tickets nuevos nacen `workflowVersion: 2` / `estado: nuevo`. Legacy v1 no se migra.
+- Listados no serializan `historial`; solo el detalle.
+
+### SHA
+- Live: `48a67f8f2686e186e79c6e867142eb99630ed35c`
+- Rollback de código: `050922c2e39453db034d237a365ba97c898f1938` — [docs/rollback-procedure.md](docs/rollback-procedure.md)
+
 ## [2026-04-22] - Dashboards Técnico & Admin Redesign
 ### Added
 - **UI Premium (AyudaTIC 2026)**: Extensión del lenguaje visual "Zero Noise" a los roles de Técnico y Admin.

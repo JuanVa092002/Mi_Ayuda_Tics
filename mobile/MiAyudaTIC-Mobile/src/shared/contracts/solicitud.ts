@@ -23,9 +23,11 @@ export type SolicitudListItemDto = {
   foto?: MediaDto;
   solucion?: SolucionDto | string;
   workflowVersion?: number;
+  lifecycleState?: string;
   displayStatus?: string;
   headline?: string;
   proximaAccion?: string;
+  capabilities?: SolicitudCapabilitiesDto;
 };
 
 export type SolicitudEventDto = {
@@ -34,6 +36,7 @@ export type SolicitudEventDto = {
   message: string;
   createdAt?: string;
   author?: { nombre?: string };
+  attachment?: { _id?: string; url?: string; filename?: string };
   metadata?: { nextAction?: string; nextActionAt?: string; resolutionType?: string };
 };
 
@@ -124,6 +127,7 @@ export type SolicitudSummary = {
   photo?: MediaAsset;
   solution?: SolicitudSolution;
   workflowVersion?: number;
+  lifecycleState?: string;
   displayStatus: string;
   headline?: string;
   proximaAccion?: string;
@@ -143,6 +147,9 @@ export type SolicitudEvent = {
   message: string;
   createdAt?: string;
   authorName?: string;
+  attachment?: { url?: string; filename?: string };
+  nextAction?: string;
+  resolutionType?: string;
 };
 
 export type SolicitudDetail = SolicitudSummary & {
@@ -357,6 +364,7 @@ export function mapSolicitudSummary(dto: SolicitudListItemDto): SolicitudSummary
     photo: mapMedia(dto.foto),
     solution: mapSolution(dto.solucion),
     workflowVersion: dto.workflowVersion,
+    lifecycleState: dto.lifecycleState,
     displayStatus: dto.displayStatus ?? getStatusLabel(dto.estado, dto.workflowVersion),
     headline: dto.headline,
     proximaAccion: dto.proximaAccion,
@@ -382,6 +390,7 @@ export function mapSolicitudDetail(dto: SolicitudDetailDto, id: string): Solicit
     photo: mapMedia(dto.foto),
     solution: mapSolution(dto.solucion),
     workflowVersion: dto.workflowVersion,
+    lifecycleState: dto.lifecycleState,
     displayStatus: dto.displayStatus ?? getStatusLabel(dto.estado, dto.workflowVersion),
     headline: dto.headline,
     proximaAccion: dto.proximaAccion,
@@ -391,6 +400,11 @@ export function mapSolicitudDetail(dto: SolicitudDetailDto, id: string): Solicit
       message: event.message,
       createdAt: event.createdAt,
       authorName: event.author?.nombre,
+      ...(event.attachment?.url
+        ? { attachment: { url: event.attachment.url, filename: event.attachment.filename } }
+        : {}),
+      ...(event.metadata?.nextAction ? { nextAction: event.metadata.nextAction } : {}),
+      ...(event.metadata?.resolutionType ? { resolutionType: event.metadata.resolutionType } : {}),
     })),
     historyNote: dto.historyNote,
     capabilities: dto.capabilities,

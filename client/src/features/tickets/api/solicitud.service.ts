@@ -6,6 +6,7 @@ import type {
   Solicitud,
   TipoCaso,
 } from '@/shared/types'
+import { sortSolicitudesNewest, unwrapWorkflowSolicitud } from '../leader-inbox'
 import { runWithWorkflowAttempt } from './workflow-idempotency'
 
 interface SolicitudesAsignadasResponse {
@@ -37,12 +38,12 @@ export const asignarSolicitudTecnico = async (
   payload: AssignTecnicoPayload
 ): Promise<Solicitud> => {
   return runWithWorkflowAttempt('assign', solicitudId, async (key) => {
-    const response = await apiClient.put<Solicitud>(
+    const response = await apiClient.put<{ message?: string; solicitud?: Solicitud } | Solicitud>(
       `/solicitud/${solicitudId}/asignarTecnico`,
       payload,
       { headers: { 'Idempotency-Key': key } }
     )
-    return response.data
+    return unwrapWorkflowSolicitud(response.data)
   }, payload)
 }
 
@@ -53,7 +54,7 @@ export const historialSolicitudesFuncionario = async (): Promise<Solicitud[]> =>
 
 export const historialSolicitudesLider = async (): Promise<Solicitud[]> => {
   const response = await apiClient.get<HistorialLiderResponse>('/solicitud/historialSolicitudes')
-  return response.data.data
+  return sortSolicitudesNewest(response.data.data ?? [])
 }
 
 export const obtenerTiposCaso = async (): Promise<ApiListResponse<TipoCaso[]>> => {
@@ -63,7 +64,7 @@ export const obtenerTiposCaso = async (): Promise<ApiListResponse<TipoCaso[]>> =
 
 export const getSolicitudesPendientes = async (): Promise<Solicitud[]> => {
   const response = await apiClient.get<ApiListResponse<Solicitud[]>>('/solicitud/pendientes')
-  return response.data.data ?? []
+  return sortSolicitudesNewest(response.data.data ?? [])
 }
 
 export const getCasosAsignados = async (): Promise<Solicitud[]> => {

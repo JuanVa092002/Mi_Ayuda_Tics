@@ -1,22 +1,31 @@
 import type { ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
+
+const tabs = [
+  { to: '/adminSolicitud', label: 'Cola de nuevos' },
+  { to: '/seguimiento', label: 'Seguimiento' },
+] as const
 
 export default function NavSolicitud(): ReactNode {
   return (
     <div className="pl-8 pt-8">
       <ul className="flex text-lg gap-8">
-        <Link
-          to="/adminSolicitud"
-          className="font-medium border-b-2  border-verde-sena text-verde-sena hover:text-azul-sena hover:border-azul-sena transition-all"
-        >
-          <li> Solicitudes asignadas </li>
-        </Link>
-        <Link
-          to="/seguimiento"
-          className="font-medium border-b-2  border-verde-sena text-verde-sena hover:text-azul-sena hover:border-azul-sena transition-all"
-        >
-          <li> Seguimiento </li>
-        </Link>
+        {tabs.map((tab) => (
+          <li key={tab.to}>
+            <NavLink
+              to={tab.to}
+              className={({ isActive }) =>
+                `font-medium border-b-2 transition-all ${
+                  isActive
+                    ? 'border-verde-sena text-verde-sena'
+                    : 'border-transparent text-slate-500 hover:text-azul-sena hover:border-azul-sena'
+                }`
+              }
+            >
+              {tab.label}
+            </NavLink>
+          </li>
+        ))}
       </ul>
     </div>
   )

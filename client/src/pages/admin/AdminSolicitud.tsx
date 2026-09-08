@@ -7,6 +7,14 @@ import { toast } from 'react-toastify'
 import { getApiErrorMessage } from '@/shared/api/apiError'
 import { classifyWorkflowMutationFailure } from '@/features/tickets/api/workflow-retry-policy'
 import { clearWorkflowAttemptKey } from '@/features/tickets/api/workflow-idempotency'
+import {
+  canLeaderAssign,
+  canLeaderCancel,
+  formatSolicitudFecha,
+  sortSolicitudesNewest,
+  validateRequiredMotivo,
+  workflowLabel,
+} from '@/features/tickets/leader-inbox'
 import AdminSolicitudLayout from '@/app/layouts/AdminSolicitudLayout'
 import type { Solicitud, User } from '@/shared/types'
 
@@ -25,7 +33,10 @@ export default function AdminSolicitud() {
   const [cancelLastPayload, setCancelLastPayload] = useState<{ motivo: string } | undefined>(undefined)
   const [assignError, setAssignError] = useState<unknown>(null)
   const [assignLastPayload, setAssignLastPayload] = useState<{ tecnico: string } | undefined>(undefined)
-  const itemsPerPage = 5
+  const [assigning, setAssigning] = useState(false)
+  const [cancelling, setCancelling] = useState(false)
+  const [loadingTecnicos, setLoadingTecnicos] = useState(false)
+  const itemsPerPage = 10
 
   useEffect(() => {
     async function fetchSolicitudes() {
@@ -33,41 +44,45 @@ export default function AdminSolicitud() {
       setFetchError(null)
       try {
         const data = await getSolicitudesPendientes()
-        const sortedData = data.sort(
-          (a, b) =>
-            new Date(b.fecha ?? 0).getTime() - new Date(a.fecha ?? 0).getTime()
-        )
-        setSolicitudes(sortedData)
+        setSolicitudes(sortSolicitudesNewest(data))
       } catch (error) {
         setFetchError(getApiErrorMessage(error))
       } finally {
         setLoading(false)
       }
     }
-    fetchSolicitudes()
+    void fetchSolicitudes()
   }, [])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm])
 
   const handleShareClick = async (solicitud: Solicitud) => {
     setSelectedSolicitud(solicitud)
+    setLoadingTecnicos(true)
     try {
       const response = await getTecnicosAprobados()
-      const tecnicosAprobados = response.tecnicos
-      setTecnicos(tecnicosAprobados)
+      setTecnicos(response.tecnicos ?? [])
       setAssignError(null)
       setAssignLastPayload(undefined)
       setShowModal(true)
     } catch (error) {
       toast.error(getApiErrorMessage(error))
+    } finally {
+      setLoadingTecnicos(false)
     }
   }
 
   const handleCancelClick = async (payloadOverride?: { motivo: string }): Promise<void> => {
-    if (!cancelTarget) return
+    if (!cancelTarget || cancelling) return
     const motivo = (payloadOverride?.motivo ?? cancelMotivo).trim()
-    if (motivo.length < 3) {
-      toast.error('El motivo de cancelación es obligatorio.')
+    const motivoError = validateRequiredMotivo(motivo)
+    if (motivoError) {
+      toast.error(motivoError)
       return
     }
+    setCancelling(true)
     try {
       await cancelarSolicitud(cancelTarget._id, motivo)
       toast.success('Solicitud cancelada')
@@ -84,12 +99,15 @@ export default function AdminSolicitud() {
       if (!failure.offersManualRetry) {
         toast.error(getApiErrorMessage(error))
       }
+    } finally {
+      setCancelling(false)
     }
   }
 
   const handleAssignClick = async (tecnicoId: User, payloadOverride?: { tecnico: string }) => {
-    if (!selectedSolicitud) return
+    if (!selectedSolicitud || assigning) return
     const tecnico = payloadOverride?.tecnico ?? tecnicoId._id
+    setAssigning(true)
     try {
       await asignarSolicitudTecnico(selectedSolicitud._id, { tecnico })
       toast.success('Solicitud asignada con éxito')
@@ -106,6 +124,8 @@ export default function AdminSolicitud() {
       if (!failure.offersManualRetry) {
         toast.error(getApiErrorMessage(error))
       }
+    } finally {
+      setAssigning(false)
     }
   }
 
@@ -127,24 +147,24 @@ export default function AdminSolicitud() {
         <AdminSolicitudLayout>
           <main className="p-8 animate-in fade-in duration-700">
             <section className="premium-card rounded-3xl overflow-hidden flex flex-col h-full shadow-xl">
-              {/* Header */}
               <div className="p-6 sm:p-8 border-b hairline-border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 bg-white">
                 <div>
-                  <h2 className="text-2xl font-bold text-on-surface tracking-tight">Panel de Supervisión</h2>
-                  <p className="text-sm text-on-surface-variant font-medium mt-1">Gestión global de carga operativa y asignación estratégica.</p>
+                  <h2 className="text-2xl font-bold text-on-surface tracking-tight">Cola de tickets nuevos</h2>
+                  <p className="text-sm text-on-surface-variant font-medium mt-1">
+                    Tickets v1 en solicitado y v2 en nuevo, listos para asignar.
+                  </p>
                 </div>
                 <div className="relative w-full sm:w-80 group">
                   <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/60 text-[18px]">search</span>
-                  <input 
-                    className="w-full pl-11 pr-4 py-3 solid-input rounded-2xl text-xs font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container/10 transition-all shadow-sm" 
-                    placeholder="Filtrar por ticket, detalle o funcionario..." 
+                  <input
+                    className="w-full pl-11 pr-4 py-3 solid-input rounded-2xl text-xs font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container/10 transition-all shadow-sm"
+                    placeholder="Filtrar por ticket, detalle o funcionario..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
               </div>
 
-              {/* Table */}
               <div className="premium-table-container max-h-[calc(100vh-320px)]">
                 <table className="premium-table">
                   <thead className="premium-thead">
@@ -171,9 +191,14 @@ export default function AdminSolicitud() {
                             <div className="flex flex-col gap-1.5">
                               <div className="flex items-center gap-2 text-[13px] font-bold text-primary-container">
                                 <span className="material-symbols-outlined !text-[16px] opacity-40">event</span>
-                                {row.fecha}
+                                {formatSolicitudFecha(row.fecha)}
                               </div>
-                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-6">ID: {row.codigoCaso || row._id.slice(-6)}</span>
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-6">
+                                ID: {row.codigoCaso || row._id.slice(-6)}
+                              </span>
+                              <span className="text-[10px] font-black uppercase tracking-widest pl-6 text-slate-500">
+                                {workflowLabel(row.workflowVersion)} · {row.displayStatus || row.estado}
+                              </span>
                             </div>
                           </td>
                           <td className="premium-td">
@@ -206,14 +231,18 @@ export default function AdminSolicitud() {
                           </td>
                           <td className="premium-td text-center">
                             <div className="flex items-center justify-center gap-2">
-                            <button 
-                              onClick={() => handleShareClick(row)}
-                              className="group inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-100 hover:bg-emerald-500 hover:text-white transition-all shadow-sm active:scale-95"
+                            {canLeaderAssign(row) ? (
+                            <button
+                              type="button"
+                              disabled={loadingTecnicos}
+                              onClick={() => void handleShareClick(row)}
+                              className="group inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-100 hover:bg-emerald-500 hover:text-white transition-all shadow-sm active:scale-95 disabled:opacity-50"
                             >
                               <span className="text-[11px] font-black uppercase tracking-widest">Asignar</span>
                               <span className="material-symbols-outlined !text-[16px] group-hover:rotate-12 transition-transform">person_add</span>
                             </button>
-                            {row.capabilities?.canCancel ? (
+                            ) : null}
+                            {canLeaderCancel(row) ? (
                               <button
                                 type="button"
                                 onClick={() => {
@@ -243,17 +272,16 @@ export default function AdminSolicitud() {
                 </table>
               </div>
 
-              {/* Footer */}
               <div className="pagination-footer">
                 <div className="flex flex-col">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Carga Actual — Página {currentPage}</span>
                   <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{totalItems} solicitudes pendientes</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="pagination-btn">
+                  <button type="button" onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="pagination-btn">
                     <span className="material-symbols-outlined">chevron_left</span>
                   </button>
-                  <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0} className="pagination-btn">
+                  <button type="button" onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0} className="pagination-btn">
                     <span className="material-symbols-outlined">chevron_right</span>
                   </button>
                 </div>
@@ -272,14 +300,21 @@ export default function AdminSolicitud() {
                 <div className="p-8 border-b hairline-border border-slate-100 flex justify-between items-center bg-slate-50/30">
                   <div>
                     <h2 id="assign-tech-title" className="text-xl font-bold text-on-surface">Seleccionar Técnico</h2>
-                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Personal calificado disponible</p>
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">
+                      {selectedSolicitud?.codigoCaso} · un clic para asignar
+                    </p>
                   </div>
-                  <button onClick={() => { if (selectedSolicitud) clearWorkflowAttemptKey('assign', selectedSolicitud._id); setShowModal(false); setAssignError(null) }} aria-label="Cerrar modal" className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-100 transition-colors">
+                  <button type="button" onClick={() => { if (selectedSolicitud) clearWorkflowAttemptKey('assign', selectedSolicitud._id); setShowModal(false); setAssignError(null) }} aria-label="Cerrar modal" className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-100 transition-colors">
                     <span className="material-symbols-outlined text-slate-400">close</span>
                   </button>
                 </div>
-                
+
                 <div className="max-h-[400px] overflow-auto hairline-scrollbar">
+                  {tecnicos.length === 0 ? (
+                    <p className="p-8 text-sm font-semibold text-slate-500">
+                      No hay técnicos aprobados. Aprueba un técnico antes de asignar.
+                    </p>
+                  ) : (
                   <table className="premium-table">
                     <thead className="premium-thead">
                       <tr>
@@ -306,19 +341,22 @@ export default function AdminSolicitud() {
                              </div>
                           </td>
                           <td className="premium-td text-right">
-                             <button 
-                               onClick={() => handleAssignClick(tecnico)}
-                               className="px-3 py-1.5 rounded-lg bg-primary-container text-white text-[10px] font-black uppercase tracking-widest hover:bg-primary transition-all shadow-sm active:scale-95"
+                             <button
+                               type="button"
+                               disabled={assigning}
+                               onClick={() => void handleAssignClick(tecnico)}
+                               className="px-3 py-1.5 rounded-lg bg-primary-container text-white text-[10px] font-black uppercase tracking-widest hover:bg-primary transition-all shadow-sm active:scale-95 disabled:opacity-50"
                              >
-                               Elegir
+                               {assigning ? 'Asignando…' : 'Elegir'}
                              </button>
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
+                  )}
                 </div>
-                
+
                 <div className="p-4 bg-slate-50/50 border-t hairline-border border-slate-100 text-center">
                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Protocolo de asignación AyudaTIC 2026</p>
                    <WorkflowManualRetryNotice
@@ -357,10 +395,11 @@ export default function AdminSolicitud() {
                   </button>
                   <button
                     type="button"
-                    className="px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-bold"
+                    disabled={cancelling}
+                    className="px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-bold disabled:opacity-50"
                     onClick={() => void handleCancelClick()}
                   >
-                    Confirmar cancelación
+                    {cancelling ? 'Cancelando…' : 'Confirmar cancelación'}
                   </button>
                 </div>
                 <WorkflowManualRetryNotice

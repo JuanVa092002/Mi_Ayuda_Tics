@@ -1,5 +1,6 @@
 import apiClient from '@/shared/api/axios'
 import type { Solicitud } from '@/shared/types'
+import { unwrapWorkflowSolicitud } from '../leader-inbox'
 import { runWithWorkflowAttempt } from './workflow-idempotency'
 
 type WorkflowResponse = {
@@ -146,6 +147,8 @@ export const reabrirSolicitud = async (
 }
 
 export const getSolicitudDetalle = async (solicitudId: string): Promise<Solicitud> => {
-  const response = await apiClient.get<{ data: Solicitud }>(`/solicitud/${solicitudId}`)
-  return response.data.data
+  const response = await apiClient.get<{ data?: Solicitud; solicitud?: Solicitud }>(
+    `/solicitud/${solicitudId}`,
+  )
+  return unwrapWorkflowSolicitud(response.data.data ?? response.data)
 }

@@ -2,6 +2,7 @@ import type { TimelineStep } from '@/shared/contracts/solicitud';
 import { semanticColors } from '@/shared/theme/semantic-colors';
 import { typography } from '@/shared/theme/typography';
 import { StyleSheet, Text, View } from 'react-native';
+import { getTicketStatePaint } from './ticket-state';
 
 type StatusTimelineProps = {
   steps: TimelineStep[];
@@ -13,12 +14,8 @@ export function StatusTimeline({ steps }: StatusTimelineProps) {
       <Text style={styles.title}>Seguimiento del caso</Text>
       {steps.map((step, index) => {
         const isLast = index === steps.length - 1;
-        const dotColor =
-          step.state === 'completed'
-            ? semanticColors.brand.green
-            : step.state === 'current'
-              ? semanticColors.brand.blue
-              : semanticColors.border.default;
+        const paint = getTicketStatePaint(step.status);
+        const dotColor = step.state === 'upcoming' ? semanticColors.border.default : paint.accent;
 
         return (
           <View key={step.status} style={styles.row}>

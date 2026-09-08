@@ -9,6 +9,8 @@ export type {
   TipoSolucion,
   SolucionCaso,
   SolicitudEstado,
+  SolicitudCapabilities,
+  SolicitudHistorialEvent,
   Solicitud,
   CaseForResolution,
   LoginCredentials,

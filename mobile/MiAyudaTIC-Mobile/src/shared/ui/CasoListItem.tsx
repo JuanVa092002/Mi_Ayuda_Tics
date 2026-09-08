@@ -18,7 +18,7 @@ export function CasoListItem({ item, onPress }: CasoListItemProps) {
     >
       <View style={styles.header}>
         <Text style={styles.code}>{item.caseCode}</Text>
-        <StatusBadge status={item.status} />
+        <StatusBadge status={item.status} workflowVersion={item.workflowVersion} />
       </View>
       <Text style={styles.description} numberOfLines={2}>
         {item.description}

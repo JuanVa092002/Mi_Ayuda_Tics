@@ -19,6 +19,33 @@ import {
 } from '@/shared/contracts/solucion';
 import type { SolicitudDetailResponseDto } from '@/shared/contracts/solicitud';
 
+export type CasoEvidenceInput = {
+  uri: string;
+  mimeType?: string;
+  fileName?: string;
+};
+
+function evidenceFingerprint(evidence?: CasoEvidenceInput) {
+  return evidence?.uri ? { evidenceUri: evidence.uri } : {};
+}
+
+async function postWorkflowForm(
+  path: string,
+  token: string,
+  idempotencyKey: string,
+  fields: Record<string, string | undefined>,
+  evidence?: CasoEvidenceInput,
+): Promise<void> {
+  const formData = new FormData();
+  for (const [key, value] of Object.entries(fields)) {
+    if (value !== undefined && value !== '') formData.append(key, value);
+  }
+  if (evidence?.uri) {
+    await appendImageToFormData(formData, 'evidencia', evidence);
+  }
+  await apiFetch(path, { method: 'POST', token, formData, idempotencyKey });
+}
+
 export async function fetchCasosAsignados(token: string): Promise<CasoSummary[]> {
   const dto = await apiFetch<CasosAsignadosResponseDto>('/solicitud/asignadas', { token });
   return mapCasosAsignadosResponse(dto);
@@ -43,18 +70,28 @@ export async function iniciarAtencion(token: string, id: string): Promise<void> 
   );
 }
 
-export async function agregarActualizacion(token: string, id: string, mensaje: string): Promise<void> {
+export async function agregarActualizacion(
+  token: string,
+  id: string,
+  mensaje: string,
+  evidence?: CasoEvidenceInput,
+): Promise<void> {
   await runWithWorkflowAttempt(
     'update',
     id,
-    (idempotencyKey) =>
-      apiFetch(`/solicitud/${id}/actualizacion`, {
+    async (idempotencyKey) => {
+      if (evidence?.uri) {
+        await postWorkflowForm(`/solicitud/${id}/actualizacion`, token, idempotencyKey, { mensaje }, evidence);
+        return;
+      }
+      await apiFetch(`/solicitud/${id}/actualizacion`, {
         method: 'POST',
         token,
         body: { mensaje },
         idempotencyKey,
-      }),
-    { mensaje },
+      });
+    },
+    { mensaje, ...evidenceFingerprint(evidence) },
   );
 }
 
@@ -76,28 +113,46 @@ export async function solicitarInformacion(token: string, id: string, mensaje: s
 export async function registrarSolucionParcial(
   token: string,
   id: string,
-  payload: { queSeHizo: string; queFalta: string; siguienteAccion: string; fechaEsperada?: string },
+  payload: {
+    queSeHizo: string;
+    queFalta: string;
+    siguienteAccion: string;
+    fechaEsperada?: string;
+    evidence?: CasoEvidenceInput;
+  },
 ): Promise<void> {
+  const { evidence, ...body } = payload;
   await runWithWorkflowAttempt(
     'partial_solution',
     id,
-    (idempotencyKey) =>
-      apiFetch(`/solicitud/${id}/solucionParcial`, { method: 'POST', token, body: payload, idempotencyKey }),
-    payload,
+    async (idempotencyKey) => {
+      if (evidence?.uri) {
+        await postWorkflowForm(`/solicitud/${id}/solucionParcial`, token, idempotencyKey, body, evidence);
+        return;
+      }
+      await apiFetch(`/solicitud/${id}/solucionParcial`, { method: 'POST', token, body, idempotencyKey });
+    },
+    { ...body, ...evidenceFingerprint(evidence) },
   );
 }
 
 export async function registrarSolucionTotal(
   token: string,
   id: string,
-  payload: { queSeHizo: string; causaIdentificada?: string },
+  payload: { queSeHizo: string; causaIdentificada?: string; evidence?: CasoEvidenceInput },
 ): Promise<void> {
+  const { evidence, ...body } = payload;
   await runWithWorkflowAttempt(
     'resolve',
     id,
-    (idempotencyKey) =>
-      apiFetch(`/solicitud/${id}/solucionTotal`, { method: 'POST', token, body: payload, idempotencyKey }),
-    payload,
+    async (idempotencyKey) => {
+      if (evidence?.uri) {
+        await postWorkflowForm(`/solicitud/${id}/solucionTotal`, token, idempotencyKey, body, evidence);
+        return;
+      }
+      await apiFetch(`/solicitud/${id}/solucionTotal`, { method: 'POST', token, body, idempotencyKey });
+    },
+    { ...body, ...evidenceFingerprint(evidence) },
   );
 }
 

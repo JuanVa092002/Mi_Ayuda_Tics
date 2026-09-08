@@ -31,6 +31,26 @@ describe('client hardening helpers', () => {
     expect(getApiErrorMessage(error)).toBe('Credenciales inválidas')
   })
 
+  it('RequireRole permite al líder entrar a sus rutas', () => {
+    mockUseAuth.mockReturnValue({
+      user: { rol: 'lider' },
+      loading: false,
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/adminSolicitud']}>
+        <Routes>
+          <Route element={<RequireRole roles={['lider']} />}>
+            <Route path="/adminSolicitud" element={<div>Cola de nuevos</div>} />
+          </Route>
+          <Route path="/funcionario" element={<div>Funcionario home</div>} />
+        </Routes>
+      </MemoryRouter>
+    )
+
+    expect(screen.getByText('Cola de nuevos')).toBeInTheDocument()
+  })
+
   it('RequireRole redirige si el rol no coincide', () => {
     mockUseAuth.mockReturnValue({
       user: { rol: 'funcionario' },

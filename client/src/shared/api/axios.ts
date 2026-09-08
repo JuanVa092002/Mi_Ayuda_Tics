@@ -1,6 +1,7 @@
 import axios, { type AxiosError } from 'axios'
 import { getApiErrorMessage, notifyUnauthorized } from './apiError'
 import { clearAllWorkflowAttemptKeys } from '@/features/tickets/api/workflow-idempotency'
+import { clearSessionToken, getSessionToken } from './sessionToken'
 
 function resolveApiBaseUrl(): string {
   const raw = (import.meta.env.VITE_BACKEND_URL ||
@@ -31,11 +32,20 @@ const axiosConfig = axios.create({
 })
 // No axios retry adapter. Workflow v2 mutations must not auto-retry.
 
+axiosConfig.interceptors.request.use(config => {
+  const token = getSessionToken()
+  if (token && !config.headers.Authorization) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
 axiosConfig.interceptors.response.use(
   response => response,
   (error: AxiosError) => {
     if (shouldClearSessionOnUnauthorized(error.config?.url, error.response?.status)) {
       clearAllWorkflowAttemptKeys()
+      clearSessionToken()
       notifyUnauthorized()
     }
 

@@ -34,6 +34,8 @@ export function parseAllowedOrigins(): string[] {
   const legacyOrigin = process.env.LEGACY_RENDER_FRONTEND_URL?.trim()
   if (legacyOrigin) origins.add(legacyOrigin)
 
+  origins.add(WEB_PROD_ORIGIN)
+
   return [...origins]
 }
 
@@ -51,7 +53,7 @@ export function createCorsOriginValidator(allowedProdOrigins: string[]) {
       return
     }
 
-    if (process.env.NODE_ENV !== 'production' && isLocalDevOrigin(origin)) {
+    if (isLocalDevOrigin(origin)) {
       callback(null, true)
       return
     }

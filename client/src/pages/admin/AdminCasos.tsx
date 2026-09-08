@@ -1,6 +1,5 @@
 import { useState, useEffect, type FormEvent } from 'react'
-import AppLayout from '@/app/layouts/AppLayout'
-import AdminLayout from '@/app/layouts/AdminLayout'
+import LeaderLayout from '@/app/layouts/LeaderLayout'
 import { getCasos, createCaso, updateCaso } from '@/features/tickets'
 import { toast } from 'react-toastify'
 import type { TipoCaso } from '@/shared/types'
@@ -79,8 +78,7 @@ export default function AdminCasos() {
   const currentItems = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
 
   return (
-    <AppLayout>
-      <AdminLayout>
+    <LeaderLayout>
           <main className="p-4 sm:p-8 animate-in fade-in duration-700">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
               
@@ -247,7 +245,6 @@ export default function AdminCasos() {
 
             </div>
           </main>
-      </AdminLayout>
-    </AppLayout>
+    </LeaderLayout>
   )
 }

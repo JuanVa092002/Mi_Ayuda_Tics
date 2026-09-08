@@ -33,6 +33,20 @@ test('SPA deep link no devuelve 404 de plataforma', async ({ page }) => {
   await expect(page.locator('#root')).toBeVisible()
 })
 
+test('preflight desde Vite local permite el origen de desarrollo', async ({ request }) => {
+  const response = await request.fetch(`${backendUrl}/api/auth/login`, {
+    method: 'OPTIONS',
+    headers: {
+      Origin: 'http://127.0.0.1:5173',
+      'Access-Control-Request-Method': 'POST',
+      'Access-Control-Request-Headers': 'content-type',
+    },
+  })
+  expect([200, 204]).toContain(response.status())
+  expect(response.headers()['access-control-allow-origin']).toBe('http://127.0.0.1:5173')
+  expect(response.headers()['access-control-allow-credentials']).toBe('true')
+})
+
 test('preflight de asignarTecnico permite Idempotency-Key', async ({ request }) => {
   const response = await request.fetch(`${backendUrl}/api/solicitud/preflight-probe/asignarTecnico`, {
     method: 'OPTIONS',

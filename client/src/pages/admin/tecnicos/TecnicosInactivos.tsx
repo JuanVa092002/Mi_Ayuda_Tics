@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
-import AppLayout from '@/app/layouts/AppLayout'
-import AdminLayout from '@/app/layouts/AdminLayout'
+import LeaderLayout from '@/app/layouts/LeaderLayout'
 import { getTecnicosInactivos, reactivarTecnico } from '@/features/users'
 import { toast } from 'react-toastify'
 import AdminTecnicosLayout from '@/app/layouts/AdminTecnicosLayout'
@@ -63,8 +62,7 @@ export default function TecnicosInactivos() {
   }
 
   return (
-    <AppLayout>
-      <AdminLayout>
+    <LeaderLayout>
         <AdminTecnicosLayout>
           <main className="p-4 sm:p-8">
             <section className="solid-card rounded-3xl overflow-hidden flex flex-col h-full animate-in slide-in-from-right-4 duration-500">
@@ -173,7 +171,6 @@ export default function TecnicosInactivos() {
             </section>
           </main>
         </AdminTecnicosLayout>
-      </AdminLayout>
-    </AppLayout>
+    </LeaderLayout>
   )
 }

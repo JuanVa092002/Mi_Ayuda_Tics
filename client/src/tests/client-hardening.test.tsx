@@ -41,6 +41,13 @@ describe('client hardening helpers', () => {
     expect(getApiErrorMessage(conflict)).toBe('Solo se pueden asignar solicitudes en estado solicitado')
   })
 
+  it('getApiErrorMessage no confunde un fallo de red con credenciales', () => {
+    const offline = new AxiosError('Network Error')
+    expect(getApiErrorMessage(offline)).toBe(
+      'Sin conexión con el servidor. Verifica tu red e intenta de nuevo.',
+    )
+  })
+
   it('401 de verify-token no cierra sesión; 401 de mutación sí', () => {
     expect(shouldClearSessionOnUnauthorized('auth/verify-token', 401)).toBe(false)
     expect(shouldClearSessionOnUnauthorized('/solicitud/s1/asignarTecnico', 401)).toBe(true)

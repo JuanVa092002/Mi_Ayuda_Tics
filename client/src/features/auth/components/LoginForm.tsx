@@ -5,6 +5,7 @@ import { isAxiosError } from 'axios'
 import { login as loginService, useAuth } from '@/features/auth'
 import { getRoleHome } from '@/app/router/roleHome'
 import { ErrorMessage } from '@/shared/ui'
+import { getApiErrorMessage } from '@/shared/api/apiError'
 import type { LoginCredentials } from '@/shared/types'
 import logoSena from '@/assets/logoSena.png'
 
@@ -32,14 +33,12 @@ export default function LoginForm(): ReactNode {
       setIsAuthenticated(true)
       navigate(getRoleHome(response.dataUser.user.rol))
     } catch (error) {
-      let msg = 'Correo o contraseña incorrectos.'
-      if (isAxiosError<{ message?: string; errors?: { message: string }[] }>(error)) {
-        msg =
-          error.response?.data?.errors?.[0]?.message ||
-          error.response?.data?.message ||
-          msg
-      }
-      setServerError(msg)
+      const isUnauthorized = isAxiosError(error) && error.response?.status === 401
+      setServerError(
+        isUnauthorized
+          ? 'Correo o contraseña incorrectos.'
+          : getApiErrorMessage(error)
+      )
       setUser(null)
       setIsAuthenticated(false)
     } finally {

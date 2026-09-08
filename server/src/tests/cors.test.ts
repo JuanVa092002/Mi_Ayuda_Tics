@@ -42,6 +42,25 @@ describe('CORS allowlist', () => {
     )
   })
 
+  it('permite localhost y 127.0.0.1 aunque NODE_ENV sea production', async () => {
+    const previous = process.env.NODE_ENV
+    process.env.NODE_ENV = 'production'
+    try {
+      const validator = createCorsOriginValidator([WEB_PROD_ORIGIN])
+      for (const origin of ['http://localhost:5173', 'http://127.0.0.1:5173']) {
+        const allowed = await new Promise<boolean>((resolve, reject) => {
+          validator(origin, (err, allow) => {
+            if (err) reject(err)
+            else resolve(Boolean(allow))
+          })
+        })
+        expect(allowed).toBe(true)
+      }
+    } finally {
+      process.env.NODE_ENV = previous
+    }
+  })
+
   it('permite el origen web de producción', async () => {
     const validator = createCorsOriginValidator([WEB_PROD_ORIGIN])
     const allowed = await new Promise<boolean>((resolve, reject) => {
@@ -65,6 +84,18 @@ describe('CORS allowlist', () => {
 })
 
 describe('OPTIONS /api/solicitud/:id/asignarTecnico', () => {
+  it('permite Idempotency-Key desde Vite local contra la API de producción', async () => {
+    const response = await request(corsApp())
+      .options(ASSIGN_PATH)
+      .set('Origin', 'http://127.0.0.1:5173')
+      .set('Access-Control-Request-Method', 'POST')
+      .set('Access-Control-Request-Headers', 'content-type')
+
+    expect([200, 204]).toContain(response.status)
+    expect(response.headers['access-control-allow-origin']).toBe('http://127.0.0.1:5173')
+    expect(response.headers['access-control-allow-credentials']).toBe('true')
+  })
+
   it('permite Idempotency-Key desde el origen web de producción', async () => {
     const response = await request(corsApp())
       .options(ASSIGN_PATH)

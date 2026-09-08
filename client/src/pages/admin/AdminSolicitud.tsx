@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import { asignarSolicitudTecnico, cancelarSolicitud, getSolicitudesPendientes, WorkflowManualRetryNotice } from '@/features/tickets'
 import { getTecnicosAprobados } from '@/features/users'
-import AppLayout from '@/app/layouts/AppLayout'
-import AdminLayout from '@/app/layouts/AdminLayout'
+import LeaderLayout from '@/app/layouts/LeaderLayout'
 import { toast } from 'react-toastify'
 import { getApiErrorMessage } from '@/shared/api/apiError'
 import { classifyWorkflowMutationFailure } from '@/features/tickets/api/workflow-retry-policy'
@@ -15,7 +14,7 @@ import {
   validateRequiredMotivo,
   workflowLabel,
 } from '@/features/tickets/leader-inbox'
-import AdminSolicitudLayout from '@/app/layouts/AdminSolicitudLayout'
+import { LeaderKpiCard, LeaderStatusPill } from '@/shared/ui'
 import type { Solicitud, User } from '@/shared/types'
 
 export default function AdminSolicitud() {
@@ -140,24 +139,29 @@ export default function AdminSolicitud() {
   const totalItems = filteredData.length
   const totalPages = Math.ceil(totalItems / itemsPerPage)
   const currentItems = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+  const nuevosV2 = solicitudes.filter((row) => row.estado === 'nuevo').length
+  const solicitadosV1 = solicitudes.filter((row) => row.estado === 'solicitado').length
 
   return (
-    <AppLayout>
-      <AdminLayout>
-        <AdminSolicitudLayout>
-          <main className="p-8 animate-in fade-in duration-700">
-            <section className="premium-card rounded-3xl overflow-hidden flex flex-col h-full shadow-xl">
-              <div className="p-6 sm:p-8 border-b hairline-border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 bg-white">
+    <LeaderLayout>
+          <main className="p-4 sm:p-8">
+            <div className="mb-6 grid gap-4 sm:grid-cols-3">
+              <LeaderKpiCard label="Pendientes" value={solicitudes.length} hint="Listos para asignar" icon="inbox" tone="navy" />
+              <LeaderKpiCard label="Nuevos v2" value={nuevosV2} hint="Workflow actual" icon="bolt" tone="green" />
+              <LeaderKpiCard label="Solicitados v1" value={solicitadosV1} hint="Cola legacy" icon="history" tone="muted" />
+            </div>
+            <section className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-[0_8px_24px_rgba(4,50,77,0.04)]">
+              <div className="flex flex-col gap-6 border-b border-slate-100 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
                 <div>
-                  <h2 className="text-2xl font-bold text-on-surface tracking-tight">Cola de tickets nuevos</h2>
-                  <p className="text-sm text-on-surface-variant font-medium mt-1">
+                  <h2 className="text-2xl font-black tracking-tight text-azul-sena">Cola de nuevos</h2>
+                  <p className="mt-1 text-sm font-medium text-slate-500">
                     Tickets v1 en solicitado y v2 en nuevo, listos para asignar.
                   </p>
                 </div>
-                <div className="relative w-full sm:w-80 group">
-                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/60 text-[18px]">search</span>
+                <div className="relative w-full sm:w-80">
+                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[18px] text-slate-400">search</span>
                   <input
-                    className="w-full pl-11 pr-4 py-3 solid-input rounded-2xl text-xs font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container/10 transition-all shadow-sm"
+                    className="w-full rounded-full border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-xs font-semibold text-on-surface focus:border-verde-sena focus:bg-white focus:outline-none"
                     placeholder="Filtrar por ticket, detalle o funcionario..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -196,8 +200,11 @@ export default function AdminSolicitud() {
                               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-6">
                                 ID: {row.codigoCaso || row._id.slice(-6)}
                               </span>
-                              <span className="text-[10px] font-black uppercase tracking-widest pl-6 text-slate-500">
-                                {workflowLabel(row.workflowVersion)} · {row.displayStatus || row.estado}
+                              <span className="pl-6">
+                                <LeaderStatusPill estado={row.estado} label={row.displayStatus || row.estado} />
+                                <span className="ml-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                                  {workflowLabel(row.workflowVersion)}
+                                </span>
                               </span>
                             </div>
                           </td>
@@ -236,7 +243,7 @@ export default function AdminSolicitud() {
                               type="button"
                               disabled={loadingTecnicos}
                               onClick={() => void handleShareClick(row)}
-                              className="group inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-100 hover:bg-emerald-500 hover:text-white transition-all shadow-sm active:scale-95 disabled:opacity-50"
+                              className="inline-flex items-center gap-2 rounded-full bg-azul-sena px-4 py-2 text-[11px] font-black uppercase tracking-widest text-white transition-all hover:bg-primary disabled:opacity-50"
                             >
                               <span className="text-[11px] font-black uppercase tracking-widest">Asignar</span>
                               <span className="material-symbols-outlined !text-[16px] group-hover:rotate-12 transition-transform">person_add</span>
@@ -249,7 +256,7 @@ export default function AdminSolicitud() {
                                   setCancelTarget(row)
                                   setCancelMotivo('')
                                 }}
-                                className="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-red-50 text-red-700 border border-red-100 text-[11px] font-black uppercase tracking-widest"
+                                className="inline-flex items-center gap-1 rounded-full bg-red-50 px-3 py-2 text-[11px] font-black uppercase tracking-widest text-red-700"
                               >
                                 Cancelar
                               </button>
@@ -272,15 +279,17 @@ export default function AdminSolicitud() {
                 </table>
               </div>
 
-              <div className="pagination-footer">
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Carga Actual — Página {currentPage}</span>
-                  <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{totalItems} solicitudes pendientes</span>
-                </div>
+              <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/70 px-6 py-5">
+                <span className="text-sm font-medium text-slate-500">
+                  Mostrando {totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1} a {Math.min(currentPage * itemsPerPage, totalItems)} de {totalItems} tickets
+                </span>
                 <div className="flex items-center gap-2">
                   <button type="button" onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="pagination-btn">
                     <span className="material-symbols-outlined">chevron_left</span>
                   </button>
+                  <span className="flex h-9 min-w-9 items-center justify-center rounded-xl bg-azul-sena text-sm font-bold text-white">
+                    {currentPage}
+                  </span>
                   <button type="button" onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0} className="pagination-btn">
                     <span className="material-symbols-outlined">chevron_right</span>
                   </button>
@@ -411,8 +420,6 @@ export default function AdminSolicitud() {
               </div>
             </div>
           ) : null}
-        </AdminSolicitudLayout>
-      </AdminLayout>
-    </AppLayout>
+    </LeaderLayout>
   )
 }

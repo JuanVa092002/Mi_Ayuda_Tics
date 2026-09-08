@@ -1,29 +1,28 @@
 import type { ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
+
+const tabs = [
+  { to: '/adminTecnicos', label: 'Por aprobar' },
+  { to: '/tecnicosActivos', label: 'Activos' },
+  { to: '/tecnicosInactivos', label: 'Inactivos' },
+] as const
 
 export default function NavTecnicos(): ReactNode {
   return (
-    <div className="pl-8 pt-8">
-      <ul className="flex text-lg gap-8">
-        <Link
-          to="/adminTecnicos"
-          className="font-medium border-b-2  border-verde-sena text-verde-sena hover:text-azul-sena hover:border-azul-sena transition-all"
+    <div className="flex flex-wrap gap-2">
+      {tabs.map((tab) => (
+        <NavLink
+          key={tab.to}
+          to={tab.to}
+          className={({ isActive }) =>
+            `rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] transition-colors ${
+              isActive ? 'bg-azul-sena text-white' : 'bg-white text-slate-500 ring-1 ring-slate-200 hover:text-azul-sena'
+            }`
+          }
         >
-          <li> Tecnicos por aprobar </li>
-        </Link>
-        <Link
-          to="/tecnicosActivos"
-          className="font-medium border-b-2  border-verde-sena text-verde-sena hover:text-azul-sena hover:border-azul-sena transition-all"
-        >
-          <li> Tecnicos activos </li>
-        </Link>
-        <Link
-          to="/tecnicosInactivos"
-          className="font-medium border-b-2  border-verde-sena text-verde-sena hover:text-azul-sena hover:border-azul-sena transition-all"
-        >
-          <li> Tecnicos inactivos </li>
-        </Link>
-      </ul>
+          {tab.label}
+        </NavLink>
+      ))}
     </div>
   )
 }

@@ -8,7 +8,9 @@ interface AdminTecnicosLayoutProps {
 export default function AdminTecnicosLayout({ children }: AdminTecnicosLayoutProps): ReactNode {
   return (
     <div className="w-full">
-      <NavTecnicos />
+      <div className="px-4 pt-6 sm:px-8">
+        <NavTecnicos />
+      </div>
       <div className="w-full">{children}</div>
     </div>
   )

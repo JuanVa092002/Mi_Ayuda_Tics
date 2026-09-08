@@ -114,7 +114,9 @@ export interface RegisterCredentials extends LoginCredentials {
 
 export interface LoginResponse {
   dataUser: {
+    token?: string
     user: User
+    expiresIn?: number
   }
 }
 

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
-import AppLayout from '@/app/layouts/AppLayout'
-import AdminLayout from '@/app/layouts/AdminLayout'
+import LeaderLayout from '@/app/layouts/LeaderLayout'
 import {
   getAmbientes,
   createAmbiente,
@@ -92,8 +91,7 @@ export default function AdminAmbientes() {
   }
 
   return (
-    <AppLayout>
-      <AdminLayout>
+    <LeaderLayout>
         <main className="p-4 sm:p-8 flex flex-col lg:flex-row gap-8 animate-in fade-in duration-700">
           
           {/* Left Column: Form Section */}
@@ -271,7 +269,6 @@ export default function AdminAmbientes() {
             </section>
           </div>
         </main>
-      </AdminLayout>
-    </AppLayout>
+    </LeaderLayout>
   )
 }

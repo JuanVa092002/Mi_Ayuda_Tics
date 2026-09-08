@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
-import AppLayout from '@/app/layouts/AppLayout'
-import AdminLayout from '@/app/layouts/AdminLayout'
+import LeaderLayout from '@/app/layouts/LeaderLayout'
 import {
   getTecnicosPendientes,
   aprobarTecnico,
@@ -63,15 +62,14 @@ export default function AdminTecnicos() {
   const currentItems = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
 
   return (
-    <AppLayout>
-      <AdminLayout>
+    <LeaderLayout>
         <AdminTecnicosLayout>
           <main className="p-8 animate-in fade-in duration-700">
             <section className="premium-card rounded-3xl overflow-hidden flex flex-col h-full shadow-xl">
               {/* Header */}
               <div className="p-6 sm:p-8 border-b hairline-border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 bg-white">
                 <div>
-                  <h2 className="text-2xl font-bold text-on-surface tracking-tight">Gestión de Talento Humano</h2>
+                  <h2 className="text-2xl font-black tracking-tight text-azul-sena">Técnicos por aprobar</h2>
                   <p className="text-sm text-on-surface-variant font-medium mt-1">Revisión y acreditación de nuevos especialistas técnicos.</p>
                 </div>
                 <div className="relative w-full sm:w-80 group">
@@ -181,7 +179,6 @@ export default function AdminTecnicos() {
             </section>
           </main>
         </AdminTecnicosLayout>
-      </AdminLayout>
-    </AppLayout>
+    </LeaderLayout>
   )
 }

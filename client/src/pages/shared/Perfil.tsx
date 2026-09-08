@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import AppLayout from '@/app/layouts/AppLayout'
-import AdminLayout from '@/app/layouts/AdminLayout'
+import LeaderLayout from '@/app/layouts/LeaderLayout'
 import { useAuth } from '@/features/auth'
 import { resolveUserPhotoUrl, userInitials } from '@/shared/media/user-photo'
 
@@ -9,9 +9,9 @@ export default function Perfil(): ReactNode {
 
   const getRoleBadgeStyles = (rol: string | undefined): string => {
     const r = rol?.toUpperCase()
-    if (r === 'LÍDER' || r === 'LIDER' || r === 'ADMINISTRADOR') return 'bg-[#F5F3FF] text-[#5B21B6]'
-    if (r === 'TÉCNICO' || r === 'TECNICO') return 'bg-[#EFF6FF] text-[#1D4ED8]'
-    return 'bg-[#F0FDF4] text-[#166534]'
+    if (r === 'LÍDER' || r === 'LIDER' || r === 'ADMINISTRADOR') return 'bg-[#E8EEF2] text-azul-sena'
+    if (r === 'TÉCNICO' || r === 'TECNICO') return 'bg-[#E8F5E0] text-[#226d00]'
+    return 'bg-[#E8F5E0] text-[#166534]'
   }
 
   const getInitials = (name: string | undefined): string => {
@@ -72,7 +72,7 @@ export default function Perfil(): ReactNode {
             </div>
 
             <p className="mt-10 text-[11px] text-[#A0AABF] font-bold uppercase tracking-[0.1em] text-center">
-              Información corporativa AyudaTIC © 2026
+              MIAYUDATICS · CTPI
             </p>
           </div>
         </div>
@@ -80,13 +80,5 @@ export default function Perfil(): ReactNode {
     </main>
   )
 
-  return (
-    <AppLayout>
-      {isLider ? (
-        <AdminLayout>{Content}</AdminLayout>
-      ) : (
-        Content
-      )}
-    </AppLayout>
-  )
+  return isLider ? <LeaderLayout>{Content}</LeaderLayout> : <AppLayout>{Content}</AppLayout>
 }

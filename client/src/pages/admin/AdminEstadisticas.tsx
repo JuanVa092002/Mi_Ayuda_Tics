@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
-import AppLayout from '@/app/layouts/AppLayout'
-import AdminLayout from '@/app/layouts/AdminLayout'
+import LeaderLayout from '@/app/layouts/LeaderLayout'
 import {
   getSolicitudesPorAmbiente,
   getSolicitudesPorMes,
@@ -79,22 +78,8 @@ export default function AdminEstadisticas() {
       {
         label: `Solicitudes por Ambiente (${year})`,
         data: ambientesData ? ambientesData.data.map(item => item.cantidad) : [],
-        backgroundColor: [
-          'rgba(255, 99, 132, 0.2)',
-          'rgba(54, 162, 235, 0.2)',
-          'rgba(255, 206, 86, 0.2)',
-          'rgba(75, 192, 192, 0.2)',
-          'rgba(153, 102, 255, 0.2)',
-          'rgba(255, 159, 64, 0.2)',
-        ],
-        borderColor: [
-          'rgba(255, 99, 132, 1)',
-          'rgba(54, 162, 235, 1)',
-          'rgba(255, 206, 86, 1)',
-          'rgba(75, 192, 192, 1)',
-          'rgba(153, 102, 255, 1)',
-          'rgba(255, 159, 64, 1)',
-        ],
+        backgroundColor: ['#04324D', '#39A900', '#226d00', '#E8EEF2', '#002b40', '#7CB518'],
+        borderColor: ['#04324D', '#39A900', '#226d00', '#E8EEF2', '#002b40', '#7CB518'],
         borderWidth: 1,
       },
     ],
@@ -106,19 +91,18 @@ export default function AdminEstadisticas() {
       {
         label: `Solicitudes por Mes (${year})`,
         data: mesesData ? mesesData.data.map(item => item.cantidad) : [],
-        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-        borderColor: 'rgba(75, 192, 192, 1)',
+        backgroundColor: 'rgba(57, 169, 0, 0.18)',
+        borderColor: '#04324D',
         borderWidth: 1,
       },
     ],
   }
 
   return (
-    <AppLayout>
-      <AdminLayout>
-        <main className="p-6 sm:p-8 animate-in fade-in duration-500">
-          <section className="solid-card rounded-3xl p-6 sm:p-8">
-            <h1 className="text-2xl font-bold text-on-surface tracking-tight">Estadísticas de Solicitudes</h1>
+    <LeaderLayout>
+        <main className="p-4 sm:p-8">
+          <section className="rounded-2xl border border-slate-100 bg-white p-6 shadow-[0_8px_24px_rgba(4,50,77,0.04)] sm:p-8">
+            <h1 className="text-2xl font-black tracking-tight text-azul-sena">Estadísticas</h1>
             <p className="text-sm text-on-surface-variant mt-1 mb-8">Distribución por ambiente y mes.</p>
 
             <div className="mb-6">
@@ -171,7 +155,6 @@ export default function AdminEstadisticas() {
             </div>
           </section>
         </main>
-      </AdminLayout>
-    </AppLayout>
+    </LeaderLayout>
   )
 }

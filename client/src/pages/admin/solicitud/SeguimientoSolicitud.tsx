@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import AppLayout from '@/app/layouts/AppLayout'
-import AdminLayout from '@/app/layouts/AdminLayout'
-import AdminSolicitudLayout from '@/app/layouts/AdminSolicitudLayout'
+import LeaderLayout from '@/app/layouts/LeaderLayout'
 import { historialSolicitudesLider, reasignarTecnico, cancelarSolicitud, WorkflowManualRetryNotice, LeaderTicketDrawer } from '@/features/tickets'
 import { classifyWorkflowMutationFailure } from '@/features/tickets/api/workflow-retry-policy'
 import { clearWorkflowAttemptKey } from '@/features/tickets/api/workflow-idempotency'
@@ -10,7 +8,6 @@ import {
   canLeaderReassign,
   filterLeaderHistory,
   formatSolicitudFecha,
-  leaderStatusTone,
   solutionPreview,
   type LeaderHistoryFilter,
   validateRequiredMotivo,
@@ -19,6 +16,7 @@ import {
 import { getTecnicosAprobados } from '@/features/users'
 import { getApiErrorMessage } from '@/shared/api/apiError'
 import { toast } from 'react-toastify'
+import { LeaderKpiCard, LeaderStatusPill } from '@/shared/ui'
 import type { Solicitud, User } from '@/shared/types'
 
 export default function SeguimientoSolicitud() {
@@ -81,38 +79,9 @@ export default function SeguimientoSolicitud() {
     if (currentPage > 1) setCurrentPage(currentPage - 1)
   }
 
-  const getStatusBadge = (solicitud: Solicitud) => {
-    const estado = solicitud.estado
-    const label = solicitud.displayStatus
-    const tone = leaderStatusTone(estado)
-    const baseClasses = "inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold border hairline-border transition-all"
-    if (tone === 'inbox') {
-      return <span className={`${baseClasses} bg-blue-50 text-blue-700 border-blue-100`}>
-        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2"></span>{label || 'Enviada'}
-      </span>
-    }
-    if (tone === 'assigned') {
-      return <span className={`${baseClasses} bg-amber-50 text-amber-700 border-amber-100`}>
-        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mr-2"></span>{label || 'Asignado'}
-      </span>
-    }
-    if (tone === 'progress') {
-      return <span className={`${baseClasses} bg-orange-50 text-orange-700 border-orange-100`}>
-        <span className="w-1.5 h-1.5 rounded-full bg-orange-500 mr-2"></span>{label || 'En Proceso'}
-      </span>
-    }
-    if (tone === 'cancelled') {
-      return <span className={`${baseClasses} bg-red-50 text-red-700 border-red-100`}>
-        <span className="material-symbols-outlined !text-[12px] mr-1">cancel</span>{label || 'Cancelado'}
-      </span>
-    }
-    if (tone === 'done') {
-      return <span className={`${baseClasses} bg-green-50 text-green-700 border-green-100`}>
-        <span className="material-symbols-outlined !text-[12px] mr-1">verified</span>{label || 'Completado'}
-      </span>
-    }
-    return <span className={`${baseClasses} bg-slate-100 text-slate-600 border-slate-200`}>{label || estado}</span>
-  }
+  const getStatusBadge = (solicitud: Solicitud) => (
+    <LeaderStatusPill estado={solicitud.estado} label={solicitud.displayStatus || solicitud.estado} />
+  )
 
   const openReassign = async (solicitud: Solicitud): Promise<void> => {
     try {
@@ -180,18 +149,21 @@ export default function SeguimientoSolicitud() {
   }
 
   return (
-    <AppLayout>
-      <AdminLayout>
-        <AdminSolicitudLayout>
+    <LeaderLayout>
           <main className="p-4 sm:p-8">
-            <section className="solid-card rounded-3xl overflow-hidden flex flex-col h-full animate-in slide-in-from-right-4 duration-500">
-              <div className="p-6 sm:p-8 border-b hairline-border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 bg-white">
+            <div className="mb-6 grid gap-4 sm:grid-cols-3">
+              <LeaderKpiCard label="Historial" value={solicitudes.length} hint="Todos los casos" icon="timeline" tone="navy" />
+              <LeaderKpiCard label="Activos" value={filterLeaderHistory(solicitudes, 'activos').length} hint="En atención" icon="progress_activity" tone="muted" />
+              <LeaderKpiCard label="Cerrados" value={filterLeaderHistory(solicitudes, 'cerrados').length} hint="Finalizados o cancelados" icon="verified" tone="green" />
+            </div>
+            <section className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-[0_8px_24px_rgba(4,50,77,0.04)]">
+              <div className="flex flex-col gap-6 border-b border-slate-100 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
                 <div>
-                  <h2 className="text-xl font-bold text-on-surface">Seguimiento de Solicitudes</h2>
-                  <p className="text-sm text-on-surface-variant font-medium mt-1">Historial completo v1 y v2, con línea de tiempo por caso.</p>
+                  <h2 className="text-xl font-black text-azul-sena">Seguimiento</h2>
+                  <p className="mt-1 text-sm font-medium text-slate-500">Historial completo v1 y v2, con línea de tiempo por caso.</p>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                  <div className="flex rounded-2xl border hairline-border border-slate-200 overflow-hidden">
+                <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+                  <div className="flex overflow-hidden rounded-full border border-slate-200">
                     {([
                       { id: 'all', label: 'Todos' },
                       { id: 'activos', label: 'Activos' },
@@ -200,8 +172,8 @@ export default function SeguimientoSolicitud() {
                       <button
                         key={option.id}
                         type="button"
-                        className={`px-3 py-2 text-[11px] font-black uppercase tracking-widest ${
-                          historyFilter === option.id ? 'bg-primary-container text-white' : 'bg-white text-slate-500'
+                        className={`px-4 py-2 text-[11px] font-black uppercase tracking-widest ${
+                          historyFilter === option.id ? 'bg-azul-sena text-white' : 'bg-white text-slate-500'
                         }`}
                         onClick={() => setHistoryFilter(option.id)}
                       >
@@ -209,10 +181,10 @@ export default function SeguimientoSolicitud() {
                       </button>
                     ))}
                   </div>
-                  <div className="relative w-full sm:w-72 group">
-                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/60 text-[18px] group-focus-within:text-primary-container transition-colors">search</span>
+                  <div className="relative w-full sm:w-72">
+                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[18px] text-slate-400">search</span>
                     <input
-                      className="w-full pl-11 pr-4 py-2.5 solid-input rounded-2xl text-xs font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container/10 transition-all placeholder:text-slate-400"
+                      className="w-full rounded-full border border-slate-200 bg-slate-50 py-2.5 pl-11 pr-4 text-xs font-semibold text-on-surface focus:border-verde-sena focus:bg-white focus:outline-none"
                       placeholder="Buscar por código de caso..."
                       type="text"
                       value={searchTerm}
@@ -381,8 +353,6 @@ export default function SeguimientoSolicitud() {
             </div>
           ) : null}
           {detailId ? <LeaderTicketDrawer solicitudId={detailId} onClose={() => setDetailId(null)} /> : null}
-        </AdminSolicitudLayout>
-      </AdminLayout>
-    </AppLayout>
+    </LeaderLayout>
   )
 }

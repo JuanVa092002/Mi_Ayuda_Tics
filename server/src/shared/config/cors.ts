@@ -46,6 +46,25 @@ export function isLocalDevOrigin(origin: string): boolean {
   )
 }
 
+export function originIsAllowed(
+  origin: string | undefined,
+  allowedProdOrigins: string[]
+): origin is string {
+  if (!origin) return false
+  return isLocalDevOrigin(origin) || allowedProdOrigins.includes(origin)
+}
+
+/** CORS headers for public unauthenticated routes that must never fail closed. */
+export function corsHeaderMap(origin: string): Record<string, string> {
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Credentials': 'true',
+    'Access-Control-Allow-Methods': CORS_ALLOWED_METHODS.join(','),
+    'Access-Control-Allow-Headers': CORS_ALLOWED_HEADERS.join(','),
+    Vary: 'Origin',
+  }
+}
+
 export function createCorsOriginValidator(allowedProdOrigins: string[]) {
   return (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void): void => {
     if (!origin) {

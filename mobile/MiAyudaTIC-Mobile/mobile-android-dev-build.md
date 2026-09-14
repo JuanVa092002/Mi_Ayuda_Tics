@@ -14,7 +14,7 @@ APK hoy, Play Store después — misma arquitectura de deep links; solo cambian 
 | Componente | Estado |
 |------------|--------|
 | Flujo mobile forgot → reset → login | ✅ Operativo |
-| `assetlinks.json` en producción | ✅ `https://miayudatics.vercel.app/.well-known/assetlinks.json` → JSON |
+| `assetlinks.json` en producción | **Not verified in Phase 0.5.** A public GET of `/.well-known/assetlinks.json` returned SPA HTML because the file was not in git and Vercel rewrite served `index.html`. Local source now has a generated JSON from the debug fingerprint only; production remains stale until a client deploy. |
 | Dominio Android (`miayudatics.vercel.app`) | ✅ **verified / `always`** (dev client en Samsung SM-A307G) |
 | Intent filters HTTPS + custom scheme | ✅ En dev client instalada |
 | Parser + guards | ✅ Sin redirección al navegador |

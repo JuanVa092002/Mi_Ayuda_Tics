@@ -85,6 +85,9 @@ console.log('✓ assetlinks.json sincronizado con manifest de huellas');
 
 const documentedScripts = new Set([
   'dev',
+  'dev:emulator',
+  'open:emulator',
+  'open:physical',
   'dev:usb',
   'dev:lan',
   'adb',
@@ -111,15 +114,20 @@ for (const name of Object.keys(pkg.scripts)) {
 }
 console.log('✓ scripts alineados con MOBILE_DEV.md');
 
-if (!pkg.scripts.start?.includes('dev:usb')) {
-  console.error('✗ start debe apuntar al flujo dev:usb');
+if (!pkg.scripts.start || !/\bdev\b/.test(pkg.scripts.start)) {
+  console.error('✗ start debe apuntar al flujo diario (pnpm dev / dev:emulator)');
   process.exit(1);
 }
-for (const name of ['dev', 'dev:usb', 'dev:lan']) {
+for (const name of ['dev:usb', 'dev:lan']) {
   if (!pkg.scripts[name]?.includes('--dev-client')) {
     console.error(`✗ ${name} debe usar --dev-client`);
     process.exit(1);
   }
+}
+const emulatorLauncher = fs.readFileSync(path.join(root, 'scripts/dev-emulator.mjs'), 'utf8');
+if (!emulatorLauncher.includes('--dev-client')) {
+  console.error('✗ scripts/dev-emulator.mjs debe usar --dev-client');
+  process.exit(1);
 }
 console.log('✓ flujo dev-client en scripts de Metro');
 

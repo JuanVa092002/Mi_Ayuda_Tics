@@ -1,0 +1,32 @@
+{
+  "package_name": "com.miayudatics.mobile",
+  "domain": "miayudatics.vercel.app",
+  "updated": "2026-09-14",
+  "source": "mobile-android-dev-build.md debug fingerprint published June 2026; Play/EAS fingerprints remain pending",
+  "fingerprints": [
+    {
+      "id": "debug",
+      "label": "Android debug keystore (dev client)",
+      "status": "active",
+      "sha256": "FA:C6:17:45:DC:09:03:78:6F:B9:ED:E6:2A:96:2B:39:9F:73:48:F0:BB:6F:89:9B:83:32:66:75:91:03:3B:9C"
+    },
+    {
+      "id": "release_local",
+      "label": "Local release keystore",
+      "status": "pending",
+      "how_to_obtain": "pnpm native:build:release then pnpm fingerprint:android"
+    },
+    {
+      "id": "eas_production",
+      "label": "EAS production signing cert",
+      "status": "pending",
+      "how_to_obtain": "EAS credentials / eas credentials after a production profile build"
+    },
+    {
+      "id": "play_app_signing",
+      "label": "Play App Signing cert",
+      "status": "pending",
+      "how_to_obtain": "Play Console → App integrity → App signing certificate SHA-256"
+    }
+  ]
+}

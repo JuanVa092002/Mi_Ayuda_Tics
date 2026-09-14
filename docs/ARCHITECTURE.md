@@ -75,7 +75,7 @@ flowchart TB
 | Area | Path | Status |
 |------|------|--------|
 | Auth | `src/features/auth`, `app/(auth)/*` | Shipped |
-| Solicitudes | `src/features/tickets` (planned) | Not started |
+| Solicitudes | `src/features/tickets` | Shipped in code (funcionario create/history/detail; technician list/solution). Device E2E not yet a Phase 0.5 gate. |
 | Socket | `src/shared/realtime` (planned) | Not started |
 
 **Líder:** blocked at app layer (`lider-not-supported.tsx`) — web only.
@@ -92,7 +92,7 @@ flowchart TB
 
 **Auth extraction order:** Bearer → cookie → socket `auth.token` (`extractAuthToken.ts`).
 
-**Health:** `GET /api/health` — always HTTP 200; `degraded` if DB disconnected.
+**Health:** `GET /api/health` — unauthenticated; HTTP 200 even for a disallowed Origin (no `Access-Control-Allow-Origin` in that case). Allowed Origin receives CORS headers. `degraded` if DB disconnected. Body must not include secrets. Local code as of Phase 0.5; production Render is unverified until a deploy.
 
 **Layers:**
 

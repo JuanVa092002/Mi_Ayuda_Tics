@@ -47,7 +47,7 @@ Mobile is first-class when:
 5. **Push** — assignment and closure notifications (v3 target).
 6. **Performance** — list virtualization for técnico casos; no N+1 API on scroll.
 
-**Current gap (honest):** auth only. Quality bar for new mobile work = Stage 1 parity with web funcionario/técnico flows.
+**Current gap (honest):** mobile funcionario/técnico ticket flows exist in code; they are not “auth only.” Remaining gaps are socket/push, full native release fingerprints, and a measured cross-client E2E. Quality bar for new mobile work is production hardening of those shipped flows, not a greenfield Stage 1 rewrite.
 
 ---
 

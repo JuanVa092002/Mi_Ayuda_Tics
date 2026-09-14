@@ -15,8 +15,8 @@ Cómo volver el **código** de Render al SHA anterior a v2 **sin borrar datos**.
 
 | Rol | Git SHA | Notas |
 |-----|---------|--------|
-| Live v2 | `48a67f8f2686e186e79c6e867142eb99630ed35c` | `feat(tickets): workflow v2 historial, idempotencia y solución` |
-| Rollback | `050922c2e39453db034d237a365ba97c898f1938` | Último prod **antes** de v2. Verificado con `git log` |
+| Live v2 (historical git tag of the feature, **not verified as Render live**) | `48a67f8f2686e186e79c6e867142eb99630ed35c` | `feat(tickets): workflow v2 historial, idempotencia y solución`. Do not treat this SHA as production without a Render revision check. |
+| Rollback | `050922c2e39453db034d237a365ba97c898f1938` | Último prod **antes** de v2. Verificado with `git log` as a git object, not as current Render. |
 
 El valor `050922c2e3453…` **no existe** en el repo. Usar `e39453`, no `e3453`.
 

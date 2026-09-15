@@ -16,9 +16,9 @@ Raw JSON dumps live under `docs/security/_raw/` (gitignored).
 | Before (Phase 0 / dirty lockfile) | 55 | 0 | 25 | 26 | 4 |
 | After (this phase) | 16 | 0 | 2 | 11 | 3 |
 
-`pnpm audit --prod --audit-level high` still **exits 1**. That is expected: two **distinct** nodemailer high advisories remain. They are **accepted, not resolved**.
+`pnpm audit --prod --audit-level high` still **exits 1**. That is expected: two **distinct** nodemailer high advisories remain. They are **accepted, not resolved**. Human acceptance recorded 2026-09-15; review date **2026-10-14**.
 
-**security gate: FAIL WITH ACCEPTED RISK**
+**security gate: FAIL WITH ACCEPTED RISK** — not PASS.
 
 Do not read that as PASS. There is no pnpm override for nodemailer. The threshold was not raised.
 
@@ -182,6 +182,23 @@ Funciones expuestas al paquete: `createTransport` + `sendMail` con opciones estr
 Mitigación actual: no usar `raw`; path productivo Brevo REST; SMTP es fallback. No hay sandbox `disableFileAccess` porque no se usa `raw`.
 
 Riesgo residual: (A) nulo mientras no se añada `raw`; (B) DoS de parser si el fallback SMTP procesa un `to` malicioso. Owner: backend. Revisión: **2026-10-14**. No marcado resuelto.
+
+### Human acceptance (2026-09-15)
+
+Human owner accepted this risk **temporarily**. Conditions recorded:
+
+```text
+Paquete afectado: nodemailer 8.0.11
+Advisories: 2
+Runtime path: sendViaSmtp()
+Production preferred path: Brevo REST
+Raw sendMail path: no alcanzable según auditoría actual
+Owner: backend
+Fecha de revisión: 2026-10-14
+Estado: accepted risk, no resuelto
+```
+
+Do not change `audit-level`. Do not add a nodemailer override. Do not call the security gate PASS. Do not make SMTP the primary path. If Brevo REST fails and SMTP fallback activates, record it as operational risk.
 
 ## Highs accepted (not marked resolved)
 

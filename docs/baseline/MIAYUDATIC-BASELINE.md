@@ -398,5 +398,70 @@ Confirmado: los 5 commits **no** incluyen JPEG/PNG de `server/storage`, **no** i
 6. **Requieren huella release real:** `release_local` / `eas_production` / `play_app_signing`.
 7. **Requieren credenciales E2E:** login líder, panel funcionario; journey v2 además exige tres roles + `RUN_DESTRUCTIVE_E2E` + `E2E_ENV` no prod.
 8. **Requieren aprobación humana:** aceptar el riesgo nodemailer; autorizar deploys; no iniciar Fase 1 hasta esa aprobación.
-9. **SHA local:** `ef542d7a021b4367a24151e4c072f86d084c558d`. **origin/master:** `ac5ae74206bac09d501bb420a349545e5cd7ea0e`.
+9. **SHA local (review R1–R6):** `ef542d7a021b4367a24151e4c072f86d084c558d`. Later local commits exist; see §17.
 10. **SHA Render:** no verificado.
+
+## 17. Phase 0.5 closeout (2026-09-15)
+
+Classification (human-accepted):
+
+```text
+PASS local con riesgos aceptados y producción pendiente.
+```
+
+Phase 1, observability, load testing, destructive E2E, push, and deploy were **not** started. D2 requires a **separate** human approval. Checklist: `docs/baseline/PHASE-05-DEPLOY.md`.
+
+### Local (this branch)
+
+| Gate | Result |
+|---|---|
+| typecheck | PASS |
+| tests | PASS (server 151, integration 12, client 59, mobile 265) |
+| build | PASS |
+| mobile validate debug | PASS |
+| health CORS tests | PASS (unit, local) |
+
+### Production pending
+
+| Item | Status |
+|---|---|
+| Render health/CORS | not deployed |
+| Vercel assetlinks JSON + Content-Type | not deployed; live GET still SPA HTML as of 2026-09-15 |
+| SHA live | unverified |
+| release fingerprint | pending |
+| workflow v2 E2E | harness only; journey not implemented and not executed |
+
+### Accepted risk
+
+| Item | Detail |
+|---|---|
+| Nodemailer | 8.0.11, **2** advisories, path `sendViaSmtp()` |
+| Preferred prod path | Brevo REST |
+| Raw sendMail | not reachable in current audit |
+| Owner | backend |
+| Review date | 2026-10-14 |
+| State | accepted risk, **not resolved** |
+| Security gate | **FAIL WITH ACCEPTED RISK** — not PASS |
+
+If Brevo REST fails and SMTP fallback activates, that is an **operational risk** (advisory B applies). Do not switch SMTP to primary. Do not raise audit threshold. Do not hide advisories with overrides.
+
+### Commits on branch vs origin/master (local, unpushed)
+
+| Commit | Subject |
+|---|---|
+| `5c64639` | fix(deps): patch reachable production highs without a nodemailer major |
+| `63b1fbd` | fix(mobile): restore android fingerprint manifest for validate |
+| `56286a8` | fix(api): apply non-throwing cors on health and accept 204 preflight |
+| `725529e` | test(e2e): skip live health cors until deploy and scaffold v2 safely |
+| `ef542d7` | docs(baseline): record phase 0.5 sha table and mobile capability drift |
+| `60841e0` | docs(baseline): separate local pass from live risk and nodemailer counts |
+| `6de33af` | fix(mobile): validate fingerprint hex and warn when release is pending |
+| `037a424` | test(e2e): complete v2 harness without running the journey |
+
+HEAD after the docs closeout commit is recorded in git log. origin/master remains `ac5ae74206bac09d501bb420a349545e5cd7ea0e`.
+
+WIP still dirty and **excluded** from deploy: leader media thumbs, historial-intent mobile, `marketing/`, `video/`, `.agents/`, `skills-lock.json`, `.atl/skill-registry.md`, local `server/storage/file-1788*`.
+
+### D3 E2E v2
+
+Armazón completed: env names, explicit `E2E_ENV`, production host refuse, `RUN_DESTRUCTIVE_E2E=false`, E2E ticket marker helper, cleanup via cancel/confirm (no DELETE), masked screenshots, ticket ID/state report file. **Journey steps still throw Not implemented.** E2E v2 does **not** exist as an executable suite. No accounts created. Destructive run not executed.

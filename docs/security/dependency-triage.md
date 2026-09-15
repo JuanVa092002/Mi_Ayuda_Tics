@@ -16,9 +16,25 @@ Raw JSON dumps live under `docs/security/_raw/` (gitignored).
 | Before (Phase 0 / dirty lockfile) | 55 | 0 | 25 | 26 | 4 |
 | After (this phase) | 16 | 0 | 2 | 11 | 3 |
 
-`pnpm audit --prod --audit-level high` still **exits 1**. That is expected: two nodemailer highs remain and are **accepted, not resolved**.
+`pnpm audit --prod --audit-level high` still **exits 1**. That is expected: two **distinct** nodemailer high advisories remain. They are **accepted, not resolved**.
+
+**security gate: FAIL WITH ACCEPTED RISK**
+
+Do not read that as PASS. There is no pnpm override for nodemailer. The threshold was not raised.
 
 Root, server, client, and contracts scanners report the same workspace lockfile. Contracts has no production high of its own.
+
+### Count discipline (workspace `--prod` after)
+
+| Qué se cuenta | Número | Notas |
+|---|---|---|
+| Vulnerabilidades high (metadata de pnpm) | 2 | Cada advisory cuenta 1 |
+| Paquetes afectados high | **1** (`nodemailer`) | No son 2 paquetes |
+| Advisories high únicos | **2** | GHSA-p6gq-j5cr-w38f y GHSA-2x7j-588g-ccc2 |
+| Rutas de dependencia duplicadas | **0** | Una sola ruta: `server>nodemailer` |
+| Versión instalada | 8.0.11 | directa en `server/package.json` `"nodemailer": "^8.0.5"` |
+
+Contar “2 high” y “1 paquete / 2 advisories” a la vez no es contradicción. Es el mismo paquete con dos hallazgos.
 
 ### Mobile lockfile (unchanged policy)
 
@@ -106,18 +122,66 @@ The Phase 0 “25 high” figure mixed:
 | Path | `server>socket.io>engine.io>ws`, `server>@socket.io/redis-adapter>…>ws` |
 | Action | Override. **Done.** Tree now `8.21.3`. |
 
-### 7. nodemailer 8.0.11 — server, direct, production — **not upgraded**
+### 7. nodemailer 8.0.11 — server, direct — **FAIL WITH ACCEPTED RISK**
+
+Re-audited 2026-09-15. No override. No `audit-level` change.
+
+#### Advisory A — unique
 
 | Field | Value |
 |---|---|
-| Advisories (high remaining) | GHSA-p6gq-j5cr-w38f / CVE-2026-82659 (`raw` bypass of disableFileAccess/disableUrlAccess); GHSA-2x7j-588g-ccc2 (addressparser quadratic DoS, patched `>=9.1.0`) |
-| Vulnerable | `<=9.0.0` / `<9.1.0` |
-| Fix | **Major:** `>=9.0.1` / `>=9.1.0` |
-| Path | `server>nodemailer` |
-| Production vs SMTP | Primary send path is Brevo REST (`sendViaBrevoApi` in `server/src/shared/utils/handleEmail.ts`). SMTP (`sendViaSmtp`) is a fallback when API key is missing, `BREVO_PREFER_SMTP=true`, or Brevo IP-block 401. |
-| `raw` reachability | Code calls `sendMail` with `from` / structured `SendMailOptions`. It does **not** pass `raw`. CVE-2026-82659 is **not reachable** on the current call sites. |
-| Addressparser DoS | Possible if SMTP fallback is used and a crafted recipient address is parsed. Residual for the fallback path only. |
-| Action | **Accepted temporarily.** Do not major-bump in this phase. |
+| Package | nodemailer |
+| Versión instalada | 8.0.11 |
+| Advisory | GHSA-p6gq-j5cr-w38f / CVE-2026-82659 |
+| Severidad | high |
+| Ruta | `server>nodemailer` (directa; no hay rutas duplicadas) |
+| Vulnerable | `<=9.0.0` |
+| Fix compatible | **No en 8.x.** Parche `>=9.0.1` (major) |
+| Título | Message-level `raw` bypasses `disableFileAccess`/`disableUrlAccess` (file read + SSRF in the delivered message) |
+| Runtime real | **No alcanzable** en el código actual: ningún `sendMail({ raw })`. Ver abajo. |
+| Aceptación | Temporal. Major 9.x fuera de esta fase. |
+
+#### Advisory B — unique (no es duplicado de A)
+
+| Field | Value |
+|---|---|
+| Package | nodemailer |
+| Versión instalada | 8.0.11 |
+| Advisory | GHSA-2x7j-588g-ccc2 (sin CVE en el JSON del auditor) |
+| Severidad | high |
+| Ruta | `server>nodemailer` (directa; misma ruta que A, advisory distinto) |
+| Vulnerable | `<9.1.0` |
+| Fix compatible | **No en 8.x.** Parche `>=9.1.0` (major) |
+| Título | Addressparser quadratic DoS via crafted address list |
+| Runtime real | **Solo en el fallback SMTP.** El path Brevo REST no usa el parser de nodemailer. Residual si SMTP corre y un `to` hostil llega a `transporter.sendMail`. |
+| Aceptación | Temporal. Mismo major. |
+
+#### Dónde se usa Nodemailer
+
+Único import runtime: `server/src/shared/utils/handleEmail.ts` → `sendViaSmtp()` hace `await import('nodemailer')` y `createTransport(...).sendMail(...)`.
+
+El export `sendMail()` **prefiere Brevo REST** (`sendViaBrevoApi` → `https://api.brevo.com/v3/smtp/email`) cuando hay `BREVO_API_KEY` y no `BREVO_PREFER_SMTP=true`. Nodemailer SMTP solo si:
+
+1. no hay API key, o `BREVO_PREFER_SMTP=true`, y hay `BREVO_USER`/`BREVO_PASSWORD`; o
+2. Brevo REST falla por bloqueo de IP (401) y existen credenciales SMTP.
+
+Call sites (payload siempre `from` / `to` / `subject` / `html` / `text`; **nunca `raw`**):
+
+| Archivo | Motivo |
+|---|---|
+| `features/auth/controllers/recuperarPassword.ts` | reset de contraseña |
+| `features/tickets/controllers/solicitud.ts` | ticket creado / notificaciones v1 |
+| `features/tickets/controllers/solicitud-workflow.ts` | asignación de técnico v2 |
+| `features/tickets/controllers/solucionCaso.ts` | caso cerrado v1 |
+| `features/users/controllers/tecnicos.ts` | aprobación de técnico |
+
+Tests (`handleEmail.test.ts`, mocks de integración) no son runtime de producción.
+
+Funciones expuestas al paquete: `createTransport` + `sendMail` con opciones estructuradas. No se pasa `raw`, `path` ni `href` de contenido.
+
+Mitigación actual: no usar `raw`; path productivo Brevo REST; SMTP es fallback. No hay sandbox `disableFileAccess` porque no se usa `raw`.
+
+Riesgo residual: (A) nulo mientras no se añada `raw`; (B) DoS de parser si el fallback SMTP procesa un `to` malicioso. Owner: backend. Revisión: **2026-10-14**. No marcado resuelto.
 
 ## Highs accepted (not marked resolved)
 
@@ -159,7 +223,7 @@ Not remediated in this phase. Remaining workspace `--prod` mix is **3 low / 11 m
 | mobile unit | 265/265 |
 | server build | PASS |
 | client build (`VITE_BACKEND_URL=http://localhost:8000`) | PASS (686.49 kB JS / 202.67 kB gzip) |
-| smoke:prod (non-destructive) | 17 PASS / 0 FAIL |
-| Playwright | 4 passed / 0 failed / 19 skipped (see G4) |
+| smoke:prod (non-destructive, **against currently reachable live URLs**) | 17 PASS / 0 FAIL — does **not** prove local HEAD runs on Render |
+| Playwright | 4 passed / 0 failed / 19 skipped. Harness green for available tests; workflow v2 E2E not yet executable. |
 
 No contracts were broken by these patch/minor bumps.

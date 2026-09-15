@@ -265,10 +265,12 @@ Phase 0 remains the measurement snapshot. This section records **local** gate wo
 
 | Fuente | SHA | Cómo se verificó | Fecha | Estado |
 |---|---|---|---|---|
-| HEAD local | `ac5ae74206bac09d501bb420a349545e5cd7ea0e` | `git rev-parse HEAD` | 2026-09-14 | verified |
-| origin/master | `ac5ae74206bac09d501bb420a349545e5cd7ea0e` | `git rev-parse origin/master` | 2026-09-14 | verified (matches HEAD) |
-| Render live | — | no Render inspect / no deploy revision API | 2026-09-14 | **not verified** |
-| último smoke | n/a | `pnpm run smoke:prod` this phase | 2026-09-14 | 17 PASS / 0 FAIL; SHA not inferred |
+| HEAD local (esta rama) | `ef542d7a021b4367a24151e4c072f86d084c558d` | `git rev-parse HEAD` | 2026-09-15 | verified; 5 commits locales no pusheados |
+| origin/master | `ac5ae74206bac09d501bb420a349545e5cd7ea0e` | `git rev-parse origin/master` | 2026-09-15 | verified; **distinto** de HEAD local |
+| Render live | — | no Render inspect / no deploy revision API | 2026-09-15 | **not verified** |
+| último smoke | n/a | `pnpm run smoke:prod` hit live URLs | 2026-09-14 | 17 PASS / 0 FAIL against **currently reachable** prod; does **not** identify a SHA and does **not** prove local HEAD is running on Render |
+
+Phase 0 measured `HEAD` as `ac5ae74` because that was both local HEAD and `origin/master` at audit start. After Phase 0.5 local commits, those two SHAs must not be collapsed.
 
 Working tree after Phase 0.5 includes these local commits/files plus the original 19 pre-existing dirty paths (web/mobile WIP, `marketing/`, `video/`, local `server/storage` media). `pnpm-lock.yaml` was already dirty; G1 install changed it further.
 
@@ -276,9 +278,10 @@ Working tree after Phase 0.5 includes these local commits/files plus the origina
 
 See `docs/security/dependency-triage.md`.
 
-- Workspace `--prod` high: **25 → 2** (both nodemailer 8.0.11; major 9.x not applied).
+- **security gate: FAIL WITH ACCEPTED RISK** (not PASS).
+- Workspace `--prod` high metadata: **25 → 2**. That is **2 unique advisories** on **1 package** (`nodemailer` 8.0.11), **1 path** (`server>nodemailer`), **0 duplicate routes**.
 - Workspace `--prod` total: **55 → 16**.
-- `pnpm audit --prod --audit-level high` still fails. Threshold unchanged.
+- `pnpm audit --prod --audit-level high` still exits 1. Threshold unchanged. No nodemailer override.
 - Safe bumps: multer 2.4.0, axios 1.20.0, form-data 4.0.6, ip-address 10.7.0, socket.io-parser 4.2.7, ws 8.21.3.
 - Mobile 33 highs remain (Expo toolchain). Not marked resolved.
 
@@ -329,3 +332,71 @@ Factual edits only: mobile is not auth-only; web consumes workflow v2; no SHA is
 - CI still does not run lint, integration, Playwright, audit, coverage, or post-deploy smoke.
 - Cross-client workflow v2 E2E (scaffold only).
 - Observability, load testing, portfolio docs — out of this phase.
+
+## 16. Phase 0.5 review R1–R6 (2026-09-15)
+
+Human review corrections. Still no push, deploy, Atlas, Render mutation, or Phase 1.
+
+### Local vs production
+
+| Gate | Local | Producción Render / Vercel |
+|---|---|---|
+| Health CORS | PASS (unit tests on this branch) | pendiente de **deploy Render**; live still mounts health before CORS |
+| assetlinks | archivo local JSON debug válido | GET live `https://miayudatics.vercel.app/.well-known/assetlinks.json` → **HTML** (`text/html`, `filename="index.html"`) el 2026-09-15. Pendiente deploy Vercel **y** huella release |
+| smoke | 17/17 contra URLs live configuradas | no implica SHA local ni que Render ejecute `ef542d7` |
+| workflow v2 | unit/integration locales | E2E remoto **no ejecutable** |
+| SHA | HEAD `ef542d7` y origin `ac5ae74` verificados | Render **no verificado** |
+| índice unique historial | estado según baseline Phase 0 | no tocar ahora |
+
+Regla: un test local verde no prueba que Render ejecute ese código. `smoke:prod` prueba el **deploy actualmente alcanzable**, no el HEAD de esta rama.
+
+### G2 App Links (review)
+
+- Manifest JSON válido. Schema: `package_name`, `fingerprints[]` con `id`/`label`/`sha256?`/`status?`.
+- Única huella con SHA-256: **debug** documentada jun 2026 en `mobile-android-dev-build.md`. No es preview ni release. Sirve para **dev client** / validate local. **No valida un APK de Play/EAS.**
+- Estado explícito: **debug fingerprint verified; Play/EAS release fingerprint pending; production app-link verification pending.**
+- `assetlinks.json`: `com.miayudatics.mobile`, relación `delegate_permission/common.handle_all_urls`, una huella debug, sin placeholders ni secretos.
+- `vercel.json` local declara `Content-Type: application/json` y excluye `/.well-known/` del rewrite SPA. Eso **no está live**.
+- `validate.mjs` ahora comprueba existencia, JSON, `package_name`, sync de SHA-256, formato hex, y avisa pending release. **No** prueba Content-Type en Vercel ni App Links de un APK de tienda.
+
+Deep linking de producción **no está resuelto**.
+
+### Playwright skipped (19)
+
+Playwright harness green for available tests; **workflow v2 E2E not yet executable.** Do not say E2E completo PASS.
+
+| # | Spec | Por qué skipped |
+|---|---|---|
+| 1 | `cors.spec.ts` health browser | health cross-origin pendiente de deploy (`E2E_EXPECT_HEALTH_CORS` unset) |
+| 1 | `login.spec.ts` | falta `E2E_LIDER_EMAIL`/`PASSWORD` |
+| 1 | `solicitud.spec.ts` | falta `E2E_FUNCA_EMAIL`/`PASSWORD` |
+| 16 | `workflow-v2.spec.ts` | journey **no implementado** + `RUN_DESTRUCTIVE_E2E` false + entorno no permitido (production host refused) |
+
+4 passed = CORS/SPA read-only contra el frontend/API **live actuales**.
+
+### Commits locales (no enviados a origin)
+
+| Commit | Archivos | Propósito | Fase 0.5 | Preexistente o creado aquí | Reversible |
+|---|---|---|---|---|---|
+| `5c64639` | `.gitignore`, `client/package.json`, `server/package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `docs/security/dependency-triage.md` | highs alcanzables; nodemailer no | sí | lockfile ya sucio + archivos nuevos/editados aquí | sí, revert local |
+| `63b1fbd` | well-known, `client/vercel.json`, `validate.mjs`, `mobile-android-dev-build.md` | manifest debug + validate | sí | creado/editado aquí | sí |
+| `56286a8` | `app.ts`, `cors.ts`, `health-cors.test.ts`, `smoke-prod.sh` | health CORS local + smoke 204 | sí | creado/editado aquí | sí |
+| `725529e` | `e2e/*` | skip health live; scaffold v2 | sí | creado/editado aquí | sí |
+| `ef542d7` | baseline + docs factales | SHA/mobile drift | sí | baseline creado en Phase 0, commiteado aquí | sí |
+
+Confirmado: los 5 commits **no** incluyen JPEG/PNG de `server/storage`, **no** incluyen `server/.env`, **no** hay secretos versionados. Los 19 WIP (leader media, historial mobile, marketing, video, storage local, `.agents`, etc.) **no** están en esos commits. `git log origin/master..HEAD` = 5 commits; **no push**.
+
+`pnpm-lock.yaml` era uno de los 19 dirty y se mezcló porque G1 lo exigía. El resto del WIP permanece untracked/modified fuera de HEAD.
+
+### Decision board
+
+1. **PASS de verdad (local, esta rama):** typecheck; server 151; integration 12; client 59; mobile 265; mobile validate (debug); health CORS unit tests; smoke script semantics (204) contra live OPTIONS que ya era 204.
+2. **PASS solo local / no prueba Render:** health CORS del código nuevo; `assetlinks.json` + `vercel.json`; SHA de esta rama.
+3. **FAIL:** `pnpm audit --prod --audit-level high` (2 high nodemailer); App Links de producción (HTML live); Playwright health CORS live; E2E v2.
+4. **High aceptados:** GHSA-p6gq-j5cr-w38f y GHSA-2x7j-588g-ccc2 en nodemailer 8.0.11. Mobile 33 Expo highs no son el gate workspace.
+5. **Requieren deploy:** health CORS → Render; assetlinks JSON + rewrite → Vercel. **No hechos.**
+6. **Requieren huella release real:** `release_local` / `eas_production` / `play_app_signing`.
+7. **Requieren credenciales E2E:** login líder, panel funcionario; journey v2 además exige tres roles + `RUN_DESTRUCTIVE_E2E` + `E2E_ENV` no prod.
+8. **Requieren aprobación humana:** aceptar el riesgo nodemailer; autorizar deploys; no iniciar Fase 1 hasta esa aprobación.
+9. **SHA local:** `ef542d7a021b4367a24151e4c072f86d084c558d`. **origin/master:** `ac5ae74206bac09d501bb420a349545e5cd7ea0e`.
+10. **SHA Render:** no verificado.

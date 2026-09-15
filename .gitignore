@@ -19,6 +19,7 @@ yarn-error.log*
 pnpm-debug.log*
 test-results/
 playwright-report/
+e2e/.reports/
 # Local AI runtime state
 .atl/
 

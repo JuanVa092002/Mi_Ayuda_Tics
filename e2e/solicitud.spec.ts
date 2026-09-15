@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { expect, test } from './helpers/fixtures'
 
 const funcionarioEmail = process.env.E2E_FUNCA_EMAIL ?? process.env.E2E_FUNCIONARIO_EMAIL
 const funcionarioPassword = process.env.E2E_FUNCA_PASSWORD ?? process.env.E2E_FUNCIONARIO_PASSWORD

@@ -1,10 +1,22 @@
-import { test } from '@playwright/test'
-import { destructiveE2ESkipReason } from './helpers/env'
+import { cleanupTrackedTickets, resetTrackedE2ETickets } from './helpers/cleanup'
+import { test } from './helpers/fixtures'
+import { destructiveE2ESkipReason, e2eBackendUrl } from './helpers/env'
+import { resetE2EReport, writeE2EReport } from './helpers/report'
 
 const skipReason = destructiveE2ESkipReason()
 
-test.describe('Workflow v2 journey (scaffold only — not implemented)', () => {
+test.describe.configure({ mode: 'serial' })
+
+test.describe('Workflow v2 journey (harness only — journey not implemented)', () => {
   test.skip(Boolean(skipReason), skipReason ?? 'destructive E2E disabled')
+
+  test.afterAll(async () => {
+    if (skipReason) return
+    await cleanupTrackedTickets({ backendUrl: e2eBackendUrl() })
+    writeE2EReport()
+    resetTrackedE2ETickets()
+    resetE2EReport()
+  })
 
   test('funcionario crea ticket', async () => {
     throw new Error('Not implemented: do not claim v2 E2E until this runs against simulation/qa/staging')

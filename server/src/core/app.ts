@@ -11,23 +11,41 @@ import router from './routes'
 import {
   CORS_ALLOWED_HEADERS,
   CORS_ALLOWED_METHODS,
+  corsHeaderMap,
   createCorsOriginValidator,
+  originIsAllowed,
   parseAllowedOrigins,
 } from '../shared/config/cors'
 import { handleUploadError } from '../shared/middleware/uploadError'
 
-// Liveness probe — antes de CORS/helmet para probes de Render (sin Origin)
-app.get('/api/health', healthCheck)
-
 const isProd = process.env.NODE_ENV === 'production'
+const allowedProdOrigins = parseAllowedOrigins()
 
 if (isProd) {
   app.set('trust proxy', 1)
 }
 
-app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }))
+function applyPublicHealthCors(req: Request, res: Response): void {
+  const origin = req.get('origin') ?? undefined
+  if (!originIsAllowed(origin, allowedProdOrigins)) return
+  for (const [name, value] of Object.entries(corsHeaderMap(origin))) {
+    res.setHeader(name, value)
+  }
+}
 
-const allowedProdOrigins = parseAllowedOrigins()
+// Liveness stays unauthenticated and never 5xx for a blocked Origin.
+// CORS headers are applied only for allowed origins so browser clients can read health.
+app.get('/api/health', (req: Request, res: Response, next: NextFunction) => {
+  applyPublicHealthCors(req, res)
+  next()
+}, healthCheck)
+
+app.options('/api/health', (req: Request, res: Response) => {
+  applyPublicHealthCors(req, res)
+  res.status(204).end()
+})
+
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }))
 
 app.use(
   cors({

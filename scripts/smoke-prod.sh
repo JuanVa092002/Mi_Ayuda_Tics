@@ -38,20 +38,26 @@ check "health database connected" "$db_conn"
 cors_get="$(curl -s -o /dev/null -w '%{http_code}' -H "Origin: $FRONTEND_URL" "$BACKEND_URL/api/auth/login")"
 check "CORS GET auth route" "$([ "$cors_get" = "404" ] || [ "$cors_get" = "405" ] || [ "$cors_get" = "200" ] && echo 1 || echo 0)"
 
-cors_header="$(curl -si -H "Origin: $FRONTEND_URL" \
-  -X OPTIONS \
-  -H "Access-Control-Request-Method: POST" \
-  "$BACKEND_URL/api/auth/login" 2>/dev/null | grep -i 'access-control-allow-origin' || true)"
-echo "$cors_header" | grep -q "$FRONTEND_URL" && cors_hdr=1 || cors_hdr=0
-check "CORS allow-origin header" "$cors_hdr"
-
-# CORS preflight
-cors_opt="$(curl -s -o /dev/null -w '%{http_code}' -X OPTIONS \
+preflight_headers="$(curl -si -X OPTIONS \
   -H "Origin: $FRONTEND_URL" \
   -H "Access-Control-Request-Method: POST" \
-  -H "Access-Control-Request-Headers: Content-Type" \
-  "$BACKEND_URL/api/auth/login")"
-check "CORS preflight login" "$([ "$cors_opt" = "200" ] && echo 1 || echo 0)"
+  -H "Access-Control-Request-Headers: Content-Type,Idempotency-Key" \
+  "$BACKEND_URL/api/auth/login" 2>/dev/null || true)"
+
+preflight_code="$(printf '%s' "$preflight_headers" | head -1 | grep -oE '[0-9]{3}' | head -1 || true)"
+check "CORS preflight login 204 or 200" "$([ "$preflight_code" = "204" ] || [ "$preflight_code" = "200" ] && echo 1 || echo 0)"
+
+printf '%s' "$preflight_headers" | grep -qi "access-control-allow-origin: $FRONTEND_URL" && cors_origin=1 || cors_origin=0
+check "CORS allow-origin exacto" "$cors_origin"
+
+printf '%s' "$preflight_headers" | grep -qi 'access-control-allow-credentials: true' && cors_cred=1 || cors_cred=0
+check "CORS allow-credentials" "$cors_cred"
+
+printf '%s' "$preflight_headers" | grep -qi 'access-control-allow-methods:' && cors_methods=1 || cors_methods=0
+check "CORS allow-methods presente" "$cors_methods"
+
+printf '%s' "$preflight_headers" | grep -qi 'idempotency-key' && cors_idem=1 || cors_idem=0
+check "CORS allow-headers incluye Idempotency-Key" "$cors_idem"
 
 # API security
 u_code="$(curl -s -o /dev/null -w '%{http_code}' "$BACKEND_URL/api/usuarios")"

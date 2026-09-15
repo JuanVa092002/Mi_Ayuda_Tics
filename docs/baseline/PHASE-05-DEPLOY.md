@@ -5,7 +5,7 @@
 Branch: `chore/measured-production-system`  
 Compared to: `origin/master` `ac5ae74206bac09d501bb420a349545e5cd7ea0e`
 
-Recommended deploy unit: the **whole branch HEAD**, not a cherry-pick. Render and Vercel both consume this repo. Splitting health/CORS from the lockfile would leave production on mixed SHAs.
+**Superseded by D1.1:** do **not** deploy the whole branch HEAD. HEAD is not exclusively runtime. See `docs/baseline/PHASE-05-D1-REVIEW.md`. Recommended (not executed): Option A — worktree from `origin/master` + only the runtime candidate files.
 
 WIP that must **not** be included: `.atl/`, `.agents/`, `marketing/`, `video/`, `skills-lock.json`, leader media thumbs, historial-intent mobile, `server/storage/file-1788*`.
 
@@ -117,16 +117,22 @@ Stop after any failed step. No E2E. No extra commits.
 
 ## 5. Rollback (this deploy only)
 
-Do **not** roll back to the historical v2 SHA table unless the incident is the v2 feature itself.
+Do **not** roll back to the historical v2 SHA table (`050922c` / `48a67f8`) unless the incident is the v2 feature itself. This D2 only changes health CORS, deps patches, and assetlinks.
 
-If this Phase 0.5 deploy fails:
+Before D2 (mandatory):
 
-1. Stop. Do not run E2E. Do not push more commits.
-2. Render dashboard: rollback the web service `miayudatics-v1-0` to the **previous successful deploy** (SHA recorded in step 1). Prefer dashboard rollback over `git push --force`.
-3. Vercel: promote/rollback to the previous production deployment that still served the SPA.
-4. Re-check `GET /api/health` 200 and frontend load. Do not require the new health CORS or assetlinks JSON after rollback — they will be absent again.
-5. Leave Atlas indexes and data untouched. No DELETE of tickets.
-6. If Render auto-deploys `master`, a dashboard-only rollback is lost on the next push. Hold further pushes until a revert commit is approved.
+1. Save the **currently live** Render git SHA / revision (or `unverified`).
+2. Save the Render **deployment ID** if the dashboard/API shows it.
+3. Save the Vercel **deployment ID** currently serving `miayudatics.vercel.app`.
+
+If health or assetlinks fail after D2:
+
+1. Stop. Do not run E2E. Do not push more commits. Do not `git push --force`.
+2. Render dashboard: rollback `miayudatics-v1-0` to the deployment ID from step 2.
+3. Vercel: rollback/promote to the deployment ID from step 3.
+4. Re-check `GET /api/health` 200 and frontend load. Do not require the new health CORS or assetlinks JSON after rollback.
+5. Leave Atlas indexes and data untouched. **Do not drop** `uniq_historial_solicitud_operationId`. Reverting code does not delete indexes. No DELETE of tickets.
+6. If Render auto-deploys `master`, a dashboard-only rollback is lost on the next push. Hold further pushes until an explicit revert commit is approved.
 
 Known previous git points (not verified as currently live):
 

@@ -1,7 +1,16 @@
+# Rollback
+
+Hay **dos** procedimientos distintos. No mezclarlos.
+
+1. **D2 (2026-09-15) — health CORS + assetlinks debug.** Current live is Render `dep-dakddg942hec73bq7q60` / SHA `b503755e63effde3fed6557e3368abf67622a979` and Vercel `dpl_F85pqQgA8RspYJ7p92VxASERrFFD` / SHA `b503755e63effde3fed6557e3368abf67622a979`. Rollback target is Render `dep-dafq4ae7bikc73ei5iqg` / SHA `ac5ae74206bac09d501bb420a349545e5cd7ea0e` and Vercel `dpl_EKC7CaYQzcdyg2v5jkPKNXA4971f` / SHA `ac5ae74206bac09d501bb420a349545e5cd7ea0e`. Details: [PHASE-05-D2-CLOSEOUT.md](./baseline/PHASE-05-D2-CLOSEOUT.md).
+2. **Workflow v2 feature rollback (historical).** SHA `050922c…` / deploy `dep-daf4anrm8hqs73dj7d40`. That is **not** the D2 rollback. Procedure below.
+
+---
+
 # Rollback — workflow v2 (API)
 
 Cómo volver el **código** de Render al SHA anterior a v2 **sin borrar datos**.  
-**No ejecutar esto como parte del cierre de release.** No hay deploy nuevo aquí: solo el procedimiento.
+**No ejecutar esto como parte del cierre de D2.** No hay deploy nuevo aquí: solo el procedimiento histórico de v2.
 
 ## Quick path
 

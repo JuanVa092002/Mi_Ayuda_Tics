@@ -115,32 +115,25 @@ Stop after any failed step. No E2E. No extra commits.
 9. Record live Render and Vercel SHAs/commits. Compare to the pushed SHA.
 10. If any check fails: stop, no E2E, no extra code, follow rollback below.
 
-## 5. Rollback (this deploy only)
+## 5. Rollback (D2 health CORS / assetlinks) — verified 2026-09-15
 
-Do **not** roll back to the historical v2 SHA table (`050922c` / `48a67f8`) unless the incident is the v2 feature itself. This D2 only changes health CORS, deps patches, and assetlinks.
+This is **not** the historical workflow-v2 rollback (`050922c` / `48a67f8`).
 
-Before D2 (mandatory):
+```text
+Estado actual:
+Render dep-dakddg942hec73bq7q60 / SHA b503755e63effde3fed6557e3368abf67622a979
+Vercel dpl_F85pqQgA8RspYJ7p92VxASERrFFD / SHA b503755e63effde3fed6557e3368abf67622a979
 
-1. Save the **currently live** Render git SHA / revision (or `unverified`).
-2. Save the Render **deployment ID** if the dashboard/API shows it.
-3. Save the Vercel **deployment ID** currently serving `miayudatics.vercel.app`.
+Rollback target:
+Render dep-dafq4ae7bikc73ei5iqg / SHA ac5ae74206bac09d501bb420a349545e5cd7ea0e
+Vercel dpl_EKC7CaYQzcdyg2v5jkPKNXA4971f / SHA ac5ae74206bac09d501bb420a349545e5cd7ea0e
+```
 
-If health or assetlinks fail after D2:
+Previous IDs map to SHA `ac5ae74…`. Current IDs map to SHA `b503755…`. Full table: `docs/baseline/PHASE-05-D2-CLOSEOUT.md`.
 
-1. Stop. Do not run E2E. Do not push more commits. Do not `git push --force`.
-2. Render dashboard: rollback `miayudatics-v1-0` to the deployment ID from step 2.
-3. Vercel: rollback/promote to the deployment ID from step 3.
-4. Re-check `GET /api/health` 200 and frontend load. Do not require the new health CORS or assetlinks JSON after rollback.
-5. Leave Atlas indexes and data untouched. **Do not drop** `uniq_historial_solicitud_operationId`. Reverting code does not delete indexes. No DELETE of tickets.
-6. If Render auto-deploys `master`, a dashboard-only rollback is lost on the next push. Hold further pushes until an explicit revert commit is approved.
+If this D2 must be undone: dashboard rollback of **both** the service and the SHA above. No force-push. No Atlas. No index drop. No DELETE. No E2E. Hold `master` pushes until an explicit revert is approved.
 
-Known previous git points (not verified as currently live):
-
-| Point | SHA | Note |
-|---|---|---|
-| origin/master at Phase 0.5 close | `ac5ae74206bac09d501bb420a349545e5cd7ea0e` | last pushed; Vite CORS to production API |
-| Historical v2 feature (unverified live) | `48a67f8f2686e186e79c6e867142eb99630ed35c` | do not use unless D2 recorded it as live |
-| Pre-v2 rollback (older procedure) | `050922c2e39453db034d237a365ba97c898f1938` | unrelated to this CORS/assetlinks deploy |
+Do **not** say “rollback to deployment ID” without naming the service and the git SHA.
 
 ## 6. Variables / secrets required (names only)
 
@@ -169,8 +162,7 @@ Harness exists. Journey is **not implemented**. Do not run destructive E2E. Do n
 ## 8. Residual risks
 
 - Security gate remains **FAIL WITH ACCEPTED RISK** (Nodemailer 8.0.11, 2 advisories). Not PASS.
-- Production health CORS and assetlinks are pending D2.
-- Debug Android fingerprint only; Play/EAS linking not claimed.
+- App Links: debug fingerprint only; Play/EAS/release still pending.
 - SMTP fallback is an operational risk if Brevo REST fails.
 - Mobile Expo 33 highs unchanged.
-- Live SHA unverified until D2.
+- Dashboard-only rollback of D2 is lost on the next push to `master`.

@@ -69,6 +69,11 @@ if (!fs.existsSync(manifestPath)) {
 execSync('node scripts/sync-assetlinks.mjs', { cwd: root, stdio: 'inherit' });
 const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 const assetlinks = JSON.parse(fs.readFileSync(assetlinksPath, 'utf8'));
+const packageName = manifest.package_name;
+if (!packageName) {
+  console.error('✗ manifest: falta package_name');
+  process.exit(1);
+}
 const expected = [
   ...new Set(
     (manifest.fingerprints ?? [])
@@ -81,7 +86,27 @@ if (JSON.stringify(expected) !== JSON.stringify(actual)) {
   console.error('✗ assetlinks.json desincronizado con manifest — pnpm sync:assetlinks');
   process.exit(1);
 }
+if (assetlinks?.[0]?.target?.package_name !== packageName) {
+  console.error('✗ assetlinks.json package_name no coincide con el manifest');
+  process.exit(1);
+}
+const sha256Re = /^[0-9A-F]{2}(:[0-9A-F]{2}){31}$/;
+for (const fp of expected) {
+  if (!sha256Re.test(fp)) {
+    console.error(`✗ huella SHA-256 inválida o placeholder: ${fp}`);
+    process.exit(1);
+  }
+}
 console.log('✓ assetlinks.json sincronizado con manifest de huellas');
+const pendingRelease = (manifest.fingerprints ?? []).filter(
+  (entry) =>
+    ['release_local', 'eas_production', 'play_app_signing'].includes(entry.id) &&
+    (!entry.sha256 || entry.status === 'pending'),
+);
+if (pendingRelease.length > 0) {
+  console.log('⚠ debug fingerprint verified; Play/EAS release fingerprint pending');
+  console.log('⚠ production app-link verification pending (no Vercel deploy in this phase)');
+}
 
 const documentedScripts = new Set([
   'dev',

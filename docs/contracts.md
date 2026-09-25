@@ -206,7 +206,7 @@ stateDiagram-v2
 | /ambienteFormacion write | — | — | ✓ |
 | GET /usuarios/perfil | ✓ | ✓ | ✓ |
 | POST /media/upload | ✓ | ✓ | ✓ |
-| Mobile app login | ✓ | ✓ | **blocked** |
+| Mobile app login | ✓ | ✓ | **blocked in the Expo app** (API login still succeeds; session/route policy rejects Líder) |
 
 ---
 

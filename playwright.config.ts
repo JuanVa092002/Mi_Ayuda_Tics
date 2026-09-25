@@ -14,13 +14,18 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: 'list',
+  outputDir: 'test-results',
   use: {
     baseURL: frontendUrl,
+    screenshot: 'only-on-failure',
+    video: 'off',
     trace: 'on-first-retry',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   metadata: {
     backendUrl,
     frontendUrl,
+    e2eEnv: process.env.E2E_ENV ?? '',
+    destructive: process.env.RUN_DESTRUCTIVE_E2E === 'true',
   },
 })

@@ -138,14 +138,14 @@ flowchart LR
 ## Roadmap by stage
 
 ### Stage 0 — Now (verified shipped)
-- Web: full role journeys
+- Web: full role journeys, including workflow v2 consumption in the SPA
 - API: prod on Render; Vercel frontend
-- Mobile: auth only (`mobile/MiAyudaTIC-Mobile`)
+- Mobile: funcionario and técnico ticket flows exist in `mobile/MiAyudaTIC-Mobile` (not auth-only). Líder remains blocked in the mobile app layer. Socket/push clients are not shipped.
 
-### Stage 1 — Mobile core (next)
-- Funcionario: create solicitud + photo (Expo)
-- Técnico: assigned list + solution + evidence
+### Stage 1 — Mobile core (remaining)
+- Remaining P1 mobile bugs and native hardening
 - Socket client for notifications
+- Device/EAS verification of App Links fingerprints beyond the documented debug cert
 
 ### Stage 2 — Platform hardening
 - Client + mobile adopt `@miayuda/contracts`

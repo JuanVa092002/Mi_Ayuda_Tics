@@ -2,8 +2,18 @@
 
 Cómo funciona el ticket nuevo en producción. El contrato canónico sigue siendo [contracts.md](./contracts.md). Si este texto y el código discrepan, gana el código.
 
-**API live:** `48a67f8f2686e186e79c6e867142eb99630ed35c` (2026-09-07).  
 **No hay migración masiva.** `workflowVersion` ausente = v1. `2` = este flujo.
+
+Web consumes this workflow via `client/src/features/tickets/api/workflow.service.ts`. Mobile funcionario/técnico flows also call the same ticket API. None of those facts prove which Git SHA Render currently runs.
+
+| Fuente | SHA | Cómo se verificó | Fecha | Estado |
+|--------|-----|------------------|-------|--------|
+| HEAD local | `ac5ae74206bac09d501bb420a349545e5cd7ea0e` | `git rev-parse HEAD` | 2026-09-14 | verified |
+| origin/master | `ac5ae74206bac09d501bb420a349545e5cd7ea0e` | `git rev-parse origin/master` | 2026-09-14 | verified (matches HEAD) |
+| Render live | — | no Render inspect / no deploy revision API | 2026-09-14 | **not verified** |
+| último smoke | n/a (health 200 connected; OPTIONS `/api/auth/login` 204) | `pnpm run smoke:prod` in Phase 0 | 2026-09-14 | smoke executed; SHA not inferred from it |
+
+Older documents that cite `48a67f8f2686e186e79c6e867142eb99630ed35c` as “API live” are historical. That commit exists in git history; it is **not** evidence of production live.
 
 ## Quick path
 

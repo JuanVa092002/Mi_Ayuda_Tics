@@ -1,8 +1,216 @@
 # MiAyudaTIC — Engineering Baseline
 
+**Current recapture:** 2026-09-15T00:37:00-05:00 (orchestrator Fase 0)  
+**Historical capture:** 2026-09-14T10:57:42-05:00 (kept below; do not use as live SHA truth)  
+**Scope:** Phase 0 only — audit and measurement. No product, platform, mobile, infrastructure, dependency, or remote configuration changes in this recapture.  
+**Evidence policy:** code and executed commands are authoritative. Documentation is a claim until it is corroborated.
+
+This recapture ran on worktree `chore/measured-production-system` at `335a9a0b9f637720542421a38855b987b69dcf92`. That SHA is **not** production. Production `origin/master` is `b503755e63effde3fed6557e3368abf67622a979`. Local command results prove this dirty worktree, not the live deploy, unless a live URL was hit.
+
+---
+
+## Recapture 2026-09-15 — orchestrator Fase 0
+
+### Status legend
+
+- **Verified:** observed in current code or from a command executed for this recapture.
+- **Inferred:** reasonable conclusion from static configuration or prior same-day closeout; not re-executed here.
+- **Pending:** not exercised or lacks sufficient evidence.
+- **Contradicted:** current code or execution disproves a documentation or automation claim.
+- **Not executable:** command exists but was not run because it is destructive, needs credentials, or would mutate remotes.
+
+### 0. Git inventory (verified)
+
+| Item | Value |
+|---|---|
+| Branch | `chore/measured-production-system` |
+| HEAD | `335a9a0b9f637720542421a38855b987b69dcf92` |
+| HEAD subject | `docs(baseline): record verified d2 rollback id-to-sha map` |
+| `origin/master` | `b503755e63effde3fed6557e3368abf67622a979` — `fix(api): apply health cors and public assetlinks` |
+| local `master` | `ac5ae74206bac09d501bb420a349545e5cd7ea0e` (behind origin by the D2 commit) |
+| merge-base(HEAD, origin/master) | `ac5ae74206bac09d501bb420a349545e5cd7ea0e` |
+| `origin/master` commits not in HEAD | 1 (`b503755`) |
+| HEAD commits not in `origin/master` | 11 (Phase 0.5 docs/e2e/deps/validate + D2 closeout docs) |
+| Remote `origin` | `https://github.com/JuanVa092002/MiAyudaTics_v1.0.git` |
+| Canonical GitHub name | **Pending** — `gh repo view` failed in this recapture; do not assert the public rename |
+| Extra worktree | `C:/Users/JuanC/Desktop/MIAyudaTics/MiAyudaTics_release-d2` at `b503755` (`release/phase-05-d2`) |
+| Node | `v24.16.0` |
+| pnpm | `10.34.3` |
+| Mobile `packageManager` field | `pnpm@11.5.0` (config drift vs root/CI 10.34.3) |
+
+D2 live SHA mapping in `docs/baseline/PHASE-05-D2-CLOSEOUT.md` (same calendar day, provider APIs) is **inferred for this recapture** (not re-queried via Render/Vercel MCP). Live **behavior** was re-hit below.
+
+### 0.1 Pre-existing dirty worktree (verified; not this recapture)
+
+These paths were dirty **before** this Fase 0 run. They are **not** part of this execution. Do not overwrite. Do not commit with Phase 0.
+
+**Modified tracked:**
+
+- `.atl/skill-registry.md`
+- `client/src/features/tickets/index.ts`
+- `client/src/pages/admin/AdminSolicitud.tsx`
+- `client/src/pages/admin/solicitud/SeguimientoSolicitud.tsx`
+- `mobile/MiAyudaTIC-Mobile/src/features/funcionario/historial-intent.ts`
+- `mobile/MiAyudaTIC-Mobile/src/features/funcionario/historial-intent.test.ts`
+
+**Untracked:**
+
+- `.agents/`
+- `client/src/features/tickets/components/LeaderMediaThumb.tsx`
+- `client/src/features/tickets/components/LeaderMediaThumb.test.tsx`
+- `client/src/shared/media/ticket-photo.ts`
+- `client/src/shared/media/ticket-photo.test.ts`
+- `marketing/`
+- `video/`
+- `skills-lock.json`
+- `server/storage/file-1788553837325.jpeg`
+- `server/storage/file-1788580905737.jpeg`
+- `server/storage/file-1788841391174.png`
+- `server/storage/file-1788841424997.png`
+
+**This-execution side effect (reverted):** `pnpm -C mobile/MiAyudaTIC-Mobile validate` rewrote `client/public/.well-known/assetlinks.json` line endings via `sync-assetlinks`. Content diff was empty. File restored with `git checkout --` of that path only. No product semantics changed.
+
+**Files modified by this Fase 0 execution:** `docs/baseline/MIAYUDATIC-BASELINE.md` only.
+
+### 0.2 Architecture actually present (verified unless noted)
+
+- pnpm workspace: `client/`, `server/`, `packages/contracts/`. Mobile is `mobile/MiAyudaTIC-Mobile/` with `--ignore-workspace`.
+- Server: Node/Express, Mongoose, Vitest. Client: Vite SPA. Mobile: Expo/React Native native (not WebView).
+- Surfaces (from `docs/product.md` + source, corroborated): web = Líder TIC / admin; mobile = Funcionario + Técnico; API = Render; web host = Vercel.
+- Workflow v2, RBAC, Idempotency-Key, payload hashing, optimistic concurrency, `workflowRevision`, `HistorialSolicitud`, legacy v1 paths, media/storage exist in server source. Production Mongo transactions are required by `workflow-runtime.ts` when production / `mongodb+srv`; **Atlas transaction capability was not probed in this recapture.**
+- HTTP bind: `server/src/index.ts` uses `server.listen(port)` with `process.env.PORT || 8000` and **does not** pass `0.0.0.0`. Docs/rollback claim `0.0.0.0:$PORT`. Live API is reachable (smoke). Explicit host bind remains **inferred / contradicted vs docs**.
+- Dockerfile: Node 22 Alpine, `CMD ["node", "dist/index.js"]`.
+
+### 0.3 Services and environments
+
+| Service | Status | Evidence |
+|---|---|---|
+| Web production | Verified reachable | `https://miayudatics.vercel.app` smoke home + SPA deep link; `/.well-known/assetlinks.json` HTTP 200 `Content-Type: application/json` |
+| API production | Verified reachable | `https://miayudatics-v1-0.onrender.com` smoke health `ok` / `connected` |
+| Health CORS live | Verified this recapture | no Origin → 200, no ACAO; Origin `https://miayudatics.vercel.app` → 200 + exact ACAO + credentials + Idempotency-Key in allow-headers |
+| Mongo Atlas topology | Pending | not inspected |
+| Cloudinary / Brevo / Redis live config | Pending | health reports configured flags only; no send/upload journey |
+| Mobile device / EAS / Play | Pending | validate debug fingerprint only |
+| Render/Vercel live SHA | Inferred from D2 closeout same day | not re-queried via provider APIs in this recapture |
+
+No secrets, tokens, PII, or connection strings captured.
+
+### 0.4 Commands executed this recapture
+
+| Command | Result | Classification |
+|---|---|---|
+| `pnpm -C server typecheck` | PASS (exit 0) | verified |
+| `pnpm -C client typecheck` | PASS | verified |
+| `pnpm -C mobile/MiAyudaTIC-Mobile typecheck` | PASS | verified |
+| `pnpm -C server test` | PASS — 27 files, **151** tests | verified on **this dirty worktree + chore HEAD**; not `b503755` |
+| `pnpm -C client exec vitest run` | PASS — 17 files, **59** tests | includes **untracked** LeaderMediaThumb / ticket-photo tests |
+| `pnpm -C mobile/MiAyudaTIC-Mobile test` | PASS — 43 files, **265** tests | includes dirty `historial-intent` tests |
+| `pnpm -C server build` | PASS (contracts + tsc) | verified |
+| `VITE_BACKEND_URL=http://localhost:8000 pnpm -C client build` | PASS — JS 686.49 kB / 202.67 kB gzip; chunk >500 kB warning | verified |
+| `pnpm -C server lint` | exit 0 — **0 errors, 155 warnings** | not a clean lint baseline |
+| `pnpm -C client lint` | exit 0 — **0 errors, 2 warnings** (one is untracked `LeaderMediaThumb.tsx`) | not a clean lint baseline |
+| `pnpm -C server test:integration` | PASS — 5 files, **12** tests; local simulation | verified; not Atlas |
+| `pnpm -C mobile/MiAyudaTIC-Mobile validate` | PASS with warnings: debug fingerprint only; Play/EAS/release pending | verified local |
+| `pnpm run smoke:prod` | **17 PASS / 0 FAIL**; recovery check skipped (no `SMOKE_REGISTERED_EMAIL`) | verified against **live** URLs |
+| `pnpm run smoke:mobile-api` | **2 PASS / 0 FAIL**; login/verify skipped (no `TEST_EMAIL`/`TEST_PASSWORD`) | verified live health + login preflight |
+| `pnpm test:e2e` | exit 0 — **4 passed, 19 skipped, 0 failed** | **not** E2E v2 PASS; skipped ≠ pass |
+| `pnpm audit --prod --audit-level high` | FAIL exit 1 — **16** vulns: 3 low, 11 moderate, **2 high** (nodemailer, path `server>nodemailer`) | threshold not changed |
+| `pnpm -C server test:coverage` | PASS — stmts 33.79%, branches 23.46%, funcs 23.86%, lines 33.73% | verified; no coverage gate in CI |
+| `pnpm -C client test:coverage` | PASS — stmts 53.39%, branches 52.1%, funcs 43.85%, lines 54.98% | includes untracked client WIP files |
+
+**Not re-executed:** `format:check` (historical 2026-09-14 FAIL, 157/173 files). **Not executable here:** `scripts/e2e-ticket-lifecycle.sh` (legacy v1 destructive); workflow-v2 Playwright journey (`Not implemented` + `RUN_DESTRUCTIVE_E2E=false` + production host refused); `migrate:*` remote; Render/Vercel deploys.
+
+Vitest still warns that `vi.mock("morgan")` in `server/src/tests/setup.ts` is not top-level and will become an error in a future Vitest.
+
+### 0.5 Playwright / E2E classification (verified)
+
+| Spec | Class | This run |
+|---|---|---|
+| `e2e/cors.spec.ts` (4 tests) | safe live CORS/SPA | 4 passed |
+| `e2e/cors.spec.ts` health browser | skipped unless `E2E_EXPECT_HEALTH_CORS=true` | skipped (live health CORS now works; flag still unset) |
+| `e2e/login.spec.ts` | needs `E2E_LIDER_*` | skipped |
+| `e2e/solicitud.spec.ts` | needs `E2E_FUNCA_*` | skipped |
+| `e2e/workflow-v2.spec.ts` (16) | harness only; journey not implemented | skipped — **do not declare E2E v2 PASS** |
+| `scripts/e2e-ticket-lifecycle.sh` | legacy v1 destructive | not run |
+
+### 0.6 CI, release, rollback
+
+**Verified CI** (`.github/workflows/ci.yml`): push/PR to `main`/`master`/`develop`; Node 22; pnpm 10.34.3; contracts build; server typecheck/build/unit; client typecheck/unit/build; mobile install ignore-workspace + typecheck/unit.
+
+**Verified gaps:** CI does not run lint, format, coverage gates, integration, Playwright, `pnpm audit`, or automatic post-deploy smoke. `post-deploy-smoke.yml` is `workflow_dispatch` only. CI has no deploy/rollback job.
+
+**Inferred deploy:** Render auto-deploys `master` (documented + D2 experience). Vercel Root Directory `client`. Not re-read from dashboards this recapture.
+
+**Rollback:** documented in `docs/rollback-procedure.md` and `docs/baseline/PHASE-05-D2-CLOSEOUT.md`. Dashboard rollback of D2 is lost on the next `master` push. Do not drop Atlas index `uniq_historial_solicitud_operationId`. Do not DELETE tickets.
+
+### 0.7 Observability
+
+**Verified:** `/api/health` JSON with status/uptime/db/Cloudinary/Brevo flags/socket count; Morgan; some JSON logs; workflow `operationId` / `workflowRevision` in domain code.
+
+**Pending / absent:** requestId on every log line; metrics endpoint; p50/p95/p99; Mongo latency; transaction abort counters; idempotency counters; hosted APM. No dashboard claimed.
+
+### 0.8 Security
+
+**Verified:** Helmet, CORS allowlist, rate limit, cookie web auth + Bearer mobile, smoke 401s, storage root not public, unauthenticated local media blocked. Audit: nodemailer 8.x, 2 high advisories, path `server>nodemailer`. Prior human classification: **FAIL WITH ACCEPTED RISK** (review 2026-10-14, owner backend, preferred path Brevo REST). This recapture **re-measured** the audit FAIL; it does **not** re-accept the risk.
+
+**Pending:** BOLA/IDOR live, media authorization matrix, CSRF, secret rotation, App Links **release** fingerprints.
+
+**App Links:** package `com.miayudatics.mobile`; published fingerprint is **debug** `FA:C6:17:45:DC:09:03:78:6F:B9:ED:E6:2A:96:2B:39:9F:73:48:F0:BB:6F:89:9B:83:32:66:75:91:03:3B:9C`. Play/EAS/release **pending**. Do not claim production App Links.
+
+### 0.9 Documentation vs this recapture
+
+| Status | Finding |
+|---|---|
+| Superseded (was contradicted 2026-09-14) | Live `/api/health` now returns ACAO for allowed Origin; live `assetlinks.json` is JSON not SPA HTML |
+| Still contradicted | `server.listen(port)` vs docs `0.0.0.0:$PORT` |
+| Still contradicted / incomplete | `docs/security.md`, `docs/operations.md`, `docs/testing.md`, `docs/deployment.md`, `docs/observability.md`, `docs/performance.md`, `docs/decisions/`, `docs/case-study/` **do not exist** |
+| Present | `docs/architecture.md`, `docs/product.md`, `docs/workflow-v2.md`, `docs/contracts.md`, `docs/quality-bar.md`, READMEs, CI, rollback |
+| Incomplete | `client/README.md` still Vite template; server README “Lean Mode” vs integration Mongo |
+| Do not collapse SHAs | chore `335a9a0` ≠ `origin/master` `b503755` ≠ historical Phase 0 `ac5ae74` |
+
+### 0.10 Open risks (current)
+
+1. **P0 accepted (not resolved):** nodemailer 8.x, 2 highs; security gate FAIL WITH ACCEPTED RISK until a later human decision.
+2. **P1:** chore HEAD and dirty WIP are not the production tree; local 151/59 tests do not prove `b503755`.
+3. **P1:** CI green ≠ lint/integration/Playwright/audit/coverage/smoke.
+4. **P1:** E2E v2 journey not implemented; 19 Playwright skips; destructive E2E not run; production refused by default.
+5. **P1:** App Links release fingerprints missing; debug-only publication.
+6. **P2:** coverage ~34% server / ~53% client; no gate; client number includes WIP.
+7. **P2:** observability and load/latency baselines absent.
+8. **P2:** Atlas transactions/index presence not re-verified this recapture.
+9. **P2:** listen host not explicit `0.0.0.0`.
+10. **WIP risk:** leader media / historial-intent / marketing / local storage JPEGs must stay out of release commits.
+
+### 0.11 Gate 0
+
+| Criterion | Result |
+|---|---|
+| Baseline written | yes — this recapture |
+| Pre-existing changes identified | yes — §0.1 |
+| Exact command results documented | yes — §0.4 |
+| No file loss | yes — product not edited; assetlinks line-ending rewrite reverted |
+| Product unmodified | yes |
+
+**Gate 0: PASS.** Do not start Fase 1 until this report is reviewed. Fase 0.5 already ran historically (2026-09-14/15 + D2). The next orchestrator step is a **re-triage**, not a silent re-patch.
+
+### 0.12 What this recapture does not claim
+
+- Production-ready / measured production system.
+- E2E v2 PASS.
+- Security PASS.
+- Scalability.
+- Production App Links.
+- That local HEAD is live on Render/Vercel.
+
+---
+
+## Historical capture 2026-09-14
+
 **Captured:** 2026-09-14T10:57:42-05:00  
 **Scope:** Phase 0 only — audit and measurement; no product, platform, mobile, infrastructure, dependency, or remote configuration changes.  
 **Evidence policy:** code and executed commands are authoritative. Documentation is a claim until it is corroborated.
+
+> Frozen snapshot. HEAD at that capture was `ac5ae74` = then-`origin/master`. Live production on 2026-09-15 is `b503755`. Do not quote §1–§5 numbers as current without the recapture table above.
 
 ## Status legend
 

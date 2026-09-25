@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import LeaderLayout from '@/app/layouts/LeaderLayout'
-import { historialSolicitudesLider, reasignarTecnico, cancelarSolicitud, WorkflowManualRetryNotice, LeaderTicketDrawer } from '@/features/tickets'
+import { historialSolicitudesLider, reasignarTecnico, cancelarSolicitud, WorkflowManualRetryNotice, LeaderTicketDrawer, LeaderMediaThumb } from '@/features/tickets'
 import { classifyWorkflowMutationFailure } from '@/features/tickets/api/workflow-retry-policy'
 import { clearWorkflowAttemptKey } from '@/features/tickets/api/workflow-idempotency'
 import {
@@ -203,7 +203,7 @@ export default function SeguimientoSolicitud() {
                       <th className="py-4 px-6 text-[10px] font-bold uppercase tracking-[0.15em] text-on-surface-variant/70 border-b hairline-border border-slate-200 min-w-[200px]">Descripción</th>
                       <th className="py-4 px-6 text-[10px] font-bold uppercase tracking-[0.15em] text-on-surface-variant/70 border-b hairline-border border-slate-200 min-w-[140px]">Usuario</th>
                       <th className="py-4 px-6 text-[10px] font-bold uppercase tracking-[0.15em] text-on-surface-variant/70 border-b hairline-border border-slate-200 min-w-[140px]">Ambiente</th>
-                      <th className="py-4 px-6 text-[10px] font-bold uppercase tracking-[0.15em] text-on-surface-variant/70 border-b hairline-border border-slate-200 text-center w-[80px]">Evidencia</th>
+                      <th className="py-4 px-6 text-[10px] font-bold uppercase tracking-[0.15em] text-on-surface-variant/70 border-b hairline-border border-slate-200 text-center min-w-[120px]">Evidencia</th>
                       <th className="py-4 px-6 text-[10px] font-bold uppercase tracking-[0.15em] text-on-surface-variant/70 border-b hairline-border border-slate-200 min-w-[140px]">Técnico</th>
                       <th className="py-4 px-6 text-[10px] font-bold uppercase tracking-[0.15em] text-on-surface-variant/70 border-b hairline-border border-slate-200 min-w-[180px]">Solución</th>
                       <th className="py-4 px-6 text-[10px] font-bold uppercase tracking-[0.15em] text-on-surface-variant/70 border-b hairline-border border-slate-200 min-w-[140px]">Estado</th>
@@ -249,13 +249,7 @@ export default function SeguimientoSolicitud() {
                             </div>
                           </td>
                           <td className="py-6 px-6 align-top text-center">
-                            {row.foto ? (
-                              <a href={row.foto.url} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 text-slate-400 hover:bg-primary-container hover:text-white transition-all shadow-sm">
-                                <span className="material-symbols-outlined !text-[18px]">image</span>
-                              </a>
-                            ) : (
-                              <span className="material-symbols-outlined text-slate-200 !text-[18px]">hide_image</span>
-                            )}
+                            <LeaderMediaThumb foto={row.foto} alt={`Evidencia de ${row.codigoCaso || 'solicitud'}`} />
                           </td>
                           <td className="py-6 px-6 align-top">
                             <div className="flex items-center gap-2">

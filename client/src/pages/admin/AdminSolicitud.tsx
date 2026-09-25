@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { asignarSolicitudTecnico, cancelarSolicitud, getSolicitudesPendientes, WorkflowManualRetryNotice } from '@/features/tickets'
+import { asignarSolicitudTecnico, cancelarSolicitud, getSolicitudesPendientes, LeaderMediaThumb, WorkflowManualRetryNotice } from '@/features/tickets'
 import { getTecnicosAprobados } from '@/features/users'
 import LeaderLayout from '@/app/layouts/LeaderLayout'
 import { toast } from 'react-toastify'
@@ -177,7 +177,7 @@ export default function AdminSolicitud() {
                       <th className="premium-th min-w-[160px]">Ambiente</th>
                       <th className="premium-th min-w-[200px]">Funcionario</th>
                       <th className="premium-th min-w-[350px]">Detalle de Solicitud</th>
-                      <th className="premium-th text-center w-[100px]">Multimedia</th>
+                      <th className="premium-th text-center min-w-[120px]">Multimedia</th>
                       <th className="premium-th text-center min-w-[140px]">Acciones</th>
                     </tr>
                   </thead>
@@ -228,13 +228,7 @@ export default function AdminSolicitud() {
                             </p>
                           </td>
                           <td className="premium-td text-center">
-                            {row.foto ? (
-                              <a href={row.foto.url} target="_blank" rel="noreferrer" className="inline-block p-2 rounded-xl bg-slate-50 border hairline-border border-slate-100 hover:bg-primary-container/10 transition-colors">
-                                <span className="material-symbols-outlined text-primary-container !text-[20px]">image</span>
-                              </a>
-                            ) : (
-                              <span className="material-symbols-outlined text-slate-200 !text-[20px]">image_not_supported</span>
-                            )}
+                            <LeaderMediaThumb foto={row.foto} alt={`Evidencia de ${row.codigoCaso || 'solicitud'}`} />
                           </td>
                           <td className="premium-td text-center">
                             <div className="flex items-center justify-center gap-2">

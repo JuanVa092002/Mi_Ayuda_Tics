@@ -128,20 +128,20 @@ Project skills in [`.cursor/skills/`](.cursor/skills/). Invoke by name or trigge
 | `60-web-scope` | `client/**` |
 | `70-platform-scope` | `server/**`, `packages/**` |
 
-## OpenCode + Engram + Gentle-AI
+## OpenCode + Engram + Gentle-AI + Antigravity
 
-This project is integrated with **Gentle AI** for persistent memory and structured workflows in OpenCode.
+This project is integrated with **Gentle AI** and **Agent Skills** for persistent memory, design intelligence, and structured development workflows.
 
 ### What's available
 
 | Feature | How to use |
 |---------|------------|
-| **Persistent memory** | `mem_save`, `mem_search`, `mem_context` — survives across sessions |
-| **SDD (Spec-Driven Dev)** | `/sdd-init`, `/sdd-new`, `/sdd-continue`, `/sdd-apply`, `/sdd-verify` |
-| **Review agents** | `review-readability`, `review-reliability`, `review-resilience`, `review-risk` |
-| **Judgment Day** | `jd-judge-a`, `jd-judge-b`, `jd-fix-agent` — adversarial dual review |
-| **Skills** | 21 skills in `.atl/skill-registry.md` — branch-pr, chained-pr, work-unit-commits, etc. |
-| **MCP server** | Engram MCP configured in `opencode.json` — auto-loads at session start |
+| **Persistent memory** | `mem_save`, `mem_search`, `mem_context` via Engram MCP in `opencode.json` & Antigravity `mcp_config.json` |
+| **Organic & Spec-Driven Dev** | ODD / SDD: native status and routing via `gentle-ai sdd-status`, `gentle-ai sdd-continue` |
+| **Review agents & Judgment Day** | `review start` (v2 compact authority), `jd-judge-a`, `jd-judge-b`, `jd-fix-agent` |
+| **UI/UX Skills Engine** | `ui-ux-pro-max`, `web-design-guidelines`, `frontend-design`, `cut-the-curve`, `design-system` |
+| **Skill Registry** | 48 skills cataloged in `.atl/skill-registry.md` across project, system, and user scopes |
+| **MCP server** | Engram MCP configured in `opencode.json` and Antigravity global MCP config |
 
 ### First time in this repo
 

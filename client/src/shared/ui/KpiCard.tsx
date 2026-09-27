@@ -5,15 +5,16 @@ export interface KpiCardProps {
   value: string | number
   hint?: string
   icon: string
-  tone?: 'navy' | 'green' | 'amber' | 'muted'
+  tone?: 'navy' | 'green' | 'amber' | 'muted' | 'red'
   className?: string
 }
 
-const TONE_CLASSES = {
-  navy: 'bg-[#E8EEF2] text-azul-sena',
-  green: 'bg-[#E8F5E0] text-verde-sena',
-  amber: 'bg-[#FFF8E6] text-[#B8860B]',
-  muted: 'bg-slate-100 text-slate-500',
+const TONE_ICON_STYLE: Record<string, { bg: string; color: string }> = {
+  navy:  { bg: 'var(--brand-subtle)', color: 'var(--brand)' },
+  green: { bg: 'var(--accent-subtle)', color: 'var(--accent)' },
+  amber: { bg: 'var(--warn-bg)', color: 'var(--warn)' },
+  red:   { bg: 'var(--danger-bg)', color: 'var(--danger)' },
+  muted: { bg: 'var(--surface-1)', color: 'var(--ink-3)' },
 }
 
 export default function KpiCard({
@@ -24,27 +25,47 @@ export default function KpiCard({
   tone = 'navy',
   className = '',
 }: KpiCardProps): ReactNode {
+  const iconStyle = TONE_ICON_STYLE[tone] ?? TONE_ICON_STYLE.navy
+
   return (
     <article
-      className={`rounded-2xl border hairline-border border-slate-100 bg-white p-5 shadow-[0_8px_24px_rgba(4,50,77,0.04)] transition-all hover:translate-y-[-2px] hover:shadow-md ${className}`}
+      className={`group relative overflow-hidden rounded-xl border bg-surface p-5 transition-all hover:-translate-y-0.5 ${className}`}
+      style={{ borderColor: 'var(--border-c)', boxShadow: 'var(--sh-xs)' }}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400 truncate">
+          <p
+            className="text-[10px] font-semibold uppercase tracking-[0.1em] truncate"
+            style={{ color: 'var(--ink-3)' }}
+          >
             {label}
           </p>
-          <p className="mt-2 text-2xl sm:text-3xl font-black tracking-tight text-azul-sena">
+          <p
+            className="mt-2 text-[28px] font-bold leading-none tracking-tight"
+            style={{ color: 'var(--ink-1)' }}
+          >
             {value}
           </p>
-          {hint ? <p className="mt-1 text-xs font-medium text-slate-400">{hint}</p> : null}
+          {hint ? (
+            <p className="mt-1.5 text-[11px] font-medium" style={{ color: 'var(--ink-3)' }}>
+              {hint}
+            </p>
+          ) : null}
         </div>
         <div
-          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${TONE_CLASSES[tone]}`}
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+          style={{ background: iconStyle.bg }}
           aria-hidden="true"
         >
-          <span className="material-symbols-outlined !text-[22px]">{icon}</span>
+          <span
+            className="material-symbols-outlined !text-[20px]"
+            style={{ color: iconStyle.color }}
+          >
+            {icon}
+          </span>
         </div>
       </div>
     </article>
   )
 }
+

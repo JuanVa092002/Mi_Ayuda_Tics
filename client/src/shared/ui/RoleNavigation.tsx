@@ -23,15 +23,15 @@ export const LEADER_NAV_ITEMS: readonly NavItem[] = [
 ] as const
 
 export const FUNCIONARIO_NAV_ITEMS: readonly NavItem[] = [
-  { to: '/funcionario', label: 'Mis Solicitudes', icon: 'assignment', match: ['/funcionario'] },
-  { to: '/perfil', label: 'Mi Perfil', icon: 'account_circle', match: ['/perfil'] },
+  { to: '/funcionario', label: 'Mis solicitudes', icon: 'assignment', match: ['/funcionario'] },
+  { to: '/perfil', label: 'Mi perfil', icon: 'account_circle', match: ['/perfil'] },
 ] as const
 
 export const TECNICO_NAV_ITEMS: readonly NavItem[] = [
   { to: '/casos-por-resolver', label: 'Por resolver', icon: 'pending_actions', match: ['/casos-por-resolver'] },
   { to: '/mis-casos', label: 'Mis casos', icon: 'assignment_ind', match: ['/mis-casos'] },
   { to: '/casos-resueltos', label: 'Casos resueltos', icon: 'task_alt', match: ['/casos-resueltos'] },
-  { to: '/perfil', label: 'Mi Perfil', icon: 'account_circle', match: ['/perfil'] },
+  { to: '/perfil', label: 'Mi perfil', icon: 'account_circle', match: ['/perfil'] },
 ] as const
 
 export function getNavItemsForRole(role: string | undefined): { items: readonly NavItem[]; ariaLabel: string } {
@@ -60,7 +60,7 @@ export default function RoleNavigation({
   const { items, ariaLabel } = getNavItemsForRole(role)
 
   return (
-    <nav aria-label={ariaLabel} className="flex flex-col gap-1 px-3">
+    <nav aria-label={ariaLabel} className="flex flex-col gap-0.5 px-2 py-2">
       {items.map((item) => {
         const active = item.match.some((path) => location.pathname === path)
         return (
@@ -69,19 +69,30 @@ export default function RoleNavigation({
             to={item.to}
             onClick={onNavigate}
             title={item.label}
-            className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors ${
+            className={[
+              'flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium transition-colors',
               active
-                ? 'bg-azul-sena text-white shadow-sm'
-                : 'text-slate-600 hover:bg-[#E8EEF2] hover:text-azul-sena'
-            } ${collapsed ? 'justify-center' : ''}`}
+                ? 'bg-brand-subtle text-brand font-semibold'
+                : 'text-ink-muted hover:bg-surface-subtle hover:text-ink',
+              collapsed ? 'justify-center' : '',
+            ].join(' ')}
           >
-            <span className="material-symbols-outlined !text-[20px]" aria-hidden="true">
+            <span
+              className={`material-symbols-outlined !text-[19px] shrink-0 ${active ? 'text-brand' : 'text-ink-muted'}`}
+              aria-hidden="true"
+              style={{ fontVariationSettings: active ? "'FILL' 1" : "'FILL' 0" }}
+            >
               {item.icon}
             </span>
-            {collapsed ? <span className="sr-only">{item.label}</span> : <span>{item.label}</span>}
+            {collapsed ? (
+              <span className="sr-only">{item.label}</span>
+            ) : (
+              <span className="truncate">{item.label}</span>
+            )}
           </NavLink>
         )
       })}
     </nav>
   )
 }
+

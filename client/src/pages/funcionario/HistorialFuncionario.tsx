@@ -99,12 +99,18 @@ export default function HistorialFuncionario({ refreshKey }: HistorialFuncionari
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
         {/* Left: Request Queue (5 cols) */}
-        <div className="lg:col-span-5 bg-white rounded-3xl border border-[#dbe4e8] shadow-sm overflow-hidden flex flex-col">
-          <div className="px-5 py-4 border-b border-[#dbe4e8] bg-[#f5f8f9] flex items-center justify-between">
-            <span className="text-xs font-black uppercase tracking-wider text-azul-sena">
-              Tus Solicitudes ({totalItems})
+        <div
+          className="lg:col-span-5 overflow-hidden rounded-xl flex flex-col"
+          style={{ border: '1px solid var(--border-c)', background: 'var(--surface-0)', boxShadow: 'var(--sh-xs)' }}
+        >
+          <div
+            className="px-4 py-3 flex items-center justify-between"
+            style={{ borderBottom: '1px solid var(--border-c)', background: 'var(--surface-1)' }}
+          >
+            <span className="text-[12px] font-semibold" style={{ color: 'var(--ink-1)' }}>
+              Tus solicitudes <span style={{ color: 'var(--ink-3)' }}>({totalItems})</span>
             </span>
-            <span className="text-[11px] font-semibold text-slate-500">
+            <span className="text-[11px] font-medium" style={{ color: 'var(--ink-3)' }}>
               Página {currentPage} de {Math.max(1, totalPages)}
             </span>
           </div>
@@ -125,7 +131,7 @@ export default function HistorialFuncionario({ refreshKey }: HistorialFuncionari
               <p className="text-xs text-slate-400 mt-0.5">No hay requerimientos que coincidan con la búsqueda.</p>
             </div>
           ) : (
-            <div className="divide-y divide-[#dbe4e8]/70" role="list">
+            <div className="divide-y" style={{ borderColor: 'var(--border-c)' }} role="list">
               {currentItems.map((item) => {
                 const isSelected = selectedCase?._id === item._id
                 return (
@@ -133,28 +139,27 @@ export default function HistorialFuncionario({ refreshKey }: HistorialFuncionari
                     key={item._id}
                     type="button"
                     onClick={() => setSelectedTicketId(item._id)}
-                    className={`w-full text-left p-4.5 transition-all cursor-pointer flex flex-col gap-2 relative ${
-                      isSelected
-                        ? 'bg-blue-50/50 ring-2 ring-inset ring-azul-sena/20 border-l-4 border-l-azul-sena'
-                        : 'hover:bg-slate-50 bg-white'
-                    }`}
+                    className={`queue-item ${isSelected ? 'is-selected' : ''}`}
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono text-xs font-black text-azul-sena">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="font-mono text-[11px] font-bold" style={{ color: 'var(--brand)' }}>
                         #{item.codigoCaso || item._id.slice(-6)}
                       </span>
                       <StatusBadge status={item.estado} />
                     </div>
 
-                    <h3 className="text-sm font-bold text-on-surface line-clamp-2">
+                    <h3 className="text-[13px] font-medium leading-snug line-clamp-2" style={{ color: 'var(--ink-1)' }}>
                       {item.descripcion}
                     </h3>
 
-                    <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
-                      <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
+                    <div className="flex items-center justify-between mt-2">
+                      <span
+                        className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md"
+                        style={{ background: 'var(--accent-subtle)', color: 'var(--accent)' }}
+                      >
                         {item.ambiente?.nombre || 'General'}
                       </span>
-                      <span className="text-[11px] text-slate-400 font-medium">{item.fecha}</span>
+                      <span className="text-[11px]" style={{ color: 'var(--ink-3)' }}>{item.fecha}</span>
                     </div>
                   </button>
                 )
@@ -193,11 +198,9 @@ export default function HistorialFuncionario({ refreshKey }: HistorialFuncionari
               </div>
 
               {/* Progress Stepper Timeline */}
-              <div className="bg-surface-subtle p-5 rounded-2xl border border-border-subtle">
-                <p className="text-xs font-bold uppercase tracking-wider text-ink-muted mb-4">
-                  Etapa del requerimiento
-                </p>
-                <div className="grid grid-cols-4 gap-2 text-center relative">
+              <div className="rounded-xl p-5" style={{ background: 'var(--surface-1)', border: '1px solid var(--border-c)' }}>
+                <p className="text-overline mb-4">Etapa del requerimiento</p>
+                <div className="stepper grid-cols-4 text-center">
                   {[
                     { step: 1, name: 'Radicado' },
                     { step: 2, name: 'Asignado' },
@@ -207,25 +210,15 @@ export default function HistorialFuncionario({ refreshKey }: HistorialFuncionari
                     const isCompleted = currentStepInfo.step > s.step
                     const isCurrent = currentStepInfo.step === s.step
                     return (
-                      <div key={s.step} className="flex flex-col items-center">
-                        <div
-                          className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                            isCurrent
-                              ? 'bg-brand-deep text-white ring-4 ring-brand-deep/15'
-                              : isCompleted
-                              ? 'bg-brand-green text-white'
-                              : 'bg-slate-200 text-slate-600'
-                          }`}
-                        >
+                      <div key={s.step} className="stepper-step">
+                        <div className={`stepper-dot ${isCurrent ? 'current' : isCompleted ? 'done' : 'pending'}`}>
                           {isCompleted ? (
-                            <span className="material-symbols-outlined !text-[18px]">check</span>
+                            <span className="material-symbols-outlined !text-[15px]">check</span>
                           ) : (
                             s.step
                           )}
                         </div>
-                        <span className={`text-xs font-semibold mt-2 ${
-                          isCurrent ? 'text-brand-deep font-bold' : isCompleted ? 'text-ink' : 'text-ink-muted'
-                        }`}>
+                        <span className={`stepper-label ${isCurrent ? 'current' : isCompleted ? 'done' : ''}`}>
                           {s.name}
                         </span>
                       </div>
@@ -243,18 +236,18 @@ export default function HistorialFuncionario({ refreshKey }: HistorialFuncionari
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="p-4 rounded-2xl bg-[#f5f8f9] border border-[#dbe4e8]">
-                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Ambiente de Formación</p>
-                    <p className="text-sm font-bold text-azul-sena mt-1">{selectedCase.ambiente?.nombre || 'General'}</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="meta-row">
+                    <span className="meta-label">Ambiente</span>
+                    <span className="meta-value">{selectedCase.ambiente?.nombre || 'General'}</span>
                   </div>
-                  <div className="p-4 rounded-2xl bg-[#f5f8f9] border border-[#dbe4e8]">
-                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Especialista Asignado</p>
-                    <p className="text-sm font-bold text-azul-sena mt-1">
+                  <div className="meta-row">
+                    <span className="meta-label">Especialista asignado</span>
+                    <span className="meta-value">
                       {typeof selectedCase.tecnico === 'object' && selectedCase.tecnico?.nombre
                         ? selectedCase.tecnico.nombre
                         : 'En espera de despacho'}
-                    </p>
+                    </span>
                   </div>
                 </div>
 

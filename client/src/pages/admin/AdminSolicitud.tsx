@@ -5,11 +5,11 @@ import {
   getSolicitudesPendientes,
   WorkflowManualRetryNotice,
 } from '@/features/tickets'
-import { formatSolicitudFecha, workflowLabel } from '@/features/tickets/leader-inbox'
+import { formatSolicitudFecha } from '@/features/tickets/leader-inbox'
 import { getTecnicosAprobados } from '@/features/users'
 import { toast } from 'react-toastify'
 import { getApiErrorMessage } from '@/shared/api/apiError'
-import { AppShell, SearchField, PaginationFooter, StatusBadge, Button } from '@/shared/ui'
+import { AppShell, SearchField, PaginationFooter, StatusBadge, Button, WorkCanvas, Metric, CommandBar, SplitWorkspace, Pane } from '@/shared/ui'
 import { classifyWorkflowMutationFailure } from '@/features/tickets/api/workflow-retry-policy'
 import { clearWorkflowAttemptKey } from '@/features/tickets/api/workflow-idempotency'
 import type { Solicitud, User } from '@/shared/types'
@@ -145,69 +145,41 @@ export default function AdminSolicitud(): ReactNode {
 
   return (
     <AppShell subtitleContext="Centro de Mando TIC">
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        
-        {/* Executive Command Header */}
-        <section className="bg-white rounded-2xl p-6 sm:p-7 border border-border-subtle shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-xs font-semibold text-ink-muted">
-              <span className="w-2 h-2 rounded-full bg-brand-green animate-pulse" />
-              <span>Centro de Mando TIC · Despacho y Asignación</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">
-              Mesa de Control de Nuevas Incidencias
-            </h1>
-            <p className="text-sm text-ink-muted leading-relaxed max-w-2xl">
-              Evalúa requerimientos recién radicados, analiza evidencia técnica y asigna especialistas con un solo clic.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="bg-surface-subtle border border-border-subtle px-4 py-2.5 rounded-xl text-center min-w-[110px]">
-              <p className="text-xs font-medium text-ink-muted">Por despachar</p>
-              <p className="text-2xl font-extrabold text-brand-deep mt-0.5">{solicitudes.length}</p>
-            </div>
-            <div className="bg-surface-subtle border border-border-subtle px-4 py-2.5 rounded-xl text-center min-w-[110px]">
-              <p className="text-xs font-medium text-ink-muted">Técnicos activos</p>
-              <p className="text-2xl font-extrabold text-brand-green mt-0.5">{tecnicos.length}</p>
-            </div>
-          </div>
-        </section>
-
-        {/* Search & Actions Toolbar */}
-        <section className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-3.5 rounded-2xl border border-[#dbe4e8] shadow-xs">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-black uppercase tracking-wider text-azul-sena">
-              Cola de Triaje y Despacho
-            </span>
-            <span className="px-2 py-0.5 rounded-full bg-blue-50 text-azul-sena text-[11px] font-bold">
-              {totalItems} pendientes
-            </span>
-          </div>
-
-          <div className="w-full sm:w-80 shrink-0">
+      <WorkCanvas>
+        <CommandBar
+          metrics={
+            <>
+              <Metric label="Por despachar" value={solicitudes.length} />
+              <Metric label="Técnicos disponibles" value={tecnicos.length} tone="ok" />
+            </>
+          }
+        >
+          <div className="w-full sm:w-80">
             <SearchField
               value={searchTerm}
               onChange={setSearchTerm}
-              placeholder="Buscar por ticket, ambiente o funcionario..."
+              placeholder="Buscar ticket, ambiente o funcionario"
               label="Buscar en incidencias nuevas"
             />
           </div>
-        </section>
+        </CommandBar>
 
-        {/* Master-Detail Split Workspace (Zero horizontal scroll) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          
-          {/* Left Panel: Incoming Ticket Queue (5 cols) */}
-          <div className="lg:col-span-5 bg-white rounded-3xl border border-[#dbe4e8] shadow-sm overflow-hidden flex flex-col">
-            <div className="px-5 py-4 border-b border-[#dbe4e8] bg-[#f5f8f9] flex items-center justify-between">
-              <span className="text-xs font-black uppercase tracking-wider text-azul-sena">
-                Requerimientos Entrantes ({totalItems})
-              </span>
-              <span className="text-[11px] font-semibold text-slate-500">
-                Página {currentPage} de {Math.max(1, totalPages)}
-              </span>
-            </div>
+        <SplitWorkspace
+          queue={
+          <Pane
+            title="Cola de despacho"
+            meta={`Página ${currentPage} de ${Math.max(1, totalPages)}`}
+            footer={
+              <PaginationFooter
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                itemLabel="requerimientos"
+              />
+            }
+          >
 
             {loading ? (
               <div className="py-24 text-center">
@@ -225,7 +197,7 @@ export default function AdminSolicitud(): ReactNode {
                 <p className="text-xs text-slate-400 mt-0.5">No hay requerimientos pendientes de asignación.</p>
               </div>
             ) : (
-              <div className="divide-y divide-[#dbe4e8]/70" role="list">
+              <div className="divide-y" style={{ borderColor: 'var(--border-c)' }} role="list">
                 {currentItems.map((item) => {
                   const isSelected = selectedSolicitud?._id === item._id
                   return (
@@ -233,72 +205,48 @@ export default function AdminSolicitud(): ReactNode {
                       key={item._id}
                       type="button"
                       onClick={() => setSelectedCaseId(item._id)}
-                      className={`w-full text-left p-4.5 transition-all cursor-pointer flex flex-col gap-2 relative ${
-                        isSelected
-                          ? 'bg-blue-50/50 ring-2 ring-inset ring-azul-sena/20 border-l-4 border-l-azul-sena'
-                          : 'hover:bg-slate-50 bg-white'
-                      }`}
+                      className={`queue-item ${isSelected ? 'is-selected' : ''}`}
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs font-black text-azul-sena">
-                            #{item.codigoCaso || item._id.slice(-6)}
-                          </span>
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                            {workflowLabel(item.workflowVersion)}
-                          </span>
-                        </div>
+                      <div className="flex items-start justify-between gap-3 mb-1.5">
+                        <p className="font-mono text-[11px] font-bold" style={{ color: 'var(--brand)' }}>
+                          #{item.codigoCaso || item._id.slice(-6)}
+                        </p>
                         <StatusBadge status={item.estado} label={item.displayStatus || item.estado} />
                       </div>
-
-                      <h3 className="text-sm font-bold text-on-surface line-clamp-2">
+                      <h3 className="text-[13px] font-medium leading-snug line-clamp-2" style={{ color: 'var(--ink-1)' }}>
                         {item.descripcion}
                       </h3>
-
-                      <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
-                        <span className="font-semibold text-slate-700 truncate max-w-[160px]">
-                          {typeof item.usuario === 'object' ? item.usuario?.nombre : 'Desconocido'}
-                        </span>
-                        <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
-                          {item.ambiente?.nombre || 'General'}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-between pt-1">
-                        <span className="text-[11px] text-slate-400 font-medium">
-                          {formatSolicitudFecha(item.fecha)}
-                        </span>
-                        <span className="text-[11px] font-bold text-azul-sena flex items-center gap-0.5">
-                          Despachar <span className="material-symbols-outlined !text-[14px]">chevron_right</span>
-                        </span>
-                      </div>
+                      <p className="mt-1.5 text-[11px]" style={{ color: 'var(--ink-3)' }}>
+                        {typeof item.usuario === 'object' ? item.usuario?.nombre : 'Sin solicitante'}
+                        {' · '}
+                        {item.ambiente?.nombre || 'Sin ambiente'}
+                      </p>
+                      <p className="mt-0.5 text-[11px]" style={{ color: 'var(--ink-4)' }}>{formatSolicitudFecha(item.fecha)}</p>
                     </button>
                   )
                 })}
               </div>
             )}
 
-            <div className="p-3 border-t border-[#dbe4e8] bg-white">
-              <PaginationFooter
-                currentPage={currentPage}
-                totalPages={totalPages}
-                totalItems={totalItems}
-                itemsPerPage={itemsPerPage}
-                onPageChange={setCurrentPage}
-                itemLabel="requerimientos"
-              />
-            </div>
-          </div>
-
-          {/* Right Panel: Dispatch Inspector & Specialist Assignment (7 cols) */}
-          <div className="lg:col-span-7">
+          </Pane>
+          }
+          detail={
+          <div>
             {selectedSolicitud ? (
-              <div className="bg-white rounded-3xl border border-[#dbe4e8] shadow-sm overflow-hidden sticky top-24 space-y-6 p-6">
-                
+              <div
+                className="rounded-xl border overflow-hidden sticky top-[72px] space-y-5 p-5"
+                style={{ borderColor: 'var(--border-c)', boxShadow: 'var(--sh-sm)', background: 'var(--surface-0)' }}
+              >
                 {/* Header */}
-                <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#dbe4e8]">
-                  <div className="flex items-center gap-2.5">
-                    <span className="font-mono text-sm font-black px-2.5 py-1 rounded-lg bg-[#f5f8f9] border border-[#dbe4e8] text-azul-sena">
+                <div
+                  className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b"
+                  style={{ borderColor: 'var(--border-c)' }}
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="font-mono text-[12px] font-bold px-2.5 py-1 rounded-md"
+                      style={{ background: 'var(--surface-1)', border: '1px solid var(--border-c)', color: 'var(--brand)' }}
+                    >
                       #{selectedSolicitud.codigoCaso || selectedSolicitud._id.slice(-6)}
                     </span>
                     <StatusBadge status={selectedSolicitud.estado} label={selectedSolicitud.displayStatus || selectedSolicitud.estado} />
@@ -323,30 +271,30 @@ export default function AdminSolicitud(): ReactNode {
 
                 {/* Description */}
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Detalle de la Incidencia</p>
-                  <p className="text-sm font-medium text-slate-800 mt-1 leading-relaxed bg-[#f5f8f9] p-4 rounded-2xl border border-[#dbe4e8]">
+                  <p className="text-overline mb-2">Qué reportó</p>
+                  <p
+                    className="text-[13px] font-medium leading-relaxed rounded-lg p-3.5"
+                    style={{ background: 'var(--surface-1)', border: '1px solid var(--border-c)', color: 'var(--ink-1)' }}
+                  >
                     {selectedSolicitud.descripcion}
                   </p>
                 </div>
 
                 {/* Metadata Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="p-4 rounded-2xl bg-[#f5f8f9] border border-[#dbe4e8]">
-                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Funcionario Solicitante</p>
-                    <p className="text-sm font-bold text-azul-sena mt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="meta-row">
+                    <span className="meta-label">Solicitante</span>
+                    <span className="meta-value">
                       {typeof selectedSolicitud.usuario === 'object' ? selectedSolicitud.usuario?.nombre : 'Desconocido'}
-                    </p>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      {selectedSolicitud.telefono ? `Tel: ${selectedSolicitud.telefono}` : 'Sin teléfono'}
-                    </p>
+                    </span>
+                    {selectedSolicitud.telefono ? (
+                      <span className="text-[11px]" style={{ color: 'var(--ink-3)' }}>Tel: {selectedSolicitud.telefono}</span>
+                    ) : null}
                   </div>
-
-                  <div className="p-4 rounded-2xl bg-[#f5f8f9] border border-[#dbe4e8]">
-                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Ambiente Afectado</p>
-                    <p className="text-sm font-bold text-azul-sena mt-1">
-                      {selectedSolicitud.ambiente?.nombre || 'General'}
-                    </p>
-                    <p className="text-xs text-slate-500 mt-0.5">Sede Central CTPI</p>
+                  <div className="meta-row">
+                    <span className="meta-label">Ambiente</span>
+                    <span className="meta-value">{selectedSolicitud.ambiente?.nombre || 'General'}</span>
+                    <span className="text-[11px]" style={{ color: 'var(--ink-3)' }}>CTPI</span>
                   </div>
                 </div>
 
@@ -374,8 +322,8 @@ export default function AdminSolicitud(): ReactNode {
                 {/* Specialist Assignment Section */}
                 <div className="pt-2 border-t border-[#dbe4e8] space-y-3">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs font-black uppercase tracking-wider text-azul-sena">
-                      Asignar Especialista Técnico
+                    <p className="text-[15px] font-semibold text-ink">
+                      Asignar técnico
                     </p>
                     <span className="text-[11px] text-slate-400 font-medium">
                       {tecnicos.length} disponibles
@@ -389,12 +337,21 @@ export default function AdminSolicitud(): ReactNode {
                       No hay técnicos aprobados disponibles actualmente.
                     </div>
                   ) : (
-                    <div className="divide-y divide-[#dbe4e8] border border-[#dbe4e8] rounded-2xl overflow-hidden max-h-60 overflow-y-auto hairline-scrollbar">
+                    <div
+                      className="divide-y overflow-hidden rounded-lg max-h-60 overflow-y-auto"
+                      style={{ border: '1px solid var(--border-c)', borderColor: 'var(--border-c)' }}
+                    >
                       {tecnicos.map((tecnico) => (
-                        <div key={tecnico._id} className="p-3.5 flex items-center justify-between hover:bg-surface-subtle transition-colors">
+                        <div
+                          key={tecnico._id}
+                          className="p-3 flex items-center justify-between transition-colors"
+                          style={{ borderColor: 'var(--border-c)' }}
+                          onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-1)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.background = '')}
+                        >
                           <div className="min-w-0 pr-3">
-                            <p className="text-sm font-bold text-ink truncate">{tecnico.nombre}</p>
-                            <p className="text-xs text-ink-muted truncate">{tecnico.correo} {tecnico.telefono ? `· ${tecnico.telefono}` : ''}</p>
+                            <p className="text-[13px] font-semibold truncate" style={{ color: 'var(--ink-1)' }}>{tecnico.nombre}</p>
+                            <p className="text-[11px] truncate" style={{ color: 'var(--ink-3)' }}>{tecnico.correo} {tecnico.telefono ? `· ${tecnico.telefono}` : ''}</p>
                           </div>
                           <Button
                             variant="primary"
@@ -423,14 +380,15 @@ export default function AdminSolicitud(): ReactNode {
                 </div>
               </div>
             ) : (
-              <div className="bg-white rounded-3xl border border-[#dbe4e8] p-12 text-center text-slate-400">
-                <span className="material-symbols-outlined !text-[48px] text-slate-300">dashboard_customize</span>
-                <p className="mt-2 text-sm font-bold text-slate-700">Selecciona un requerimiento para despachar</p>
+              <div className="rounded-xl border border-dashed border-border-strong bg-surface p-12 text-center">
+                <p className="text-base font-semibold text-ink">Selecciona un requerimiento para despachar</p>
+                <p className="mt-1 text-sm text-ink-muted">La asignación queda en este panel, junto al caso.</p>
               </div>
             )}
           </div>
-        </div>
-      </div>
+          }
+        />
+      </WorkCanvas>
 
       {/* Image Preview Modal */}
       {previewImage && (

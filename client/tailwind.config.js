@@ -4,45 +4,63 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: '#04324d',
-        accent:  '#39a900',
-        'verde-sena': '#39a900',
-        'azul-sena': '#04324d',
-        // New Mockup 2026 colors
+        /* ── Brand ── */
+        brand:       '#04324d',
+        'brand-hover': '#032539',
+        'brand-subtle': '#e6eef3',
+        'brand-muted':  '#cddce6',
+        accent:      '#2f9600',
+        'accent-subtle': '#eaf5e6',
+
+        /* ── Legacy aliases (keep for existing components) ── */
+        primary:          '#04324d',
+        'verde-sena':     '#2f9600',
+        'azul-sena':      '#04324d',
         'primary-container': '#002b40',
-        'on-surface': '#0f172a',
-        'on-surface-variant': '#64748b',
-        'outline-variant': 'rgba(203, 213, 225, 0.8)',
-        secondary: '#226d00',
-        'on-secondary': '#ffffff',
-        'on-primary': '#ffffff',
-        // Layered semantic tokens
-        canvas: '#e9eff2',
-        'canvas-deep': '#dfe8ec',
-        'surface-subtle': '#f5f8f9',
-        'surface-selected': '#edf7f2',
-        'border-subtle': '#d5e0e5',
-        'border-strong': '#b8cbd3',
-        warning: '#b7791f',
-        danger: '#b42318',
-        ink: '#102c3b',
-        'ink-muted': '#607783',
-        'brand-deep': '#04324d',
-        'brand-mid': '#0b536f',
-        'brand-green': '#39a900',
-        tertiary: '#0a1b2e',
-        background: '#e9eff2',
-        surface: '#ffffff',
-        'surface-container-lowest': '#ffffff',
-        'surface-container-low': '#f0f3ff',
-        'primary-fixed': '#cbe6ff',
-        'on-primary-fixed': '#001e30',
-        'tertiary-fixed-dim': '#b7c8e1',
-        'on-primary-container': '#759bba',
+        'on-surface':     '#0e2433',
+        'on-surface-variant': '#3d5a6a',
+        secondary:        '#226d00',
+        'on-secondary':   '#ffffff',
+        'on-primary':     '#ffffff',
+
+        /* ── Canvas ── */
+        canvas:           '#f0f4f6',
+        'canvas-deep':    '#e8eef2',
+
+        /* ── Surface layers ── */
+        surface:          '#ffffff',
+        'surface-raised': '#ffffff',
+        'surface-subtle': '#f7f9fa',
+        'surface-selected': '#e8f3ed',
+
+        /* ── Borders ── */
+        'border-subtle':  '#dde5e9',
+        'border-strong':  '#c4d2d9',
+
+        /* ── Ink ── */
+        ink:              '#0e2433',
+        'ink-muted':      '#3d5a6a',
+
+        /* ── Brand deep (token) ── */
+        'brand-deep':     '#04324d',
+        'brand-mid':      '#0b536f',
+        'brand-green':    '#2f9600',
+
+        /* ── States ── */
+        warning:          '#92610f',
+        danger:           '#991b1b',
       },
       fontFamily: {
-        sans: ['Public Sans', 'sans-serif'],
-        'jakarta': ['Plus Jakarta Sans', 'sans-serif'],
+        sans:    ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+        mono:    ['JetBrains Mono', 'Fira Code', 'monospace'],
+        jakarta: ['Plus Jakarta Sans', 'sans-serif'],
+      },
+      boxShadow: {
+        'xs':  '0 1px 2px rgba(4,50,77,.04)',
+        '2xs': '0 1px 1px rgba(4,50,77,.03)',
+        'card': '0 2px 6px rgba(4,50,77,.06), 0 1px 2px rgba(4,50,77,.04)',
+        'panel': '0 4px 16px rgba(4,50,77,.08), 0 2px 4px rgba(4,50,77,.05)',
+        'modal': '0 20px 60px rgba(4,50,77,.16), 0 4px 16px rgba(4,50,77,.10)',
       },
     },
   },

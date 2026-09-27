@@ -72,7 +72,6 @@ export default function AppShell({ children, subtitleContext = 'Mesa de servicio
   const fotoUrl = resolveUserPhotoUrl(user?.foto)
 
   const roleInfo = formatRoleLabel(user?.rol)
-  const firstName = (user?.nombre || roleInfo.title).split(' ')[0]
 
   useEffect(() => {
     setMobileOpen(false)
@@ -182,15 +181,10 @@ export default function AppShell({ children, subtitleContext = 'Mesa de servicio
     >
       {/* Desktop Sidebar */}
       <aside
-        className={`hidden shrink-0 border-r border-border-subtle bg-surface lg:block transition-all duration-200 motion-reduce:transition-none ${
-          collapsed ? 'w-[88px]' : 'w-[272px]'
-        } ${
-          roleInfo.tone === 'dispatch'
-            ? 'border-l-4 border-l-brand-deep'
-            : roleInfo.tone === 'focus'
-              ? 'border-l-4 border-l-warning'
-              : 'border-l-4 border-l-brand-green'
+        className={`hidden shrink-0 border-r bg-surface lg:block transition-all duration-200 motion-reduce:transition-none ${
+          collapsed ? 'w-[72px]' : 'w-[248px]'
         }`}
+        style={{ borderColor: 'var(--border-c)' }}
       >
         <div className="sticky top-0 h-screen">{sidebar}</div>
       </aside>
@@ -213,19 +207,28 @@ export default function AppShell({ children, subtitleContext = 'Mesa de servicio
       {/* Main Column */}
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Sticky Header */}
-        <header className="sticky top-0 z-40 flex h-20 items-center justify-between gap-4 border-b border-border-subtle bg-surface px-4 sm:px-8">
+        <header
+          className="sticky top-0 z-40 flex h-14 items-center justify-between gap-4 border-b bg-surface px-4 sm:px-6"
+          style={{ borderColor: 'var(--border-c)' }}
+        >
           <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
-              className="flex h-11 w-11 items-center justify-center rounded-xl bg-surface-subtle text-brand-deep hover:bg-canvas lg:hidden"
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-ink-muted hover:bg-surface-subtle lg:hidden"
               onClick={() => setMobileOpen(true)}
               aria-label="Abrir menú"
             >
-              <span className="material-symbols-outlined">menu</span>
+              <span className="material-symbols-outlined !text-[22px]">menu</span>
             </button>
             <div className="min-w-0">
-              <p className="text-[13px] font-medium text-ink-muted">{subtitleContext} · {firstName}</p>
-              <h1 className="truncate text-[28px] font-bold leading-tight text-ink">{roleInfo.workspaceTitle}</h1>
+              <div className="flex items-center gap-2">
+                <p className="text-[11px] font-medium text-ink-muted tracking-wide">
+                  {subtitleContext}
+                </p>
+              </div>
+              <h1 className="truncate text-[17px] font-semibold leading-tight text-ink tracking-tight">
+                {roleInfo.workspaceTitle}
+              </h1>
             </div>
           </div>
 

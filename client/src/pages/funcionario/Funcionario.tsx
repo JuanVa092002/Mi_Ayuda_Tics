@@ -5,12 +5,12 @@ import {
   historialSolicitudesFuncionario,
   obtenerTiposCaso,
 } from '@/features/tickets'
+import { useAuth } from '@/features/auth'
 import { toast } from 'react-toastify'
 import { getApiErrorMessage } from '@/shared/api/apiError'
 import { useForm, Controller } from 'react-hook-form'
 import HistorialFuncionario from './HistorialFuncionario'
-import { CustomSelect, AppShell, StatusBadge, Button } from '@/shared/ui'
-import { useAuth } from '@/features/auth'
+import { CustomSelect, AppShell, StatusBadge, Button, WorkCanvas, Metric, CommandBar } from '@/shared/ui'
 import type { AmbienteFormacion, Solicitud, TipoCaso } from '@/shared/types'
 
 interface SolicitudFormValues {
@@ -130,53 +130,27 @@ export default function Funcionario(): ReactNode {
     resueltas: solicitudes.filter(s => ['finalizado', 'resuelto', 'cerrado'].includes(s.estado)).length,
   }
 
-  const userName = user?.nombre ? user.nombre.split(' ')[0] : 'Funcionario'
-
   return (
     <AppShell subtitleContext="Centro de Asistencia TIC">
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        
-        {/* Self-Service Assistance Header */}
-        <section className="bg-white rounded-2xl p-6 sm:p-7 border border-border-subtle shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-xs font-semibold text-ink-muted">
-              <span className="w-2 h-2 rounded-full bg-brand-green animate-pulse" />
-              <span>Mesa de Ayuda CTPI · Portal de Funcionario</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">
-              Hola, {userName}. ¿En qué podemos apoyarte hoy?
-            </h1>
-            <p className="text-sm text-ink-muted leading-relaxed max-w-2xl">
-              Reporta fallas de conectividad, equipos o software en ambientes de formación para asignación técnica prioritaria.
-            </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
-            <div className="flex items-center gap-2 bg-surface-subtle border border-border-subtle px-3.5 py-2 rounded-xl text-center">
-              <div className="px-2 border-r border-border-subtle">
-                <p className="text-[11px] font-medium text-ink-muted">Total</p>
-                <p className="text-lg font-extrabold text-brand-deep">{stats.total}</p>
-              </div>
-              <div className="px-2 border-r border-border-subtle">
-                <p className="text-[11px] font-medium text-amber-700">En curso</p>
-                <p className="text-lg font-extrabold text-amber-600">{stats.enAtencion}</p>
-              </div>
-              <div className="px-2">
-                <p className="text-[11px] font-medium text-emerald-700">Resueltas</p>
-                <p className="text-lg font-extrabold text-brand-green">{stats.resueltas}</p>
-              </div>
-            </div>
-
-            <Button
-              variant="primary"
-              size="lg"
-              onClick={() => setShowNewRequestForm(!showNewRequestForm)}
-              icon={showNewRequestForm ? 'close' : 'add_circle'}
-            >
-              {showNewRequestForm ? 'Cerrar formulario' : 'Reportar incidencia'}
-            </Button>
-          </div>
-        </section>
+      <WorkCanvas>
+        <CommandBar
+          metrics={
+            <>
+              <Metric label="Tus solicitudes" value={stats.total} />
+              <Metric label="En curso" value={stats.enAtencion} tone="warn" />
+              <Metric label="Resueltas" value={stats.resueltas} tone="ok" />
+            </>
+          }
+        >
+          <Button
+            variant="primary"
+            size="lg"
+            onClick={() => setShowNewRequestForm(!showNewRequestForm)}
+            icon={showNewRequestForm ? 'close' : 'add_circle'}
+          >
+            {showNewRequestForm ? 'Cerrar formulario' : 'Reportar incidencia'}
+          </Button>
+        </CommandBar>
 
         {/* Featured Live Status Card (Si hay un ticket en progreso) */}
         {activeTicket ? (
@@ -367,7 +341,7 @@ export default function Funcionario(): ReactNode {
 
           <HistorialFuncionario refreshKey={refreshKey} />
         </section>
-      </div>
+      </WorkCanvas>
 
       {/* Confirmation Modal */}
       {isModalOpen && (

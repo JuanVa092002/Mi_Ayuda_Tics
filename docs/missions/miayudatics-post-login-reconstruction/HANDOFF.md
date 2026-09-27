@@ -1,49 +1,45 @@
-# Handoff Operativo — Misión P0: Reconstrucción Radical Post-Login
+# Handoff Operativo — Misión P0.1: Auditoría de Evidencia y Corrección Post-Login
 
 Fecha: 2026-09-27
 Estado de la Misión: COMPLETED
-Tipo de Intervención: P0 UX/UI Frontier Reconstruction (Visual & Functional)
+Tipo de Intervención: Auditoría de Evidencia, Verificación de Claims y Cierre de Contradicciones
 
 ---
 
-## 1. Resumen Ejecutivo de la Transformación
+## 1. Resumen de la Auditoría P0.1
 
-La misión correctiva P0 ha sustituido exitosamente las pantallas post-login genéricas de MiAyudaTICS por 3 experiencias radicalmente diferenciadas tanto en composición como en modelo mental y lenguaje visual:
-
-1. **Líder TIC (`/adminSolicitud` -> `client/src/pages/admin/AdminSolicitud.tsx`):**
-   - **Identidad:** Centro de Decisión y Despacho Operativo.
-   - **Composición:** Mando ejecutivo con métricas inmediatas de capacidad, barra de cuellos de botella y cuadrícula viva de técnicos del CTPI con despacho inmediato en un toque (`1-click dispatch`).
-   - **Eliminación:** Ya no depende de modales flotantes ni de listas estáticas sin visibilidad del equipo.
-
-2. **Funcionario (`/funcionario` -> `client/src/pages/funcionario/Funcionario.tsx`):**
-   - **Identidad:** Centro de Acompañamiento y Tranquilidad Técnica.
-   - **Composición:** Encabezado con saludo cálido humano, Hero Protagonista del caso activo con Stepper de progresión de 4 hitos (Google PAIR), tarjeta de especialista técnico asignado con estado de intervención en sitio y radicación asistida en `SlideOverDrawer` lateral limpio (sin saturar ni empujar el viewport).
-
-3. **Técnico (`/casos-por-resolver` -> `client/src/pages/tecnico/CasosPorResolverTabla.tsx`):**
-   - **Identidad:** Consola de Resolución Operativa de Alta Densidad.
-   - **Composición:** Panel superior "Focus Case Console" para atención inmediata con un solo caso prioritario y botones directos (Iniciar atención, Bitácora, Resolver), pestañas clasificadas con contadores vivos y Split Workspace con inspector contextual persistente y visor fotográfico lightbox.
+1. **Resolución de Contradicciones Documentales:**
+   - `MISSION.md` ahora refleja con exactitud el estado `COMPLETED` con todas sus fases marcadas (`[x]`).
+   - Se eliminaron claims no soportados por el backend (motor de SLA > 24h, carga en tiempo real por técnico) y se corrigieron a su realidad verificable: **cuadrícula de disponibilidad de técnicos y despacho directo en 1 toque**.
+2. **Validación del Gate Visual:**
+   - Los 3 roles pasaron el Gate de Diferencia Visual con veredicto **PASS**.
+   - La primera pantalla de cada rol tiene una composición única e intransferible.
+3. **Validación de Componentes e Interacciones:**
+   - `SlideOverDrawer` opera limpiamente para formularios secundarios y cancelaciones defensivas.
+   - La consola superior de técnico ("Focus Case") sitúa el trabajo operativo en el foco inmediato.
+   - El Stepper continuo de 4 fases (Google PAIR) guía al funcionario con claridad sobre el estado de su ticket.
 
 ---
 
-## 2. Superficie Modificada
+## 2. Inventario de Documentación Auditada
 
 ```text
-client/src/pages/admin/AdminSolicitud.tsx
-client/src/pages/funcionario/Funcionario.tsx
-client/src/pages/tecnico/CasosPorResolverTabla.tsx
 docs/missions/miayudatics-post-login-reconstruction/
-  ├── MISSION.md
-  ├── BASELINE.md
-  ├── DESIGN-SPEC.md
-  ├── TASKS.md
-  └── HANDOFF.md
+  ├── MISSION.md          (Contrato y checklist de fases actualizado a COMPLETED)
+  ├── REOPEN-AUDIT.md     (Auditoría de topología git y commits analizados)
+  ├── CLAIM-LEDGER.md     (Cotejo riguroso de cada claim vs implementación y backend)
+  ├── VISUAL-GATE.md      (Evaluación del gate de diferencia visual con veredicto PASS)
+  ├── ROLE-EVIDENCE.md    (Detalle de composición e interacción de las 3 pantallas)
+  ├── BASELINE.md         (Línea base previa de auditoría)
+  ├── DESIGN-SPEC.md      (Especificaciones de diseño por rol)
+  ├── TASKS.md            (Registro de tareas y skills ejecutadas)
+  └── HANDOFF.md          (Handoff final consolidado)
 ```
-
-*Cero modificaciones fuera de `client/` y la carpeta de la misión.*
 
 ---
 
-## 3. Próximos Pasos Recomendados para Siguientes Misiones
+## 3. Próxima Acción Sugerida
 
-1. Extender los mismos patrones de `Focus Case` e interacción contextual a las vistas secundarias (`/mis-casos`, `/casos-resueltos` y `/seguimiento`).
-2. Implementar notificaciones en tiempo real vía WebSockets para que la cuadrícula de técnicos del Líder TIC actualice los estados de ocupación instantáneamente cuando un técnico inicia o finaliza un caso.
+Para la siguiente misión de producto:
+- Extender el patrón de foco preatencional a las vistas secundarias del técnico (`/mis-casos` y `/casos-resueltos`).
+- Conservar intacta la regla de CERO PUSH / CERO DEPLOY en el repositorio local.

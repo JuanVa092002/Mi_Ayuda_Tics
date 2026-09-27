@@ -22,8 +22,8 @@ Este repositorio es el monorepo activo de MiAyudaTICS.
 - Producto: `docs/product.md`
 - Arquitectura: `docs/architecture.md`
 - Contratos: `packages/contracts/` y `docs/contracts.md`
-- Estado mobile: `context/current-mobile-agent-context.md`
-- Estado backend: `context/current-web-backend-behavior-v2.md`
+- Estado mobile: `docs/current/current-mobile-agent-context.md`
+- Estado backend: `docs/current/current-web-backend-behavior-v2.md`
 - Reglas generales: `AGENTS.md`
 - Reglas específicas de Cursor: `.cursor/rules/`
 - Skills bajo demanda: `.agents/skills/`
@@ -33,7 +33,8 @@ Este repositorio es el monorepo activo de MiAyudaTICS.
 Leer solo la superficie necesaria para la tarea.
 No indexar ni explorar por defecto:
 
-- `archive/`
+- `docs/history/`
+- `marketing/**/out/`
 - `video/out/`
 - `node_modules/`
 - `server/storage/`

@@ -417,7 +417,7 @@ Each transition has a designated actor, API endpoint, RBAC gate, and (where appl
 |----------------|----------------|----------|
 | Production smoke suite (12+ checks) | Release confidence | `scripts/smoke-prod.sh` |
 | Ticket lifecycle E2E script | API integration verification | `scripts/e2e-ticket-lifecycle.sh` |
-| War-room release audit | Structured pre-release QA | `archive/audits/2026-06-14-release-war-room/` |
+| War-room release audit | Structured pre-release QA | `docs/history/audits/2026-06-14-release-war-room/` |
 | Incident postmortem | Operational maturity | `archive/incidents/2026-06-14-forgot-password-prod.md` |
 | Cursor Agent OS (6 roles, skills, hooks) | AI-native development operating model | `AGENTS.md`, `docs/agents.md`, `.cursor/` |
 
@@ -989,7 +989,7 @@ Each transition has a designated actor, API endpoint, RBAC gate, and (where appl
 | Quality gates | `docs/quality-bar.md` |
 | Agent OS | `AGENTS.md`, `docs/agents.md`, `.cursor/` |
 | Mobile architecture | `mobile/MiAyudaTIC-Mobile/mobile-context-architecture.md` |
-| War-room audit | `archive/audits/2026-06-14-release-war-room/` |
+| War-room audit | `docs/history/audits/2026-06-14-release-war-room/` |
 | Incident | `archive/incidents/2026-06-14-forgot-password-prod.md` |
 | CI | `.github/workflows/ci.yml` |
 | Smoke / E2E | `scripts/smoke-prod.sh`, `scripts/e2e-ticket-lifecycle.sh` |

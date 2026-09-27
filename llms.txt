@@ -4,11 +4,11 @@ LLM / agent index (2025–2026 `llms.txt` convention).
 
 ## Canonical context
 
-- [Mobile current state](context/current-mobile-agent-context.md) — Expo app as of 2026-08-30; invariants, file map, open P1 work
+- [Mobile current state](docs/current/current-mobile-agent-context.md) — Expo app as of 2026-08-30; invariants, file map, open P1 work
 - [Agent operating system](AGENTS.md) — roles, surfaces, HITL, verify
 - [Business contracts](docs/contracts.md) — RBAC, solicitud states, naming
 - [Architecture](docs/architecture.md) — deploy, security, mobile API notes
-- [Web/backend behavior v2](context/current-web-backend-behavior-v2.md) — useful for API; ignore “mobile is auth-only”
+- [Web/backend behavior v2](docs/current/current-web-backend-behavior-v2.md) — useful for API; ignore “mobile is auth-only”
 
 ## Surfaces (do not mix in one workstream)
 

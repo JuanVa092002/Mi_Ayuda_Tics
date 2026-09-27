@@ -58,8 +58,7 @@ pnpm -C client run typecheck && pnpm -C client run test && pnpm -C client run bu
 | `server/` | API Express (Render) |
 | `mobile/MiAyudaTIC-Mobile/` | App móvil oficial (Expo) |
 | `packages/contracts/` | Tipos compartidos `@miayuda/contracts` |
-| `docs/` | Documentación operativa canónica |
-| `archive/` | Histórico (briefs, openspec, auditorías, QA) |
+| `docs/` | Documentación operativa canónica (current, history, design, specs) |
 | `AGENTS.md` | Entrypoint para agentes Cursor |
 | `.cursor/` | Rules, skills, hooks |
 
@@ -78,7 +77,7 @@ pnpm -C client run typecheck && pnpm -C client run test && pnpm -C client run bu
 | [quality-bar.md](docs/quality-bar.md) | Estándares de excelencia |
 | [handoff-template.md](docs/handoff-template.md) | Plantilla de transferencia |
 
-**Regla:** el código manda si hay conflicto con docs. Verificación en `archive/audits/`.
+**Regla:** el código manda si hay conflicto con docs. Verificación en `docs/history/audits/`.
 
 ## Skills de proyecto
 

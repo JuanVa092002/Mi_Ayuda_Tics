@@ -104,10 +104,10 @@ describe('Role Contextual Workspaces', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Cola de despacho' })).toBeDefined()
+      expect(screen.getByRole('heading', { name: 'Cola de Despacho Priorizada' })).toBeDefined()
       expect(screen.getAllByText('#CASO-101').length).toBeGreaterThan(0)
       expect(screen.getAllByText('Falla de conectividad en Sala 304').length).toBeGreaterThan(0)
-      expect(screen.getByText('Asignar técnico')).toBeDefined()
+      expect(screen.getByText('Despachar a Especialista en 1 Toque')).toBeDefined()
     })
 
     // Click second item in queue to switch inspection detail
@@ -127,9 +127,9 @@ describe('Role Contextual Workspaces', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /Reportar incidencia/i })).toBeDefined()
+      expect(screen.getByRole('button', { name: /Radicar nueva incidencia/i })).toBeDefined()
       expect(screen.getByText('Historial y Seguimiento de Incidencias')).toBeDefined()
-      expect(screen.getByText('Etapa del requerimiento')).toBeDefined()
+      expect(screen.getByText('Línea de Vida y Progreso del Requerimiento')).toBeDefined()
     })
   })
 
@@ -141,9 +141,9 @@ describe('Role Contextual Workspaces', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Cola priorizada' })).toBeDefined()
-      expect(screen.getByText('Acciones Operativas Inmediatas')).toBeDefined()
-      expect(screen.getByText('Finalizar caso técnico')).toBeDefined()
+      expect(screen.getByRole('heading', { name: 'Cola Operativa Clasificada' })).toBeDefined()
+      expect(screen.getByText('Acciones Operativas Disponibles')).toBeDefined()
+      expect(screen.getAllByText('Finalizar caso').length).toBeGreaterThan(0)
     })
   })
 })

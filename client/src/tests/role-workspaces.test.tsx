@@ -129,7 +129,7 @@ describe('Role Contextual Workspaces', () => {
     await waitFor(() => {
       expect(screen.getByText(/¿En qué podemos apoyarte hoy\?/i)).toBeDefined()
       expect(screen.getByText('Historial y Seguimiento de Incidencias')).toBeDefined()
-      expect(screen.getByText('Etapa del Requerimiento')).toBeDefined()
+      expect(screen.getByText('Etapa del requerimiento')).toBeDefined()
     })
   })
 
@@ -143,7 +143,7 @@ describe('Role Contextual Workspaces', () => {
     await waitFor(() => {
       expect(screen.getByText('Bandeja Operativa de Incidentes')).toBeDefined()
       expect(screen.getByText('Acciones Operativas Inmediatas')).toBeDefined()
-      expect(screen.getByText('Finalizar Caso Técnico')).toBeDefined()
+      expect(screen.getByText('Finalizar caso técnico')).toBeDefined()
     })
   })
 })

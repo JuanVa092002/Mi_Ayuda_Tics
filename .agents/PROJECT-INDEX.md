@@ -12,8 +12,7 @@ Este repositorio es el monorepo activo de MiAyudaTICS.
 | API | `server/` | Cambios de backend, sockets o persistencia |
 | Contratos | `packages/contracts/` | Cambios de DTOs, Zod o integración client/server |
 | Mobile | `mobile/MiAyudaTIC-Mobile/` | Cambios de Expo/React Native |
-| Video | `video/` | Cambios del showcase Remotion |
-| Marketing | `marketing/` | Cambios de Hyperframes o piezas de lanzamiento |
+| Marketing & Film | `marketing/` | Hyperframes, piezas de lanzamiento y showcase de producto (`marketing/product-film/`) |
 | E2E | `e2e/` | Cambios de pruebas end-to-end |
 | Scripts | `scripts/` | Automatización y validaciones |
 
@@ -35,7 +34,7 @@ No indexar ni explorar por defecto:
 
 - `docs/history/`
 - `marketing/**/out/`
-- `video/out/`
+- `marketing/**/renders/`
 - `node_modules/`
 - `server/storage/`
 - `*.mp4`

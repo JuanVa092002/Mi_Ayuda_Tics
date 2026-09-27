@@ -1,0 +1,204 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        #root {
+          position: absolute;
+          inset: 0;
+          width: 1080px;
+          height: 1920px;
+          background: #F8FAFC;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 180px 60px 240px 60px;
+          overflow: hidden;
+          font-family: 'Inter', -apple-system, sans-serif;
+          color: #0F172A;
+        }
+        .brand-logo-wrap {
+          display: flex;
+          align-items: center;
+          gap: 20px;
+          margin-bottom: 30px;
+        }
+        .brand-logo-img {
+          height: 76px;
+          width: auto;
+        }
+        .brand-title {
+          font-size: 68px;
+          font-weight: 900;
+          color: #04324D;
+          letter-spacing: -0.02em;
+        }
+        .brand-title span {
+          color: #38A600;
+        }
+        .header-02 {
+          text-align: center;
+          margin-bottom: 40px;
+        }
+        .tag-02 {
+          display: inline-flex;
+          align-items: center;
+          padding: 8px 20px;
+          background: #EBF3F8;
+          color: #04324D;
+          border: 1px solid #D6E4ED;
+          border-radius: 9999px;
+          font-size: 18px;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          margin-bottom: 16px;
+        }
+        .title-02 {
+          font-size: 50px;
+          font-weight: 900;
+          color: #04324D;
+          line-height: 1.15;
+          max-width: 900px;
+        }
+        .subtitle-02 {
+          font-size: 26px;
+          color: #475569;
+          margin-top: 14px;
+          line-height: 1.4;
+          max-width: 840px;
+        }
+        .workflow-box {
+          width: 880px;
+          background: #FFFFFF;
+          border: 1px solid #E2E8F0;
+          border-radius: 24px;
+          padding: 36px 30px;
+          box-shadow: 0 15px 35px rgba(4, 50, 77, 0.08);
+          margin-top: 20px;
+        }
+        .workflow-steps-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          position: relative;
+        }
+        .step-col {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 10px;
+          z-index: 2;
+        }
+        .step-circle {
+          width: 58px;
+          height: 58px;
+          border-radius: 50%;
+          background: #F1F5F9;
+          color: #475569;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 22px;
+          font-weight: 800;
+          border: 2px solid #E2E8F0;
+        }
+        .step-col.active .step-circle {
+          background: #04324D;
+          color: #FFFFFF;
+          border-color: #04324D;
+          box-shadow: 0 0 0 6px rgba(4, 50, 77, 0.15);
+        }
+        .step-col.done .step-circle {
+          background: #39A900;
+          color: #FFFFFF;
+          border-color: #39A900;
+        }
+        .step-label {
+          font-size: 15px;
+          font-weight: 800;
+          color: #475569;
+          text-transform: uppercase;
+        }
+        .step-col.done .step-label {
+          color: #2E8800;
+        }
+        .step-col.active .step-label {
+          color: #04324D;
+        }
+        .connector-bar {
+          position: absolute;
+          top: 29px;
+          left: 30px;
+          right: 30px;
+          height: 4px;
+          background: #E2E8F0;
+          z-index: 1;
+        }
+        .connector-fill {
+          height: 100%;
+          width: 0%;
+          background: #39A900;
+        }
+      </style>
+
+      <div id="root" data-composition-id="scene-02" data-width="1080" data-height="1920">
+        <div id="brand-wrap-02" class="brand-logo-wrap">
+          <img src="assets/logoSena.png" alt="SENA" class="brand-logo-img" />
+          <div class="brand-title">MiAyuda<span>TIC</span></div>
+        </div>
+
+        <div class="header-02">
+          <div class="tag-02">GESTIÓN INSTITUCIONAL</div>
+          <h2 class="title-02">Soporte técnico con trazabilidad real</h2>
+          <p class="subtitle-02">
+            Cada solicitud tiene un código, un responsable, un historial y una solución verificable.
+          </p>
+        </div>
+
+        <div id="flow-box-02" class="workflow-box">
+          <div class="workflow-steps-row">
+            <div class="connector-bar">
+              <div id="fill-bar-02" class="connector-fill"></div>
+            </div>
+            <div class="step-col done">
+              <div class="step-circle">1</div>
+              <div class="step-label">Reportar</div>
+            </div>
+            <div class="step-col active">
+              <div class="step-circle">2</div>
+              <div class="step-label">Asignar</div>
+            </div>
+            <div class="step-col">
+              <div class="step-circle">3</div>
+              <div class="step-label">Atender</div>
+            </div>
+            <div class="step-col">
+              <div class="step-circle">4</div>
+              <div class="step-label">Resolver</div>
+            </div>
+            <div class="step-col">
+              <div class="step-circle">5</div>
+              <div class="step-label">Confirmar</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <script>
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+
+        tl.fromTo("#brand-wrap-02", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 0.2);
+        tl.fromTo("#flow-box-02", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" }, 0.6);
+        tl.fromTo("#fill-bar-02", { width: "0%" }, { width: "35%", duration: 1.2, ease: "power2.out" }, 1.0);
+
+        window.__timelines["scene-02"] = tl;
+      </script>
+    </template>
+  </body>
+</html>

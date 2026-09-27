@@ -1,0 +1,294 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        #root {
+          position: absolute;
+          inset: 0;
+          width: 1080px;
+          height: 1920px;
+          background: #F1F5F9;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 160px 60px 220px 60px;
+          overflow: hidden;
+          font-family: 'Inter', -apple-system, sans-serif;
+          color: #0F172A;
+        }
+        .header-05 {
+          text-align: center;
+          margin-bottom: 28px;
+        }
+        .tag-05 {
+          display: inline-flex;
+          align-items: center;
+          padding: 8px 20px;
+          background: #EBF3F8;
+          color: #04324D;
+          border: 1px solid #D6E4ED;
+          border-radius: 9999px;
+          font-size: 18px;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          margin-bottom: 14px;
+        }
+        .title-05 {
+          font-size: 48px;
+          font-weight: 900;
+          color: #04324D;
+          line-height: 1.15;
+          max-width: 920px;
+        }
+        .subtitle-05 {
+          font-size: 24px;
+          color: #475569;
+          margin-top: 10px;
+          line-height: 1.4;
+        }
+        .browser-box-05 {
+          position: relative;
+          width: 940px;
+          height: 1080px;
+          background: #FFFFFF;
+          border-radius: 24px;
+          border: 1px solid #CBD5E1;
+          box-shadow: 0 30px 70px -20px rgba(4, 50, 77, 0.28);
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+        }
+        .browser-top-05 {
+          height: 52px;
+          background: #F1F5F9;
+          border-bottom: 1px solid #E2E8F0;
+          display: flex;
+          align-items: center;
+          padding: 0 20px;
+          gap: 16px;
+        }
+        .dots-wrap-05 {
+          display: flex;
+          gap: 8px;
+        }
+        .dot-05 {
+          width: 13px;
+          height: 13px;
+          border-radius: 50%;
+        }
+        .dot-05.red { background: #EF4444; }
+        .dot-05.yellow { background: #F59E0B; }
+        .dot-05.green { background: #10B981; }
+        .url-bar-05 {
+          flex: 1;
+          height: 34px;
+          background: #FFFFFF;
+          border-radius: 8px;
+          border: 1px solid #E2E8F0;
+          display: flex;
+          align-items: center;
+          padding: 0 14px;
+          font-size: 13px;
+          color: #64748B;
+          font-family: 'JetBrains Mono', monospace;
+        }
+        .web-inner-05 {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          background: #F8FAFC;
+          position: relative;
+        }
+        .nav-05 {
+          height: 64px;
+          background: #04324D;
+          color: #FFFFFF;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 24px;
+        }
+        .nav-brand-05 {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          font-size: 17px;
+          font-weight: 800;
+        }
+        .nav-user-05 {
+          font-size: 13px;
+          font-weight: 600;
+          background: rgba(255, 255, 255, 0.15);
+          padding: 6px 14px;
+          border-radius: 9999px;
+        }
+        .table-area-05 {
+          flex: 1;
+          padding: 24px;
+          display: flex;
+          flex-direction: column;
+        }
+        .tbl-05 {
+          width: 100%;
+          border-collapse: collapse;
+          background: #FFFFFF;
+          border-radius: 14px;
+          border: 1px solid #E2E8F0;
+          overflow: hidden;
+        }
+        .tbl-05 th {
+          background: #F8FAFC;
+          padding: 12px 16px;
+          font-size: 12px;
+          font-weight: 800;
+          color: #64748B;
+          text-transform: uppercase;
+          text-align: left;
+          border-bottom: 1px solid #E2E8F0;
+        }
+        .tbl-05 td {
+          padding: 14px 16px;
+          font-size: 14px;
+          color: #0F172A;
+          border-bottom: 1px solid #F1F5F9;
+        }
+        .modal-box-05 {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 520px;
+          background: #FFFFFF;
+          border-radius: 20px;
+          border: 1px solid #CBD5E1;
+          box-shadow: 0 25px 60px rgba(0, 0, 0, 0.22);
+          padding: 28px;
+          z-index: 100;
+        }
+        .pill-badge {
+          display: inline-flex;
+          padding: 6px 14px;
+          border-radius: 9999px;
+          font-size: 13px;
+          font-weight: 700;
+        }
+        .pill-badge.enviada { background: #E0F2FE; color: #0369A1; }
+        .pill-badge.asignada { background: #EFF6FF; color: #1D4ED8; }
+        .pill-badge.resuelta { background: #DCFCE7; color: #15803D; }
+      </style>
+
+      <div id="root" data-composition-id="scene-05" data-width="1080" data-height="1920">
+        <div class="header-05">
+          <div class="tag-05">WEB DE OPERACIÓN</div>
+          <h2 class="title-05">El Líder TIC ve la operación y asigna con claridad</h2>
+          <p class="subtitle-05">Control integral de carga de trabajo y cola de incidencias.</p>
+        </div>
+
+        <div id="browser-mock-05" class="browser-box-05">
+          <div class="browser-top-05">
+            <div class="dots-wrap-05">
+              <div class="dot-05 red"></div>
+              <div class="dot-05 yellow"></div>
+              <div class="dot-05 green"></div>
+            </div>
+            <div class="url-bar-05">
+              🔒 https://miayudatics.sena.edu.co/adminSolicitud
+            </div>
+          </div>
+
+          <div class="web-inner-05">
+            <div class="nav-05">
+              <div class="nav-brand-05">
+                <img src="assets/logoSena.png" alt="SENA" style="height: 32px; filter: brightness(0) invert(1);" />
+                <span>Mesa de Control TIC</span>
+              </div>
+              <div class="nav-user-05">Coordinación TIC (Líder)</div>
+            </div>
+
+            <div class="table-area-05">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <div style="font-size: 18px; font-weight: 800; color: #04324D;">Cola de Solicitudes Recientes</div>
+                <span class="pill-badge enviada">1 Pendiente de asignación</span>
+              </div>
+
+              <table class="tbl-05">
+                <thead>
+                  <tr>
+                    <th>Código</th>
+                    <th>Ambiente</th>
+                    <th>Incidencia</th>
+                    <th>Funcionario</th>
+                    <th>Técnico</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr style="background: #F0FDF4;">
+                    <td style="font-weight: 800; font-family: 'JetBrains Mono', monospace;">2026-09-00042</td>
+                    <td>Lab A-201</td>
+                    <td>Proyector sin señal</td>
+                    <td>Laura Martínez</td>
+                    <td id="tech-cell-val" style="font-weight: 700; color: #04324D;">Sin Asignar</td>
+                    <td>
+                      <span id="badge-tbl-val" class="pill-badge enviada">Enviada</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="font-family: 'JetBrains Mono', monospace; color: #6C7786;">2026-09-00041</td>
+                    <td>Aula B-105</td>
+                    <td>Mantenimiento PC #4</td>
+                    <td>Carlos Gómez</td>
+                    <td>Javier Torres</td>
+                    <td><span class="pill-badge resuelta">Cerrada</span></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <!-- Modal Asignar Técnico -->
+              <div id="modal-box-inner-05" class="modal-box-05">
+                <div style="font-size: 20px; font-weight: 800; color: #04324D; margin-bottom: 6px;">
+                  Asignar Técnico Responsable
+                </div>
+                <div style="font-size: 14px; color: #64748B; margin-bottom: 20px;">
+                  Solicitud #2026-09-00042 · Laboratorio A-201
+                </div>
+
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-radius: 12px; border: 2px solid #39A900; background: #F0FDF4; margin-bottom: 20px;">
+                  <div>
+                    <div style="font-weight: 800; font-size: 16px; color: #04324D;">Andrés Rojas</div>
+                    <div style="font-size: 13px; color: #15803D;">Especialista Hardware & Audiovisuales</div>
+                  </div>
+                  <div style="font-size: 20px; color: #39A900; font-weight: 800;">✓</div>
+                </div>
+
+                <button id="btn-assign-sub-05" style="width: 100%; padding: 14px; background: #39A900; color: #FFFFFF; font-size: 16px; font-weight: 800; border: none; border-radius: 9999px; cursor: pointer;">
+                  Confirmar Asignación Directa
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <script>
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+
+        tl.fromTo("#browser-mock-05", { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" }, 0.2);
+        tl.fromTo("#modal-box-inner-05", { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.6, ease: "back.out(1.4)" }, 2.5);
+        tl.to("#btn-assign-sub-05", { scale: 0.96, duration: 0.15, yoyo: true, repeat: 1 }, 5.5);
+        tl.to("#modal-box-inner-05", { opacity: 0, scale: 0.92, duration: 0.4, ease: "power2.in" }, 6.2);
+        tl.to("#tech-cell-val", { textContent: "Andrés Rojas", duration: 0.2 }, 6.6);
+        tl.to("#badge-tbl-val", { className: "pill-badge asignada", textContent: "Asignado", duration: 0.2 }, 6.6);
+
+        window.__timelines["scene-05"] = tl;
+      </script>
+    </template>
+  </body>
+</html>

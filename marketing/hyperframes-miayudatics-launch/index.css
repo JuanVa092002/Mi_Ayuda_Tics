@@ -1,0 +1,197 @@
+:root {
+  --primary: #04324D;
+  --primary-dark: #021B2B;
+  --secondary: #39A900;
+  --secondary-hover: #2E8500;
+  --surface: #F8FAFC;
+  --surface-card: #FFFFFF;
+  --surface-subtle: #F1F5F9;
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #94A3B8;
+  --border: #E2E8F0;
+  --border-subtle: #F1F5F9;
+
+  --status-enviada-bg: #E0F2FE;
+  --status-enviada-text: #0369A1;
+  --status-asignada-bg: #EFF6FF;
+  --status-asignada-text: #1D4ED8;
+  --status-atencion-bg: #FEF3C7;
+  --status-atencion-text: #B45309;
+  --status-resuelta-bg: #DCFCE7;
+  --status-resuelta-text: #15803D;
+
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 1080px;
+  height: 1920px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: var(--surface);
+  font-family: var(--font-family);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  position: relative;
+  width: 1080px;
+  height: 1920px;
+  overflow: hidden;
+  background: #F8FAFC;
+}
+
+/* Base Clip Layout */
+.clip {
+  position: absolute;
+  inset: 0;
+  width: 1080px;
+  height: 1920px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 180px 60px 240px 60px; /* Respect safe zones */
+  overflow: hidden;
+}
+
+/* Safe Zone Overlay / Guide container */
+.safe-zone {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Subtitles / Captions bar */
+.caption-container {
+  position: absolute;
+  bottom: 180px;
+  left: 60px;
+  right: 60px;
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.caption-box {
+  background: rgba(4, 50, 77, 0.92);
+  backdrop-filter: blur(12px);
+  color: #FFFFFF;
+  padding: 16px 32px;
+  border-radius: 9999px;
+  font-size: 28px;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.35;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  max-width: 900px;
+}
+
+/* Headers & Callouts */
+.scene-header {
+  text-align: center;
+  margin-bottom: 36px;
+  z-index: 10;
+}
+
+.scene-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  background: #EBF3F8;
+  color: var(--primary);
+  border-radius: 9999px;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  border: 1px solid #D6E4ED;
+}
+
+.scene-title {
+  font-size: 50px;
+  font-weight: 900;
+  color: var(--primary);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  max-width: 920px;
+}
+
+.scene-subtitle {
+  font-size: 26px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-top: 14px;
+  line-height: 1.4;
+  max-width: 840px;
+}
+
+/* Badges & Pills */
+.pill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border-radius: 9999px;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.pill-badge.enviada {
+  background: var(--status-enviada-bg);
+  color: var(--status-enviada-text);
+  border: 1px solid #BAE6FD;
+}
+
+.pill-badge.atencion {
+  background: var(--status-atencion-bg);
+  color: var(--status-atencion-text);
+  border: 1px solid #FDE68A;
+}
+
+.pill-badge.resuelta {
+  background: var(--status-resuelta-bg);
+  color: var(--status-resuelta-text);
+  border: 1px solid #BBF7D0;
+}
+
+.pill-badge.asignada {
+  background: var(--status-asignada-bg);
+  color: var(--status-asignada-text);
+  border: 1px solid #BFDBFE;
+}
+
+/* Primary Button */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: var(--secondary);
+  color: #FFFFFF;
+  font-size: 26px;
+  font-weight: 800;
+  padding: 20px 48px;
+  border-radius: 9999px;
+  box-shadow: 0 12px 28px rgba(57, 169, 0, 0.35);
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+}

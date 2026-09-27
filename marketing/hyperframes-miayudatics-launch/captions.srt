@@ -1,0 +1,49 @@
+1
+00:00:00,100 --> 00:00:02,900
+¿Tus incidencias todavía se pierden
+entre mensajes y llamadas?
+
+2
+00:00:03,100 --> 00:00:06,900
+MiAyudaTIC
+Soporte técnico con trazabilidad real.
+
+3
+00:00:07,100 --> 00:00:15,800
+Reporta desde el lugar donde ocurre.
+Incidencia y evidencia en segundos.
+
+4
+00:00:16,100 --> 00:00:22,800
+Cada solicitud queda registrada
+desde el primer momento.
+
+5
+00:00:23,100 --> 00:00:33,800
+El Líder TIC ve la operación
+y asigna con claridad.
+
+6
+00:00:34,100 --> 00:00:45,800
+El técnico llega
+con el contexto que necesita.
+
+7
+00:00:46,100 --> 00:00:57,800
+Cada avance queda registrado.
+Una solución parcial no oculta lo que falta.
+
+8
+00:00:58,100 --> 00:01:07,800
+No se trata de cerrar tickets.
+Se trata de resolver problemas.
+
+9
+00:01:08,100 --> 00:01:19,800
+Campo y operación. Mobile y web.
+Una sola fuente de verdad.
+
+10
+00:01:20,100 --> 00:01:25,000
+Una solicitud. Un responsable.
+Un historial. Una solución verificable.

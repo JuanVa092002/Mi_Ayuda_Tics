@@ -1,0 +1,13 @@
+{
+  "name": "hyperframes-miayudatics-launch",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npx --yes hyperframes@0.8.33 preview",
+    "lint": "npx --yes hyperframes@0.8.33 lint",
+    "check": "npx --yes hyperframes@0.8.33 check",
+    "render:preview": "npx --yes hyperframes@0.8.33 render -c compositions/preview-short.html -o renders/preview-12s.mp4 --quality draft",
+    "render": "npx --yes hyperframes@0.8.33 render",
+    "publish": "npx --yes hyperframes@0.8.33 publish"
+  }
+}

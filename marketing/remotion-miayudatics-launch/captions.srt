@@ -1,0 +1,42 @@
+1
+00:00:00,166 --> 00:00:02,833
+¿Tus incidencias todavía se pierden entre mensajes y llamadas?
+
+2
+00:00:03,166 --> 00:00:06,833
+MiAyudaTIC
+Soporte técnico con trazabilidad real.
+
+3
+00:00:07,166 --> 00:00:14,666
+Reporta desde el lugar donde ocurre.
+
+4
+00:00:15,166 --> 00:00:21,666
+Cada solicitud queda registrada desde el primer momento.
+
+5
+00:00:22,166 --> 00:00:30,666
+El Líder TIC ve la operación y asigna con claridad.
+
+6
+00:00:31,166 --> 00:00:41,666
+El técnico llega con el contexto que necesita.
+
+7
+00:00:42,166 --> 00:00:51,666
+Nada se pierde. Cada avance queda registrado.
+
+8
+00:00:52,166 --> 00:01:01,666
+No se trata de cerrar tickets.
+Se trata de resolver problemas.
+
+9
+00:01:02,166 --> 00:01:14,666
+Campo y operación. Mobile y web.
+Una sola fuente de verdad.
+
+10
+00:01:15,166 --> 00:01:24,666
+Una solicitud. Un responsable. Un historial. Una solución verificable.

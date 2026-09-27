@@ -7,17 +7,27 @@
 :root {
   --color-primary: #04324d;
   --color-accent:  #39a900;
-  --surface-color: #FFFFFF;
-  --background-color: #eef2f4;
-  --border-color: #dbe4e8;
-  --canvas: #eef2f4;
+  --surface-color: #ffffff;
+  --background-color: #e9eff2;
+  --border-color: #d5e0e5;
+
+  /* Layered Canvas & Surfaces System (FAANG/B2B Elite Standard) */
+  --canvas: #e9eff2;
+  --canvas-deep: #dfe8ec;
+  --surface: #ffffff;
   --surface-raised: #ffffff;
-  --surface-subtle: #f5f8f9;
-  --border-subtle: #dbe4e8;
-  --ink: #0b2636;
-  --ink-muted: #5f7480;
+  --surface-subtle: #f6f9fa;
+  --surface-selected: #edf7f2;
+  --border: #d5e0e5;
+  --border-subtle: #d5e0e5;
+  --border-strong: #b9cbd3;
+  --ink: #102c3b;
+  --ink-muted: #607783;
   --brand-deep: #04324d;
+  --brand-mid: #0b536f;
   --brand-green: #39a900;
+  --warning: #b7791f;
+  --danger: #b42318;
   --focus: #0b76a8;
   --hairline: 1px;
 }

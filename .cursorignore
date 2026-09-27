@@ -17,6 +17,11 @@ server/storage/file-*
 test-results/
 playwright-report/
 e2e/.reports/
+coverage/
+**/coverage/
+mobile/**/.expo/
+mobile/**/.gradle/
+**/.cache/
 
 # Skills multimedia masivas bajo demanda (evita sobrecargar el contexto de desarrollo web/móvil)
 .agents/skills/

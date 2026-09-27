@@ -16,13 +16,17 @@ Este repositorio es el monorepo activo de MiAyudaTICS.
 | E2E | `e2e/` | Cambios de pruebas end-to-end |
 | Scripts | `scripts/` | Automatización y validaciones |
 
-## Fuentes de verdad
+## Fuentes de verdad y perfiles de contexto
 
+- Perfil Web: `docs/current/web.md` (`pnpm context:web`)
+- Perfil Backend: `docs/current/backend.md` (`pnpm context:backend`)
+- Perfil Mobile: `docs/current/mobile.md` (`pnpm context:mobile`)
+- Perfil Video & Marketing: `docs/current/video.md` (`pnpm context:video`)
 - Producto: `docs/product.md`
 - Arquitectura: `docs/architecture.md`
 - Contratos: `packages/contracts/` y `docs/contracts.md`
-- Estado mobile: `docs/current/current-mobile-agent-context.md`
-- Estado backend: `docs/current/current-web-backend-behavior-v2.md`
+- Estado mobile detallado: `docs/current/current-mobile-agent-context.md`
+- Estado backend detallado: `docs/current/current-web-backend-behavior-v2.md`
 - Reglas generales: `AGENTS.md`
 - Reglas específicas de Cursor: `.cursor/rules/`
 - Skills bajo demanda: `.agents/skills/`

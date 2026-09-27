@@ -13,7 +13,11 @@
     "smoke:mobile-api": "bash scripts/smoke-mobile-api.sh",
     "smoke:mobile-client": "pnpm -C server exec ts-node --transpile-only src/scripts/mobile-smoke-client.ts",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "context:web": "node scripts/context/surface.mjs web",
+    "context:backend": "node scripts/context/surface.mjs backend",
+    "context:mobile": "node scripts/context/surface.mjs mobile",
+    "context:video": "node scripts/context/surface.mjs video"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.5.0",

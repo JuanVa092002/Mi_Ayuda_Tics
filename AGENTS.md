@@ -21,7 +21,10 @@
 | [`docs/architecture.md`](docs/architecture.md) | System, deploy, security, mobile API |
 | [`docs/agents.md`](docs/agents.md) | 6 roles + review matrix |
 | [`docs/handoff-template.md`](docs/handoff-template.md) | Required output on every workstream |
-| [`docs/current/current-mobile-agent-context.md`](docs/current/current-mobile-agent-context.md) | Canonical mobile state for agents (2026-08) |
+| [`docs/current/web.md`](docs/current/web.md) | Web surface profile (`pnpm context:web`) |
+| [`docs/current/backend.md`](docs/current/backend.md) | Backend surface profile (`pnpm context:backend`) |
+| [`docs/current/mobile.md`](docs/current/mobile.md) | Mobile surface profile (`pnpm context:mobile`) |
+| [`docs/current/video.md`](docs/current/video.md) | Video & Marketing profile (`pnpm context:video`) |
 | [`.agents/PROJECT-INDEX.md`](.agents/PROJECT-INDEX.md) | Project index, surfaces & scope rules |
 | [`llms.txt`](llms.txt) | LLM index — start here if you are another model |
 

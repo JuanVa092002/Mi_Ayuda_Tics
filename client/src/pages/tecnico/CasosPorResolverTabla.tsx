@@ -1,7 +1,7 @@
 import { useState, useEffect, type ReactNode } from 'react'
 import { toast } from 'react-toastify'
 import { getApiErrorMessage } from '@/shared/api/apiError'
-import { AppShell, SearchField, PaginationFooter, StatusBadge, Button, WorkCanvas, Metric, CommandBar, SplitWorkspace, Pane } from '@/shared/ui'
+import { AppShell, SearchField, PaginationFooter, StatusBadge, Button, WorkCanvas, Metric, CommandBar, SplitWorkspace, Pane, SlideOverDrawer, AdaptiveSkeletonList } from '@/shared/ui'
 import {
   ResolutionModal,
   getCasosAsignados,
@@ -321,10 +321,7 @@ export default function CasosPorResolverTabla(): ReactNode {
           >
 
               {loading ? (
-                <div className="py-24 text-center">
-                  <div className="h-8 w-8 mx-auto animate-spin rounded-full border-3 border-slate-200 border-t-azul-sena" />
-                  <p className="mt-3 text-xs font-bold uppercase tracking-wider text-slate-400">Cargando cola técnica...</p>
-                </div>
+                <AdaptiveSkeletonList count={4} />
               ) : currentItems.length === 0 ? (
                 <div className="py-20 text-center px-4">
                   <span className="material-symbols-outlined !text-[44px] text-slate-300">task_alt</span>
@@ -603,77 +600,97 @@ export default function CasosPorResolverTabla(): ReactNode {
         </div>
       )}
 
-      {/* Workflow Action Dialog */}
-      {workflowTarget && workflowKind ? (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[120] p-4">
-          <div className="bg-white w-full max-w-lg rounded-3xl p-8 shadow-2xl animate-in fade-in zoom-in duration-200 border border-[#dbe4e8]">
-            <h2 className="text-lg font-bold text-azul-sena mb-1.5">
-              {workflowKind === 'update' && 'Registrar Avance en Bitácora'}
-              {workflowKind === 'info' && 'Solicitar Información al Funcionario'}
-              {workflowKind === 'partial' && 'Registrar Solución Parcial'}
-              {workflowKind === 'total' && 'Registrar Solución Total y Conclusión'}
-            </h2>
-            <p className="text-xs text-slate-500 mb-4">Caso #{workflowTarget.codigoCaso || workflowTarget._id.slice(-6)}</p>
-
-            {workflowKind === 'update' || workflowKind === 'info' ? (
-              <textarea
-                className="w-full min-h-28 rounded-2xl border border-[#dbe4e8] p-3 text-sm focus:border-azul-sena focus:outline-none"
-                placeholder={workflowKind === 'update' ? 'Escribe qué pruebas o acciones realizaste en sitio...' : 'Indica qué datos requieres del funcionario...'}
-                value={workflowText.mensaje}
-                onChange={(event) => setWorkflowText((prev) => ({ ...prev, mensaje: event.target.value }))}
-              />
-            ) : (
-              <div className="flex flex-col gap-3">
-                <textarea
-                  className="w-full min-h-24 rounded-2xl border border-[#dbe4e8] p-3 text-sm focus:border-azul-sena focus:outline-none"
-                  placeholder="Qué se solucionó concretamente..."
-                  value={workflowText.queSeHizo}
-                  onChange={(event) => setWorkflowText((prev) => ({ ...prev, queSeHizo: event.target.value }))}
-                />
-                {workflowKind === 'partial' ? (
-                  <>
-                    <textarea
-                      className="w-full min-h-16 rounded-xl border border-[#dbe4e8] p-3 text-sm"
-                      placeholder="Qué parte queda pendiente..."
-                      value={workflowText.queFalta}
-                      onChange={(event) => setWorkflowText((prev) => ({ ...prev, queFalta: event.target.value }))}
-                    />
-                    <textarea
-                      className="w-full min-h-16 rounded-xl border border-[#dbe4e8] p-3 text-sm"
-                      placeholder="Siguiente acción requerida..."
-                      value={workflowText.siguienteAccion}
-                      onChange={(event) => setWorkflowText((prev) => ({ ...prev, siguienteAccion: event.target.value }))}
-                    />
-                  </>
-                ) : null}
-              </div>
-            )}
-
-            <div className="mt-6 flex justify-end gap-3 border-t border-[#dbe4e8] pt-4">
-              <button
-                type="button"
-                onClick={closeWorkflowModal}
-                className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-600 hover:bg-slate-100 rounded-xl"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                className="px-5 py-2.5 rounded-xl bg-azul-sena text-white text-xs font-bold uppercase tracking-widest hover:bg-[#032539] transition-all shadow-sm"
-                onClick={() => void submitWorkflow()}
-              >
-                Guardar Registro
-              </button>
-            </div>
-            <WorkflowManualRetryNotice
-              error={workflowError}
-              lastPayload={workflowLastPayload}
-              currentPayload={currentWorkflowPayload()}
-              onRetry={() => void submitWorkflow(workflowLastPayload)}
+      {/* Workflow Action Slide-over Drawer */}
+      <SlideOverDrawer
+        isOpen={Boolean(workflowTarget && workflowKind)}
+        onClose={closeWorkflowModal}
+        title={
+          workflowKind === 'update'
+            ? 'Registrar Avance en Bitácora'
+            : workflowKind === 'info'
+              ? 'Solicitar Información al Funcionario'
+              : workflowKind === 'partial'
+                ? 'Registrar Solución Parcial'
+                : 'Registrar Solución Total y Conclusión'
+        }
+        subtitle={workflowTarget ? `Caso #${workflowTarget.codigoCaso || workflowTarget._id.slice(-6)} · Registro con trazabilidad inmediata` : undefined}
+        width="lg"
+        footer={
+          <>
+            <Button variant="secondary" size="md" onClick={closeWorkflowModal}>
+              Cancelar
+            </Button>
+            <Button variant="primary" size="md" onClick={() => void submitWorkflow()} icon="save">
+              Guardar Registro
+            </Button>
+          </>
+        }
+      >
+        {workflowKind === 'update' || workflowKind === 'info' ? (
+          <div className="space-y-2">
+            <label className="text-xs font-semibold" style={{ color: 'var(--ink-1)' }}>
+              {workflowKind === 'update' ? 'Detalle de la actividad técnica' : 'Información requerida del usuario'}
+            </label>
+            <textarea
+              className="w-full min-h-36 rounded-xl border p-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-shadow"
+              style={{ borderColor: 'var(--border-c)', background: 'var(--surface-0)', color: 'var(--ink-1)' }}
+              placeholder={workflowKind === 'update' ? 'Escribe qué pruebas, diagnósticos o ajustes realizaste en sitio...' : 'Indica con claridad qué datos o validaciones requieres del funcionario...'}
+              value={workflowText.mensaje}
+              onChange={(event) => setWorkflowText((prev) => ({ ...prev, mensaje: event.target.value }))}
             />
           </div>
-        </div>
-      ) : null}
+        ) : (
+          <div className="flex flex-col gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold" style={{ color: 'var(--ink-1)' }}>
+                Acciones de resolución implementadas
+              </label>
+              <textarea
+                className="w-full min-h-28 rounded-xl border p-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-shadow"
+                style={{ borderColor: 'var(--border-c)', background: 'var(--surface-0)', color: 'var(--ink-1)' }}
+                placeholder="Describe concretamente la solución aplicada a los equipos o software..."
+                value={workflowText.queSeHizo}
+                onChange={(event) => setWorkflowText((prev) => ({ ...prev, queSeHizo: event.target.value }))}
+              />
+            </div>
+            {workflowKind === 'partial' ? (
+              <>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold" style={{ color: 'var(--ink-1)' }}>
+                    Pendientes identificados
+                  </label>
+                  <textarea
+                    className="w-full min-h-20 rounded-xl border p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-shadow"
+                    style={{ borderColor: 'var(--border-c)', background: 'var(--surface-0)', color: 'var(--ink-1)' }}
+                    placeholder="Qué parte queda pendiente por repuestos, garantías o autorizaciones..."
+                    value={workflowText.queFalta}
+                    onChange={(event) => setWorkflowText((prev) => ({ ...prev, queFalta: event.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold" style={{ color: 'var(--ink-1)' }}>
+                    Siguiente acción coordinada
+                  </label>
+                  <textarea
+                    className="w-full min-h-20 rounded-xl border p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-shadow"
+                    style={{ borderColor: 'var(--border-c)', background: 'var(--surface-0)', color: 'var(--ink-1)' }}
+                    placeholder="Paso a seguir y fecha estimada de continuación..."
+                    value={workflowText.siguienteAccion}
+                    onChange={(event) => setWorkflowText((prev) => ({ ...prev, siguienteAccion: event.target.value }))}
+                  />
+                </div>
+              </>
+            ) : null}
+          </div>
+        )}
+
+        <WorkflowManualRetryNotice
+          error={workflowError}
+          lastPayload={workflowLastPayload}
+          currentPayload={currentWorkflowPayload()}
+          onRetry={() => void submitWorkflow(workflowLastPayload)}
+        />
+      </SlideOverDrawer>
     </AppShell>
   )
 }

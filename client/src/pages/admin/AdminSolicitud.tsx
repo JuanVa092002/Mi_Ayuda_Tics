@@ -9,7 +9,7 @@ import { formatSolicitudFecha } from '@/features/tickets/leader-inbox'
 import { getTecnicosAprobados } from '@/features/users'
 import { toast } from 'react-toastify'
 import { getApiErrorMessage } from '@/shared/api/apiError'
-import { AppShell, SearchField, PaginationFooter, StatusBadge, Button, WorkCanvas, Metric, CommandBar, SplitWorkspace, Pane } from '@/shared/ui'
+import { AppShell, SearchField, PaginationFooter, StatusBadge, Button, WorkCanvas, Metric, CommandBar, SplitWorkspace, Pane, SlideOverDrawer, AdaptiveSkeletonList } from '@/shared/ui'
 import { classifyWorkflowMutationFailure } from '@/features/tickets/api/workflow-retry-policy'
 import { clearWorkflowAttemptKey } from '@/features/tickets/api/workflow-idempotency'
 import type { Solicitud, User } from '@/shared/types'
@@ -182,10 +182,7 @@ export default function AdminSolicitud(): ReactNode {
           >
 
             {loading ? (
-              <div className="py-24 text-center">
-                <div className="h-8 w-8 mx-auto animate-spin rounded-full border-3 border-slate-200 border-t-azul-sena" />
-                <p className="mt-3 text-xs font-bold uppercase tracking-wider text-slate-400">Cargando cola de despacho...</p>
-              </div>
+              <AdaptiveSkeletonList count={4} />
             ) : fetchError ? (
               <div className="p-8 text-center text-red-600 font-bold text-sm">
                 {fetchError}
@@ -410,52 +407,67 @@ export default function AdminSolicitud(): ReactNode {
         </div>
       )}
 
-      {/* Cancel Justification Modal */}
-      {cancelTarget ? (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-[110] p-4">
-          <div className="bg-white w-full max-w-lg rounded-3xl p-8 shadow-2xl animate-in fade-in zoom-in duration-200 border border-[#dbe4e8]" role="dialog" aria-modal="true">
-            <h2 className="text-xl font-bold text-on-surface mb-1.5">Cancelar Solicitud de Incidencia</h2>
-            <p className="text-xs text-slate-500 mb-4">Caso #{cancelTarget.codigoCaso}. El ticket se preservará en el histórico con trazabilidad del motivo.</p>
-            <textarea
-              className="w-full min-h-28 rounded-2xl border border-[#dbe4e8] p-4 text-sm focus:border-azul-sena focus:outline-none"
-              placeholder="Indica el motivo justificado de la cancelación..."
-              value={cancelMotivo}
-              onChange={(event) => setCancelMotivo(event.target.value)}
-            />
-            <div className="mt-6 flex justify-end gap-3 border-t border-[#dbe4e8] pt-4">
-              <button 
-                type="button" 
-                className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-600 hover:bg-slate-100 rounded-xl"
-                onClick={() => {
-                  if (cancelTarget) clearWorkflowAttemptKey('cancel', cancelTarget._id)
-                  setCancelTarget(null)
-                  setCancelError(null)
-                  setCancelLastPayload(undefined)
-                }}
-              >
-                Cerrar
-              </button>
-              <button
-                type="button"
-                disabled={cancelling}
-                className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-black uppercase tracking-widest transition-all shadow-sm active:scale-98 disabled:opacity-50"
-                onClick={() => void handleCancelSubmit()}
-              >
-                {cancelling ? 'Cancelando...' : 'Confirmar Cancelación'}
-              </button>
-            </div>
-            <WorkflowManualRetryNotice
-              error={cancelError}
-              lastPayload={cancelLastPayload}
-              currentPayload={cancelLastPayload}
-              onRetry={() => {
-                if (!cancelLastPayload) return
-                void handleCancelSubmit(cancelLastPayload)
+      {/* Cancel Justification Slide-over Drawer */}
+      <SlideOverDrawer
+        isOpen={Boolean(cancelTarget)}
+        onClose={() => {
+          if (cancelTarget) clearWorkflowAttemptKey('cancel', cancelTarget._id)
+          setCancelTarget(null)
+          setCancelError(null)
+          setCancelLastPayload(undefined)
+        }}
+        title="Cancelar Solicitud de Incidencia"
+        subtitle={cancelTarget ? `Caso #${cancelTarget.codigoCaso}. El ticket se preservará en el histórico con trazabilidad del motivo.` : undefined}
+        width="md"
+        footer={
+          <>
+            <Button
+              variant="secondary"
+              size="md"
+              onClick={() => {
+                if (cancelTarget) clearWorkflowAttemptKey('cancel', cancelTarget._id)
+                setCancelTarget(null)
+                setCancelError(null)
+                setCancelLastPayload(undefined)
               }}
-            />
-          </div>
+            >
+              Cerrar
+            </Button>
+            <Button
+              variant="danger"
+              size="md"
+              disabled={cancelling}
+              onClick={() => void handleCancelSubmit()}
+              icon="cancel"
+            >
+              {cancelling ? 'Cancelando...' : 'Confirmar Cancelación'}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-2">
+          <label className="text-xs font-semibold" style={{ color: 'var(--ink-1)' }}>
+            Motivo justificado de la cancelación
+          </label>
+          <textarea
+            className="w-full min-h-32 rounded-xl border p-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 transition-shadow"
+            style={{ borderColor: 'var(--border-c)', background: 'var(--surface-0)', color: 'var(--ink-1)' }}
+            placeholder="Indica con detalle el motivo administrativo o técnico por el cual se cancela el requerimiento..."
+            value={cancelMotivo}
+            onChange={(event) => setCancelMotivo(event.target.value)}
+          />
         </div>
-      ) : null}
+
+        <WorkflowManualRetryNotice
+          error={cancelError}
+          lastPayload={cancelLastPayload}
+          currentPayload={cancelLastPayload}
+          onRetry={() => {
+            if (!cancelLastPayload) return
+            void handleCancelSubmit(cancelLastPayload)
+          }}
+        />
+      </SlideOverDrawer>
     </AppShell>
   )
 }

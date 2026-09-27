@@ -59,7 +59,7 @@ export default function CustomSelect({
         }}
         onClick={() => setIsOpen(!isOpen)}
         className={`
-          w-full flex items-center justify-between solid-input rounded-xl px-4 py-2.5 text-sm font-medium transition-all cursor-pointer hover:bg-slate-50/80
+          w-full flex items-center justify-between solid-input rounded-xl px-4 py-2.5 text-sm font-medium transition-all cursor-pointer hover:bg-slate-50/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2
           ${isOpen ? 'ring-2 ring-primary/20 border-primary/30' : ''}
         `}
       >

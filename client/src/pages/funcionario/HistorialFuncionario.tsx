@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { historialSolicitudesFuncionario } from '@/features/tickets'
 import { getApiErrorMessage } from '@/shared/api/apiError'
-import { SearchField, PaginationFooter, StatusBadge, ErrorState } from '@/shared/ui'
+import { SearchField, PaginationFooter, StatusBadge, ErrorState, AdaptiveSkeletonList } from '@/shared/ui'
 import type { Solicitud } from '@/shared/types'
 
 interface HistorialFuncionarioProps {
@@ -116,10 +116,7 @@ export default function HistorialFuncionario({ refreshKey }: HistorialFuncionari
           </div>
 
           {loading ? (
-            <div className="py-24 text-center">
-              <div className="h-8 w-8 mx-auto animate-spin rounded-full border-3 border-slate-200 border-t-azul-sena" />
-              <p className="mt-3 text-xs font-bold uppercase tracking-wider text-slate-400">Consultando historial...</p>
-            </div>
+            <AdaptiveSkeletonList count={4} />
           ) : fetchError ? (
             <div className="p-6">
               <ErrorState message={fetchError} onRetry={() => void fetchHistorial()} />

@@ -36,7 +36,7 @@ describe('LeaderLayout', () => {
     expect(screen.getByText('AYUDA')).toBeInTheDocument()
     expect(screen.getByRole('navigation', { name: 'Navegación líder' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Cola de nuevos' })).toHaveAttribute('aria-current', 'page')
-    expect(screen.getByRole('heading', { name: /Hola, Líder/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /Despacho de solicitudes/i })).toBeInTheDocument()
     expect(screen.getByText('Contenido líder')).toBeInTheDocument()
   })
 })

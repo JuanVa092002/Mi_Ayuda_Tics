@@ -16,11 +16,11 @@
   --canvas-deep: #dfe8ec;
   --surface: #ffffff;
   --surface-raised: #ffffff;
-  --surface-subtle: #f6f9fa;
+  --surface-subtle: #f5f8f9;
   --surface-selected: #edf7f2;
   --border: #d5e0e5;
   --border-subtle: #d5e0e5;
-  --border-strong: #b9cbd3;
+  --border-strong: #b8cbd3;
   --ink: #102c3b;
   --ink-muted: #607783;
   --brand-deep: #04324d;
@@ -34,6 +34,15 @@
 
 body, * {
   font-family: 'Public Sans', 'Plus Jakarta Sans', sans-serif;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* ── New Mockup 2026 Classes ── */

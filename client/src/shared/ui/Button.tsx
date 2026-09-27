@@ -24,7 +24,7 @@ export default function Button({
   ...props
 }: ButtonProps): ReactNode {
   const baseStyles =
-    'inline-flex items-center justify-center font-bold transition-all select-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100'
+    'inline-flex items-center justify-center font-semibold transition-colors select-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.985] motion-reduce:transform-none disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100'
 
   const sizeStyles = {
     sm: 'h-9 px-3.5 rounded-lg text-xs gap-1.5 min-h-[36px]',

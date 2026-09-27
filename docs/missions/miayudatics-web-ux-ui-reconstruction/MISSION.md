@@ -1,8 +1,7 @@
-# Mission Contract — MiAyudaTICS Web UX/UI Reconstruction
-
 - **Misión:** Reconstrucción Integral UX/UI Web Multirol (Líder TIC, Funcionario, Técnico).
 - **Modo:** `/goal` (Long-running autonomous execution).
-- **Scope Autorizado:** `client/` y documentación en `docs/missions/miayudatics-web-ux-ui-reconstruction/`.
+- **Estado General:** COMPLETED_WITH_CAVEATS (Reabierta por misión correctiva P0 — post-login workspace visual reconstruction).
+- **Superficie autorizada:** Exclusivamente `client/` y documentación en `docs/missions/miayudatics-web-ux-ui-reconstruction/`.
 - **Scope Prohibido:** `server/`, `mobile/`, `packages/contracts/`.
 - **Seguridad:** Cero secrets en código, cero git push, cero deploy.
 

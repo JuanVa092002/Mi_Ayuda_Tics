@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { historialSolicitudesFuncionario } from '@/features/tickets'
 import { getApiErrorMessage } from '@/shared/api/apiError'
+import { SearchField, PaginationFooter, StatusBadge, EmptyState, ErrorState } from '@/shared/ui'
 import type { Solicitud } from '@/shared/types'
 
 interface HistorialFuncionarioProps {
@@ -15,259 +16,253 @@ export default function HistorialFuncionario({ refreshKey }: HistorialFuncionari
   const [fetchError, setFetchError] = useState<string | null>(null)
   const itemsPerPage = 5
 
-  useEffect(() => {
-    const fetchHistorial = async () => {
-      setLoading(true)
-      setFetchError(null)
-      try {
-        const solicitudes = await historialSolicitudesFuncionario()
-        setHistorial(solicitudes)
-      } catch (error) {
-        setFetchError(getApiErrorMessage(error))
-      } finally {
-        setLoading(false)
-      }
+  const fetchHistorial = async () => {
+    setLoading(true)
+    setFetchError(null)
+    try {
+      const solicitudes = await historialSolicitudesFuncionario()
+      setHistorial(solicitudes)
+    } catch (error) {
+      setFetchError(getApiErrorMessage(error))
+    } finally {
+      setLoading(false)
     }
-    fetchHistorial()
+  }
+
+  useEffect(() => {
+    void fetchHistorial()
   }, [refreshKey])
 
-  // Reset to page 1 when searching
   useEffect(() => {
     setCurrentPage(1)
   }, [searchTerm])
 
-  const filteredData = historial.filter(row =>
-    (row.codigoCaso || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (row.descripcion || '').toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredData = historial.filter(
+    (row) =>
+      (row.codigoCaso || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (row.descripcion || '').toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
-  // Pagination Logic
   const totalItems = filteredData.length
   const totalPages = Math.ceil(totalItems / itemsPerPage)
   const indexOfLastItem = currentPage * itemsPerPage
   const indexOfFirstItem = indexOfLastItem - itemsPerPage
   const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem)
 
-  const nextPage = () => {
-    if (currentPage < totalPages) setCurrentPage(currentPage + 1)
-  }
-
-  const prevPage = () => {
-    if (currentPage > 1) setCurrentPage(currentPage - 1)
-  }
-
-  const getStatusBadge = (row: Solicitud): ReactNode => {
-    const estado = row.estado
-    const label = row.displayStatus
-    const baseClasses = "inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold border hairline-border transition-all";
-    switch (estado) {
-      case 'solicitado':
-      case 'nuevo':
-        return <span className={`${baseClasses} bg-blue-50 text-blue-700 border-blue-100`}>
-          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2"></span>{label || 'Enviada'}
-        </span>
-      case 'asignado':
-        return <span className={`${baseClasses} bg-amber-50 text-amber-700 border-amber-100`}>
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mr-2"></span>{label || 'Asignado'}
-        </span>
-      case 'pendiente':
-      case 'en_progreso':
-      case 'esperando_usuario':
-      case 'resuelto':
-        return <span className={`${baseClasses} bg-orange-50 text-orange-700 border-orange-100`}>
-          <span className="w-1.5 h-1.5 rounded-full bg-orange-500 mr-2"></span>{label || 'En Proceso'}
-        </span>
-      case 'finalizado':
-      case 'cerrado':
-      case 'cancelado':
-        return <span className={`${baseClasses} bg-green-50 text-green-700 border-green-100`}>
-          <span className="material-symbols-outlined !text-[12px] mr-1">verified</span>{label || 'Completado'}
-        </span>
-      default:
-        return <span className={`${baseClasses} bg-slate-100 text-slate-600 border-slate-200`}>{label || estado}</span>
-    }
-  }
-
   return (
-    <section className="solid-card rounded-3xl overflow-hidden flex flex-col h-full animate-in slide-in-from-right-4 duration-500">
+    <section className="premium-card rounded-3xl overflow-hidden flex flex-col h-full bg-white shadow-xl">
       {/* Header of Table */}
-      <div className="p-6 sm:p-8 border-b hairline-border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 bg-white">
+      <div className="p-6 sm:p-8 border-b hairline-border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white">
         <div>
-          <h2 className="text-xl font-bold text-on-surface">Historial de Solicitudes</h2>
-          <p className="text-sm text-on-surface-variant font-medium mt-1">Mostrando registros paginados para mayor claridad.</p>
+          <h2 className="text-xl font-black text-azul-sena tracking-tight">Historial de Solicitudes</h2>
+          <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
+            Seguimiento en tiempo real de tus incidencias radicadas
+          </p>
         </div>
-        <div className="relative w-full sm:w-72 group">
-          <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/60 text-[18px] group-focus-within:text-primary-container transition-colors">search</span>
-          <input 
-            className="w-full pl-11 pr-4 py-2.5 solid-input rounded-2xl text-xs font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container/10 transition-all placeholder:text-slate-400" 
-            placeholder="Buscar por código o descripción..." 
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+        <SearchField
+          value={searchTerm}
+          onChange={setSearchTerm}
+          placeholder="Buscar por código o descripción..."
+          label="Buscar en historial de solicitudes"
+        />
       </div>
 
-      {/* Table Body - Premium UX/UI Overhaul with Scroll Control */}
-      <div className="w-full overflow-auto max-h-[calc(100vh-350px)] hairline-scrollbar">
-        <table className="w-full text-left border-separate border-spacing-y-0">
-          <thead className="sticky-header">
+      {/* Table Body - Natural Flow Container */}
+      <div className="premium-table-container">
+        <table className="premium-table">
+          <thead className="premium-thead">
             <tr>
-              <th className="py-4 px-6 text-[10px] font-bold uppercase tracking-[0.15em] text-on-surface-variant/70 border-b hairline-border border-slate-200 min-w-[100px]">Ticket</th>
-              <th className="py-4 px-6 text-[10px] font-bold uppercase tracking-[0.15em] text-on-surface-variant/70 border-b hairline-border border-slate-200 min-w-[130px]">Registro</th>
-              <th className="py-4 px-6 text-[10px] font-bold uppercase tracking-[0.15em] text-on-surface-variant/70 border-b hairline-border border-slate-200 min-w-[120px]">Categoría</th>
-              <th className="py-4 px-6 text-[10px] font-bold uppercase tracking-[0.15em] text-on-surface-variant/70 border-b hairline-border border-slate-200 min-w-[140px]">Ubicación</th>
-              <th className="py-4 px-6 text-[10px] font-bold uppercase tracking-[0.15em] text-on-surface-variant/70 border-b hairline-border border-slate-200 min-w-[280px]">Detalle del Caso</th>
-              <th className="py-4 px-6 text-[10px] font-bold uppercase tracking-[0.15em] text-on-surface-variant/70 border-b hairline-border border-slate-200 text-center w-[80px]">Media</th>
-              <th className="py-4 px-6 text-[10px] font-bold uppercase tracking-[0.15em] text-on-surface-variant/70 border-b hairline-border border-slate-200 min-w-[140px]">Estado</th>
-              <th className="py-4 px-6 text-[10px] font-bold uppercase tracking-[0.15em] text-on-surface-variant/70 border-b hairline-border border-slate-200 min-w-[160px]">Seguimiento</th>
+              <th className="premium-th min-w-[110px]">Ticket</th>
+              <th className="premium-th min-w-[130px]">Registro</th>
+              <th className="premium-th min-w-[120px]">Categoría</th>
+              <th className="premium-th min-w-[140px]">Ubicación</th>
+              <th className="premium-th min-w-[280px]">Detalle del Caso</th>
+              <th className="premium-th text-center w-[80px]">Media</th>
+              <th className="premium-th min-w-[130px]">Estado</th>
+              <th className="premium-th min-w-[160px]">Especialista</th>
             </tr>
           </thead>
           <tbody className="bg-white">
             {loading ? (
               <tr>
-                <td colSpan={8} className="py-24 text-center">
-                  <div className="flex flex-col items-center gap-4 opacity-40" role="status" aria-live="polite">
-                    <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-[#04324d]" />
-                    <p className="text-sm font-black uppercase tracking-[0.2em]">Cargando historial...</p>
+                <td colSpan={8} className="py-20 text-center">
+                  <div className="flex flex-col items-center gap-3 opacity-60" role="status" aria-live="polite">
+                    <div className="h-8 w-8 animate-spin rounded-full border-3 border-slate-200 border-t-azul-sena" />
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+                      Cargando historial...
+                    </p>
                   </div>
                 </td>
               </tr>
             ) : fetchError ? (
               <tr>
-                <td colSpan={8} className="py-24 text-center">
-                  <div className="flex flex-col items-center gap-4 text-red-600">
-                    <span className="material-symbols-outlined !text-[48px]">error</span>
-                    <p className="text-sm font-semibold">{fetchError}</p>
-                  </div>
+                <td colSpan={8} className="py-12">
+                  <ErrorState message={fetchError} onRetry={() => void fetchHistorial()} />
                 </td>
               </tr>
             ) : currentItems.length > 0 ? (
               currentItems.map((row) => (
-                <tr key={row._id} className="hover:bg-slate-50/50 transition-colors group">
-                  {/* Ticket - Align Top */}
-                  <td className="py-6 px-6 align-top">
-                    <div className="flex flex-col gap-1.5">
-                      <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined !text-[16px] text-primary-container/40 font-variation-['wght'_300]">confirmation_number</span>
-                        <span className="text-[13px] font-bold text-primary-container leading-none">
+                <tr key={row._id} className="premium-tr group">
+                  {/* Ticket */}
+                  <td className="premium-td">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="material-symbols-outlined !text-[16px] text-azul-sena/50">
+                          confirmation_number
+                        </span>
+                        <span className="text-[13px] font-bold text-azul-sena leading-none">
                           #{row.codigoCaso}
                         </span>
                       </div>
-                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider pl-6">ID Sistema</span>
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider pl-5">
+                        Caso Oficial
+                      </span>
                     </div>
                   </td>
 
-                  {/* Fecha - Align Top */}
-                  <td className="py-6 px-6 align-top">
-                    <div className="flex flex-col gap-1.5">
-                      <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined !text-[16px] text-slate-300 font-variation-['wght'_300]">calendar_today</span>
-                        <span className="text-[13px] font-semibold text-on-surface whitespace-nowrap leading-none">{row.fecha}</span>
+                  {/* Fecha */}
+                  <td className="premium-td">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="material-symbols-outlined !text-[15px] text-slate-400">
+                          calendar_today
+                        </span>
+                        <span className="text-[13px] font-semibold text-slate-800 whitespace-nowrap leading-none">
+                          {row.fecha}
+                        </span>
                       </div>
-                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider pl-6">Fecha Reporte</span>
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider pl-5">
+                        Fecha Reporte
+                      </span>
                     </div>
                   </td>
 
-                  {/* Categoría - Align Top */}
-                  <td className="py-6 px-6 align-top">
-                    <div className="flex flex-col gap-1.5">
-                      <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined !text-[16px] text-primary/40 font-variation-['wght'_300]">category</span>
-                        <span className="text-[13px] font-semibold text-on-surface whitespace-nowrap leading-none">
+                  {/* Categoría */}
+                  <td className="premium-td">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="material-symbols-outlined !text-[15px] text-azul-sena/50">
+                          category
+                        </span>
+                        <span className="text-[13px] font-semibold text-slate-800 whitespace-nowrap leading-none">
                           {typeof row.tipoCaso === 'object' ? row.tipoCaso?.nombre : 'General'}
                         </span>
                       </div>
-                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider pl-6">Tipo de Caso</span>
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider pl-5">
+                        Tipo de Caso
+                      </span>
                     </div>
                   </td>
 
-                  {/* Ambiente - Align Top */}
-                  <td className="py-6 px-6 align-top">
-                    <div className="flex flex-col gap-1.5">
-                      <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined !text-[18px] text-emerald-500 font-variation-['FILL'_1,'wght'_300]">location_on</span>
-                        <span className="text-[13px] font-medium text-on-surface leading-snug">
+                  {/* Ambiente */}
+                  <td className="premium-td">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="material-symbols-outlined !text-[16px] text-verde-sena">
+                          location_on
+                        </span>
+                        <span className="text-[13px] font-medium text-slate-800 leading-snug">
                           {row.ambiente?.nombre || 'No especificado'}
                         </span>
                       </div>
-                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider pl-6">Ubicación</span>
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider pl-5">
+                        Ubicación
+                      </span>
                     </div>
                   </td>
 
-                  {/* Descripción & Solución - Combined for UX Flow */}
-                  <td className="py-6 px-6 align-top">
-                    <div className="flex flex-col gap-3 max-w-[400px]">
+                  {/* Descripción & Solución */}
+                  <td className="premium-td">
+                    <div className="flex flex-col gap-2 max-w-[380px]">
                       <div>
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <span className="material-symbols-outlined !text-[14px] text-slate-300 font-variation-['wght'_300]">history_edu</span>
-                          <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Reporte Inicial</span>
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <span className="material-symbols-outlined !text-[14px] text-slate-400">
+                            description
+                          </span>
+                          <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">
+                            Reporte
+                          </span>
                         </div>
-                        <p className="text-[13px] font-medium text-on-surface leading-relaxed line-clamp-3">
+                        <p className="text-[13px] font-medium text-slate-800 leading-relaxed line-clamp-3">
                           {row.descripcion}
                         </p>
                       </div>
-                      {typeof row.solucion === 'object' && row.solucion?.descripcionSolucion && (
-                        <div className="pl-4 border-l-2 border-emerald-500/20 py-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="material-symbols-outlined !text-[14px] text-emerald-500/50 font-variation-['FILL'_1,'wght'_300]">verified_user</span>
-                            <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600">Resolución Técnica</span>
+                      {typeof row.solucion === 'object' && row.solucion?.descripcionSolucion ? (
+                        <div className="pl-3 border-l-2 border-verde-sena/40 py-0.5">
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <span className="material-symbols-outlined !text-[13px] text-verde-sena">
+                              task_alt
+                            </span>
+                            <span className="text-[9px] font-bold uppercase tracking-widest text-verde-sena">
+                              Resolución Técnica
+                            </span>
                           </div>
-                          <p className="text-[12px] font-medium text-on-surface-variant leading-relaxed italic">
+                          <p className="text-[12px] font-medium text-slate-600 leading-relaxed italic">
                             {row.solucion.descripcionSolucion}
                           </p>
                         </div>
-                      )}
+                      ) : null}
                     </div>
                   </td>
 
-                  {/* Foto - Align Top */}
-                  <td className="py-6 px-6 align-top text-center">
+                  {/* Foto */}
+                  <td className="premium-td text-center">
                     {row.foto ? (
-                      <a 
-                        href={row.foto.url} 
-                        target="_blank" 
-                        rel="noreferrer" 
-                        className="inline-flex flex-col items-center gap-1 group/thumb"
+                      <a
+                        href={row.foto.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex flex-col items-center gap-1 group/thumb focus:outline-none focus:ring-2 focus:ring-azul-sena rounded-xl p-1"
                         onClick={(e) => e.stopPropagation()}
+                        title="Ver evidencia"
                       >
-                        <div className="w-10 h-10 rounded-xl overflow-hidden border hairline-border border-slate-200 group-hover/thumb:border-primary-container transition-all shadow-sm relative">
-                           <img src={row.foto.url} alt="Evidencia" className="w-full h-full object-cover" />
-                           <div className="absolute inset-0 bg-primary-container/40 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center">
-                              <span className="material-symbols-outlined !text-[16px] text-white">visibility</span>
-                           </div>
+                        <div className="w-10 h-10 rounded-xl overflow-hidden border hairline-border border-slate-200 group-hover/thumb:border-azul-sena transition-all shadow-sm relative">
+                          <img src={row.foto.url} alt="Evidencia" className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-azul-sena/40 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center">
+                            <span className="material-symbols-outlined !text-[16px] text-white">visibility</span>
+                          </div>
                         </div>
-                        <span className="text-[9px] font-bold text-slate-400 uppercase group-hover/thumb:text-primary-container">Ver</span>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase group-hover/thumb:text-azul-sena">
+                          Ver
+                        </span>
                       </a>
                     ) : (
                       <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center border border-dashed border-slate-200 mx-auto">
-                        <span className="material-symbols-outlined text-slate-300 text-[18px] font-variation-['wght'_300]">image_not_supported</span>
+                        <span className="material-symbols-outlined text-slate-300 text-[18px]">
+                          image_not_supported
+                        </span>
                       </div>
                     )}
                   </td>
 
-                  {/* Estado - Align Top */}
-                  <td className="py-6 px-6 align-top">
-                    <div className="flex flex-col gap-2">
-                       {getStatusBadge(row)}
-                    </div>
+                  {/* Estado */}
+                  <td className="premium-td">
+                    <StatusBadge status={row.estado} label={row.displayStatus} />
                   </td>
 
-                  {/* Técnico - Align Top */}
-                  <td className="py-6 px-6 align-top">
-                    <div className="flex flex-col gap-1.5">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 group-hover:bg-primary-container/10 transition-colors">
-                          <span className="material-symbols-outlined !text-[14px] text-on-surface-variant group-hover:text-primary-container font-variation-['FILL'_1,'wght'_300]">support_agent</span>
+                  {/* Técnico */}
+                  <td className="premium-td">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
+                          <span className="material-symbols-outlined !text-[14px] text-slate-600">
+                            support_agent
+                          </span>
                         </div>
-                        <span className="text-[13px] font-bold text-on-surface truncate max-w-[120px] group-hover:text-primary-container transition-colors">
-                          {typeof row.tecnico === 'object' ? row.tecnico?.nombre : 'Por asignar'}
+                        <span className="text-[13px] font-bold text-slate-800 truncate max-w-[130px]">
+                          {typeof row.tecnico === 'object' && row.tecnico?.nombre
+                            ? row.tecnico.nombre
+                            : 'Por asignar'}
                         </span>
                       </div>
                       {typeof row.tecnico === 'object' && row.tecnico ? (
-                        <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-wider pl-8 italic">Agente Activo</span>
+                        <span className="text-[9px] font-bold text-verde-sena uppercase tracking-wider pl-7">
+                          Especialista Asignado
+                        </span>
                       ) : (
-                        <span className="text-[9px] font-bold text-slate-300 uppercase tracking-wider pl-8">Cola de espera</span>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider pl-7">
+                          Cola de espera
+                        </span>
                       )}
                     </div>
                   </td>
@@ -275,11 +270,16 @@ export default function HistorialFuncionario({ refreshKey }: HistorialFuncionari
               ))
             ) : (
               <tr>
-                <td colSpan={7} className="py-24 text-center">
-                   <div className="flex flex-col items-center gap-4 opacity-30">
-                      <span className="material-symbols-outlined !text-[64px]">layers_clear</span>
-                      <p className="text-sm font-black uppercase tracking-[0.2em]">Sin actividad registrada</p>
-                   </div>
+                <td colSpan={8} className="py-8">
+                  <EmptyState
+                    icon="task"
+                    title="Sin solicitudes registradas"
+                    description={
+                      searchTerm
+                        ? 'No se encontraron coincidencias para tu búsqueda.'
+                        : 'Aún no has radicado incidencias. Usa el formulario para crear una nueva.'
+                    }
+                  />
                 </td>
               </tr>
             )}
@@ -287,31 +287,15 @@ export default function HistorialFuncionario({ refreshKey }: HistorialFuncionari
         </table>
       </div>
 
-      {/* Footer of Table */}
-      <div className="p-6 border-t hairline-border border-slate-100 flex items-center justify-between mt-auto bg-slate-50/50">
-        <div className="flex flex-col">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Página {currentPage} de {totalPages || 1}</span>
-          <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
-            {totalItems} registros totales
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <button 
-            onClick={prevPage}
-            disabled={currentPage === 1}
-            className="w-9 h-9 rounded-xl flex items-center justify-center border hairline-border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm group"
-          >
-            <span className="material-symbols-outlined !text-[20px] group-active:scale-90 transition-transform">chevron_left</span>
-          </button>
-          <button 
-            onClick={nextPage}
-            disabled={currentPage === totalPages || totalPages === 0}
-            className="w-9 h-9 rounded-xl flex items-center justify-center border hairline-border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm group"
-          >
-            <span className="material-symbols-outlined !text-[20px] group-active:scale-90 transition-transform">chevron_right</span>
-          </button>
-        </div>
-      </div>
+      {/* Pagination Footer */}
+      <PaginationFooter
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        itemsPerPage={itemsPerPage}
+        onPageChange={setCurrentPage}
+        itemLabel="solicitudes"
+      />
     </section>
   )
 }

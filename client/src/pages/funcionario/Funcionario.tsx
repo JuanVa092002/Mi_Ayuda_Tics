@@ -5,12 +5,11 @@ import {
   historialSolicitudesFuncionario,
   obtenerTiposCaso,
 } from '@/features/tickets'
-import AppLayout from '@/app/layouts/AppLayout'
 import { toast } from 'react-toastify'
 import { getApiErrorMessage } from '@/shared/api/apiError'
 import { useForm, Controller } from 'react-hook-form'
 import HistorialFuncionario from './HistorialFuncionario'
-import { CustomSelect } from '@/shared/ui'
+import { CustomSelect, AppShell, KpiCard, PageHeader } from '@/shared/ui'
 import { useAuth } from '@/features/auth'
 import type { AmbienteFormacion, Solicitud, TipoCaso } from '@/shared/types'
 
@@ -29,11 +28,11 @@ export default function Funcionario(): ReactNode {
   const [tiposCaso, setTiposCaso] = useState<TipoCaso[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [formData, setFormData] = useState<SolicitudFormValues | null>(null)
-  const [previewImage, setPreviewImage] = useState<string | null>(null) // Estado para la vista previa de la imagen
-  const [isImageModalOpen, setIsImageModalOpen] = useState(false) // Estado para el modal de la imagen ampliada
+  const [previewImage, setPreviewImage] = useState<string | null>(null)
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false)
 
   const [refreshKey, setRefreshKey] = useState(0)
-  const watchFoto = watch('foto') // Verifica el cambio en el input de la foto
+  const watchFoto = watch('foto')
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -89,25 +88,21 @@ export default function Funcionario(): ReactNode {
       submissionData.append('usuario', user._id)
       submissionData.append('foto', formData.foto[0])
 
-      const response = await crearSolicitud(submissionData)
-      console.log('Solicitud enviada con éxito:', response)
-      toast.success('La solicitud ha sido realizada.')
+      await crearSolicitud(submissionData)
+      toast.success('La solicitud ha sido realizada con éxito.')
       setRefreshKey(prev => prev + 1)
-      reset() // Limpia el formulario después de enviarlo
-      closeModal() // Cierra el modal después de enviar
+      reset()
+      closeModal()
     } catch (error) {
-      console.error('Error al enviar la solicitud:', error)
       toast.error(getApiErrorMessage(error))
-      closeModal() // Cierra el modal si ocurre un error
+      closeModal()
     }
   }
 
-  // Abrir modal de imagen ampliada
   const openImageModal = () => {
     setIsImageModalOpen(true)
   }
 
-  // Cerrar modal de imagen ampliada
   const closeImageModal = () => {
     setIsImageModalOpen(false)
   }
@@ -141,47 +136,37 @@ export default function Funcionario(): ReactNode {
   }, [refreshKey])
 
   return (
-    <AppLayout>
-      <main className="flex-grow w-full max-w-[1800px] mx-auto px-6 sm:px-10 lg:px-12 py-8 sm:py-12">
-        {/* Welcome Section */}
-        <div className="mb-12">
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-primary-container tracking-tight mb-2 text-glow">Panel de Gestión</h1>
-          <p className="text-base sm:text-lg text-on-surface-variant font-medium">
-            Hola {user?.nombre || 'Funcionario'}, gestiona tus incidentes tecnológicos aquí.
-          </p>
-        </div>
+    <AppShell subtitleContext="Portal del Funcionario">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
+        <PageHeader
+          category="Mesa de Ayuda CTPI"
+          title="Panel de Gestión de Solicitudes"
+          description={`Bienvenido ${user?.nombre ? user.nombre.split(' ')[0] : 'Funcionario'}. Reporta y da seguimiento a tus requerimientos TIC.`}
+        />
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-12">
-          <div className="solid-card rounded-3xl p-6 flex items-center gap-5 transition-all hover:translate-y-[-2px] hover:shadow-lg group">
-             <div className="w-14 h-14 rounded-2xl bg-primary-container/10 flex items-center justify-center text-primary-container group-hover:bg-primary-container group-hover:text-white transition-all duration-300">
-                <span className="material-symbols-outlined !text-[28px] font-variation-['FILL'_1,'wght'_300]">analytics</span>
-             </div>
-             <div className="flex flex-col">
-               <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-on-surface-variant opacity-60">Total Solicitudes</span>
-               <span className="text-3xl font-black text-primary-container leading-none">{stats.total.toString().padStart(2, '0')}</span>
-             </div>
-          </div>
-
-          <div className="solid-card rounded-3xl p-6 flex items-center gap-5 transition-all hover:translate-y-[-2px] hover:shadow-lg group">
-             <div className="w-14 h-14 rounded-2xl bg-orange-50 flex items-center justify-center text-orange-600 group-hover:bg-orange-600 group-hover:text-white transition-all duration-300">
-                <span className="material-symbols-outlined !text-[28px] font-variation-['FILL'_1,'wght'_300]">pending_actions</span>
-             </div>
-             <div className="flex flex-col">
-               <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-on-surface-variant opacity-60">Pendientes</span>
-               <span className="text-3xl font-black text-orange-600 leading-none">{stats.pendientes.toString().padStart(2, '0')}</span>
-             </div>
-          </div>
-
-          <div className="solid-card rounded-3xl p-6 flex items-center gap-5 transition-all hover:translate-y-[-2px] hover:shadow-lg group">
-             <div className="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300">
-                <span className="material-symbols-outlined !text-[28px] font-variation-['FILL'_1,'wght'_300]">verified</span>
-             </div>
-             <div className="flex flex-col">
-               <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-on-surface-variant opacity-60">Resueltas</span>
-               <span className="text-3xl font-black text-verde-sena leading-none">{stats.resueltas.toString().padStart(2, '0')}</span>
-             </div>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+          <KpiCard
+            label="Total Solicitudes"
+            value={stats.total}
+            icon="analytics"
+            tone="navy"
+            hint="Histórico registrado"
+          />
+          <KpiCard
+            label="En Proceso / Pendientes"
+            value={stats.pendientes}
+            icon="pending_actions"
+            tone="amber"
+            hint="En atención activa"
+          />
+          <KpiCard
+            label="Resueltas / Cerradas"
+            value={stats.resueltas}
+            icon="verified"
+            tone="green"
+            hint="Conformidad o cierre"
+          />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -283,7 +268,7 @@ export default function Funcionario(): ReactNode {
             <HistorialFuncionario refreshKey={refreshKey} />
           </div>
         </div>
-      </main>
+      </div>
 
       {/* Confirmation Modal */}
       {isModalOpen && (
@@ -329,6 +314,6 @@ export default function Funcionario(): ReactNode {
           </button>
         </div>
       )}
-    </AppLayout>
+    </AppShell>
   )
 }

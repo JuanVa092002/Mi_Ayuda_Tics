@@ -9,7 +9,7 @@ import { toast } from 'react-toastify'
 import { getApiErrorMessage } from '@/shared/api/apiError'
 import { useForm, Controller } from 'react-hook-form'
 import HistorialFuncionario from './HistorialFuncionario'
-import { CustomSelect, AppShell, StatusBadge } from '@/shared/ui'
+import { CustomSelect, AppShell, StatusBadge, Button } from '@/shared/ui'
 import { useAuth } from '@/features/auth'
 import type { AmbienteFormacion, Solicitud, TipoCaso } from '@/shared/types'
 
@@ -136,50 +136,45 @@ export default function Funcionario(): ReactNode {
     <AppShell subtitleContext="Centro de Asistencia TIC">
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         
-        {/* Hero Banner: Confianza, Orientación y Acción Inmediata */}
-        <section className="relative overflow-hidden rounded-3xl bg-linear-to-br from-[#04324d] via-[#03283e] to-[#021b2b] text-white p-6 sm:p-10 shadow-[0_12px_36px_rgba(4,50,77,0.15)] border border-white/10">
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="max-w-2xl space-y-2">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-300">
-                <span className="w-2 h-2 rounded-full bg-[#39a900] animate-pulse" />
-                Mesa de Ayuda CTPI · En Servicio
-              </div>
-              <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white">
-                Hola, {userName}. ¿En qué podemos apoyarte hoy?
-              </h1>
-              <p className="text-sm sm:text-base text-slate-300 font-medium leading-relaxed">
-                Reporta fallas de conectividad, equipos o software en ambientes de formación. Nuestro equipo técnico responderá de inmediato.
-              </p>
+        {/* Self-Service Assistance Header */}
+        <section className="bg-white rounded-2xl p-6 sm:p-7 border border-border-subtle shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-xs font-semibold text-ink-muted">
+              <span className="w-2 h-2 rounded-full bg-brand-green animate-pulse" />
+              <span>Mesa de Ayuda CTPI · Portal de Funcionario</span>
             </div>
-
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
-              <button
-                type="button"
-                onClick={() => setShowNewRequestForm(!showNewRequestForm)}
-                className="inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl bg-[#39a900] hover:bg-[#329600] active:scale-98 text-white font-black text-sm uppercase tracking-wider transition-all shadow-lg shadow-[#39a900]/25 group cursor-pointer"
-              >
-                <span className="material-symbols-outlined !text-[20px] font-variation-['FILL'_1] group-hover:rotate-90 transition-transform">
-                  {showNewRequestForm ? 'close' : 'add_circle'}
-                </span>
-                {showNewRequestForm ? 'Cerrar Formulario' : 'Reportar Incidencia'}
-              </button>
-            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">
+              Hola, {userName}. ¿En qué podemos apoyarte hoy?
+            </h1>
+            <p className="text-sm text-ink-muted leading-relaxed max-w-2xl">
+              Reporta fallas de conectividad, equipos o software en ambientes de formación para asignación técnica prioritaria.
+            </p>
           </div>
 
-          {/* Quick Metrics Bar */}
-          <div className="relative z-10 mt-8 pt-6 border-t border-white/10 grid grid-cols-3 gap-4 text-center sm:text-left">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Total Radicadas</p>
-              <p className="text-2xl sm:text-3xl font-black text-white mt-1">{stats.total}</p>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+            <div className="flex items-center gap-2 bg-surface-subtle border border-border-subtle px-3.5 py-2 rounded-xl text-center">
+              <div className="px-2 border-r border-border-subtle">
+                <p className="text-[11px] font-medium text-ink-muted">Total</p>
+                <p className="text-lg font-extrabold text-brand-deep">{stats.total}</p>
+              </div>
+              <div className="px-2 border-r border-border-subtle">
+                <p className="text-[11px] font-medium text-amber-700">En curso</p>
+                <p className="text-lg font-extrabold text-amber-600">{stats.enAtencion}</p>
+              </div>
+              <div className="px-2">
+                <p className="text-[11px] font-medium text-emerald-700">Resueltas</p>
+                <p className="text-lg font-extrabold text-brand-green">{stats.resueltas}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-300">En Atención Activa</p>
-              <p className="text-2xl sm:text-3xl font-black text-amber-400 mt-1">{stats.enAtencion}</p>
-            </div>
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-300">Resueltas / Cerradas</p>
-              <p className="text-2xl sm:text-3xl font-black text-emerald-400 mt-1">{stats.resueltas}</p>
-            </div>
+
+            <Button
+              variant="primary"
+              size="lg"
+              onClick={() => setShowNewRequestForm(!showNewRequestForm)}
+              icon={showNewRequestForm ? 'close' : 'add_circle'}
+            >
+              {showNewRequestForm ? 'Cerrar formulario' : 'Reportar incidencia'}
+            </Button>
           </div>
         </section>
 

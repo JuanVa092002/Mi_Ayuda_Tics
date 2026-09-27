@@ -193,15 +193,15 @@ export default function HistorialFuncionario({ refreshKey }: HistorialFuncionari
               </div>
 
               {/* Progress Stepper Timeline */}
-              <div className="bg-[#f5f8f9] p-5 rounded-2xl border border-[#dbe4e8]">
-                <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-4">
-                  Etapa del Requerimiento
+              <div className="bg-surface-subtle p-5 rounded-2xl border border-border-subtle">
+                <p className="text-xs font-bold uppercase tracking-wider text-ink-muted mb-4">
+                  Etapa del requerimiento
                 </p>
                 <div className="grid grid-cols-4 gap-2 text-center relative">
                   {[
                     { step: 1, name: 'Radicado' },
                     { step: 2, name: 'Asignado' },
-                    { step: 3, name: 'En Atención' },
+                    { step: 3, name: 'En atención' },
                     { step: 4, name: 'Resuelto' }
                   ].map((s) => {
                     const isCompleted = currentStepInfo.step > s.step
@@ -209,22 +209,22 @@ export default function HistorialFuncionario({ refreshKey }: HistorialFuncionari
                     return (
                       <div key={s.step} className="flex flex-col items-center">
                         <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                          className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
                             isCurrent
-                              ? 'bg-azul-sena text-white ring-4 ring-azul-sena/15'
+                              ? 'bg-brand-deep text-white ring-4 ring-brand-deep/15'
                               : isCompleted
-                              ? 'bg-[#39a900] text-white'
-                              : 'bg-slate-200 text-slate-500'
+                              ? 'bg-brand-green text-white'
+                              : 'bg-slate-200 text-slate-600'
                           }`}
                         >
                           {isCompleted ? (
-                            <span className="material-symbols-outlined !text-[16px]">check</span>
+                            <span className="material-symbols-outlined !text-[18px]">check</span>
                           ) : (
                             s.step
                           )}
                         </div>
-                        <span className={`text-[11px] font-bold mt-2 ${
-                          isCurrent ? 'text-azul-sena font-black' : isCompleted ? 'text-slate-800' : 'text-slate-400'
+                        <span className={`text-xs font-semibold mt-2 ${
+                          isCurrent ? 'text-brand-deep font-bold' : isCompleted ? 'text-ink' : 'text-ink-muted'
                         }`}>
                           {s.name}
                         </span>

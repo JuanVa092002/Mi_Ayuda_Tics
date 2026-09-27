@@ -1,7 +1,7 @@
 import { useState, useEffect, type ReactNode } from 'react'
 import { toast } from 'react-toastify'
 import { getApiErrorMessage } from '@/shared/api/apiError'
-import { AppShell, SearchField, PaginationFooter, StatusBadge } from '@/shared/ui'
+import { AppShell, SearchField, PaginationFooter, StatusBadge, Button } from '@/shared/ui'
 import {
   ResolutionModal,
   getCasosAsignados,
@@ -254,35 +254,35 @@ export default function CasosPorResolverTabla(): ReactNode {
     <AppShell subtitleContext="Terminal Operativa Técnica">
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         
-        {/* Context Header */}
-        <section className="rounded-3xl bg-[#04324d] text-white p-6 sm:p-7 shadow-[0_12px_36px_rgba(4,50,77,0.12)] border border-[#dbe4e8]/20 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-1.5">
-            <div className="inline-flex items-center gap-2 px-3 py-0.5 rounded-full bg-white/10 backdrop-blur-md text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-300">
-              <span className="w-2 h-2 rounded-full bg-[#39a900] animate-pulse" />
-              Consola de Soporte y Resolución en Sitio
+        {/* Technician Terminal Header */}
+        <section className="bg-white rounded-2xl p-6 sm:p-7 border border-border-subtle shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-xs font-semibold text-ink-muted">
+              <span className="w-2 h-2 rounded-full bg-brand-green animate-pulse" />
+              <span>Soporte Técnico en Sitio · Terminal de Resolución</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">
               Bandeja Operativa de Incidentes
             </h1>
-            <p className="text-xs sm:text-sm text-slate-300 font-medium max-w-2xl">
+            <p className="text-sm text-ink-muted leading-relaxed max-w-2xl">
               Inspecciona requerimientos asignados, documenta bitácoras en campo y registra soluciones con trazabilidad total.
             </p>
           </div>
 
-          <div className="flex items-center gap-4 bg-white/10 p-3 rounded-2xl border border-white/15 shrink-0">
-            <div className="text-center px-3 border-r border-white/15">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-300">Total Cola</p>
-              <p className="text-2xl font-black text-white">{cases.length}</p>
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="bg-surface-subtle border border-border-subtle px-4 py-2.5 rounded-xl text-center min-w-[100px]">
+              <p className="text-xs font-medium text-ink-muted">Total cola</p>
+              <p className="text-2xl font-extrabold text-brand-deep mt-0.5">{cases.length}</p>
             </div>
-            <div className="text-center px-3 border-r border-white/15">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-amber-300">En Curso</p>
-              <p className="text-2xl font-black text-amber-400">
+            <div className="bg-surface-subtle border border-border-subtle px-4 py-2.5 rounded-xl text-center min-w-[100px]">
+              <p className="text-xs font-medium text-amber-700">En curso</p>
+              <p className="text-2xl font-extrabold text-amber-600 mt-0.5">
                 {cases.filter(c => c.estado === 'en_progreso' || c.estado === 'en_atencion').length}
               </p>
             </div>
-            <div className="text-center px-3">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">Por Iniciar</p>
-              <p className="text-2xl font-black text-emerald-400">
+            <div className="bg-surface-subtle border border-border-subtle px-4 py-2.5 rounded-xl text-center min-w-[100px]">
+              <p className="text-xs font-medium text-emerald-700">Por iniciar</p>
+              <p className="text-2xl font-extrabold text-brand-green mt-0.5">
                 {cases.filter(c => c.estado === 'asignado').length}
               </p>
             </div>
@@ -501,22 +501,23 @@ export default function CasosPorResolverTabla(): ReactNode {
                   ) : null}
 
                   {/* Immediate Operational Actions */}
-                  <div className="pt-2 border-t border-[#dbe4e8] space-y-3">
-                    <p className="text-xs font-black uppercase tracking-wider text-slate-400">
+                  <div className="pt-2 border-t border-border-subtle space-y-3">
+                    <p className="text-xs font-bold uppercase tracking-wider text-ink-muted">
                       Acciones Operativas Inmediatas
                     </p>
 
                     {inspectedCase.workflowVersion === 2 ? (
-                      <div className="flex flex-wrap gap-2.5">
+                      <div className="flex flex-wrap items-center gap-3">
                         {inspectedCase.capabilities?.canStart ? (
                           <>
-                            <button
-                              type="button"
+                            <Button
+                              variant="primary"
+                              size="md"
                               onClick={() => runStart(inspectedCase._id)}
-                              className="px-5 py-2.5 rounded-xl bg-azul-sena hover:bg-[#032539] text-white text-xs font-black uppercase tracking-wider shadow-sm transition-all cursor-pointer active:scale-98"
+                              icon="play_arrow"
                             >
-                              Iniciar Atención en Sitio
-                            </button>
+                              Iniciar atención en sitio
+                            </Button>
                             {startRetry?.id === inspectedCase._id ? (
                               <WorkflowManualRetryNotice
                                 error={startRetry.error}
@@ -528,58 +529,62 @@ export default function CasosPorResolverTabla(): ReactNode {
                         ) : null}
 
                         {inspectedCase.capabilities?.canUpdate ? (
-                          <button
-                            type="button"
+                          <Button
+                            variant="secondary"
+                            size="md"
                             onClick={() => {
                               setWorkflowError(null)
                               setWorkflowLastPayload(undefined)
                               setWorkflowTarget(inspectedCase)
                               setWorkflowKind('update')
                             }}
-                            className="px-4 py-2.5 rounded-xl border border-[#dbe4e8] hover:bg-slate-50 text-slate-700 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                            icon="edit_note"
                           >
-                            Añadir Bitácora
-                          </button>
+                            Añadir bitácora
+                          </Button>
                         ) : null}
 
                         {inspectedCase.capabilities?.canRequestInfo ? (
-                          <button
-                            type="button"
+                          <Button
+                            variant="secondary"
+                            size="md"
                             onClick={() => {
                               setWorkflowError(null)
                               setWorkflowLastPayload(undefined)
                               setWorkflowTarget(inspectedCase)
                               setWorkflowKind('info')
                             }}
-                            className="px-4 py-2.5 rounded-xl border border-[#dbe4e8] hover:bg-slate-50 text-slate-700 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                            icon="help_outline"
                           >
-                            Solicitar Información
-                          </button>
+                            Solicitar información
+                          </Button>
                         ) : null}
 
                         {inspectedCase.capabilities?.canResolve ? (
-                          <button
-                            type="button"
+                          <Button
+                            variant="success"
+                            size="md"
                             onClick={() => {
                               setWorkflowError(null)
                               setWorkflowLastPayload(undefined)
                               setWorkflowTarget(inspectedCase)
                               setWorkflowKind('total')
                             }}
-                            className="px-5 py-2.5 rounded-xl bg-[#39a900] hover:bg-[#329600] text-white text-xs font-black uppercase tracking-wider shadow-sm transition-all cursor-pointer active:scale-98"
+                            icon="check_circle"
                           >
-                            Finalizar Caso Técnico
-                          </button>
+                            Finalizar caso técnico
+                          </Button>
                         ) : null}
                       </div>
                     ) : (
-                      <button
-                        type="button"
+                      <Button
+                        variant="primary"
+                        size="md"
                         onClick={() => openModal(inspectedCase)}
-                        className="px-5 py-2.5 rounded-xl bg-azul-sena hover:bg-[#032539] text-white text-xs font-black uppercase tracking-wider shadow-sm transition-all cursor-pointer active:scale-98"
+                        icon="check_circle"
                       >
-                        Formalizar Resolución del Caso
-                      </button>
+                        Formalizar resolución del caso
+                      </Button>
                     )}
                   </div>
                 </div>

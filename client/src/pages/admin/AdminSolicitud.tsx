@@ -9,7 +9,7 @@ import { formatSolicitudFecha, workflowLabel } from '@/features/tickets/leader-i
 import { getTecnicosAprobados } from '@/features/users'
 import { toast } from 'react-toastify'
 import { getApiErrorMessage } from '@/shared/api/apiError'
-import { AppShell, SearchField, PaginationFooter, StatusBadge } from '@/shared/ui'
+import { AppShell, SearchField, PaginationFooter, StatusBadge, Button } from '@/shared/ui'
 import { classifyWorkflowMutationFailure } from '@/features/tickets/api/workflow-retry-policy'
 import { clearWorkflowAttemptKey } from '@/features/tickets/api/workflow-idempotency'
 import type { Solicitud, User } from '@/shared/types'
@@ -147,29 +147,29 @@ export default function AdminSolicitud(): ReactNode {
     <AppShell subtitleContext="Centro de Mando TIC">
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         
-        {/* Command Header */}
-        <section className="rounded-3xl bg-[#04324d] text-white p-6 sm:p-7 shadow-[0_12px_36px_rgba(4,50,77,0.12)] border border-[#dbe4e8]/20 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-1.5">
-            <div className="inline-flex items-center gap-2 px-3 py-0.5 rounded-full bg-white/10 backdrop-blur-md text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-300">
-              <span className="w-2 h-2 rounded-full bg-[#39a900] animate-pulse" />
-              Despacho y Asignación de Solicitudes
+        {/* Executive Command Header */}
+        <section className="bg-white rounded-2xl p-6 sm:p-7 border border-border-subtle shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-xs font-semibold text-ink-muted">
+              <span className="w-2 h-2 rounded-full bg-brand-green animate-pulse" />
+              <span>Centro de Mando TIC · Despacho y Asignación</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">
               Mesa de Control de Nuevas Incidencias
             </h1>
-            <p className="text-xs sm:text-sm text-slate-300 font-medium max-w-2xl">
+            <p className="text-sm text-ink-muted leading-relaxed max-w-2xl">
               Evalúa requerimientos recién radicados, analiza evidencia técnica y asigna especialistas con un solo clic.
             </p>
           </div>
 
-          <div className="flex items-center gap-4 bg-white/10 p-3 rounded-2xl border border-white/15 shrink-0">
-            <div className="text-center px-4 border-r border-white/15">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-300">Por Despachar</p>
-              <p className="text-2xl font-black text-white">{solicitudes.length}</p>
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="bg-surface-subtle border border-border-subtle px-4 py-2.5 rounded-xl text-center min-w-[110px]">
+              <p className="text-xs font-medium text-ink-muted">Por despachar</p>
+              <p className="text-2xl font-extrabold text-brand-deep mt-0.5">{solicitudes.length}</p>
             </div>
-            <div className="text-center px-4">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">Técnicos Activos</p>
-              <p className="text-2xl font-black text-emerald-400">{tecnicos.length}</p>
+            <div className="bg-surface-subtle border border-border-subtle px-4 py-2.5 rounded-xl text-center min-w-[110px]">
+              <p className="text-xs font-medium text-ink-muted">Técnicos activos</p>
+              <p className="text-2xl font-extrabold text-brand-green mt-0.5">{tecnicos.length}</p>
             </div>
           </div>
         </section>
@@ -391,19 +391,20 @@ export default function AdminSolicitud(): ReactNode {
                   ) : (
                     <div className="divide-y divide-[#dbe4e8] border border-[#dbe4e8] rounded-2xl overflow-hidden max-h-60 overflow-y-auto hairline-scrollbar">
                       {tecnicos.map((tecnico) => (
-                        <div key={tecnico._id} className="p-3.5 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                        <div key={tecnico._id} className="p-3.5 flex items-center justify-between hover:bg-surface-subtle transition-colors">
                           <div className="min-w-0 pr-3">
-                            <p className="text-xs font-bold text-on-surface truncate">{tecnico.nombre}</p>
-                            <p className="text-[11px] text-slate-400 truncate">{tecnico.correo} {tecnico.telefono ? `· ${tecnico.telefono}` : ''}</p>
+                            <p className="text-sm font-bold text-ink truncate">{tecnico.nombre}</p>
+                            <p className="text-xs text-ink-muted truncate">{tecnico.correo} {tecnico.telefono ? `· ${tecnico.telefono}` : ''}</p>
                           </div>
-                          <button
-                            type="button"
+                          <Button
+                            variant="primary"
+                            size="sm"
                             disabled={assigning}
                             onClick={() => void handleAssignClick(tecnico, selectedSolicitud._id)}
-                            className="shrink-0 px-3.5 py-1.5 rounded-xl bg-azul-sena hover:bg-[#03283e] text-white text-[11px] font-black uppercase tracking-wider shadow-2xs transition-all cursor-pointer active:scale-98 disabled:opacity-50"
+                            icon="person_add"
                           >
-                            {assigning ? 'Asignando...' : 'Asignar'}
-                          </button>
+                            {assigning ? 'Asignando...' : 'Asignar técnico'}
+                          </Button>
                         </div>
                       ))}
                     </div>

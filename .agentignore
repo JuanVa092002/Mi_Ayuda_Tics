@@ -20,3 +20,9 @@ e2e/.reports/
 
 # Skills multimedia masivas bajo demanda (evita sobrecargar el contexto de desarrollo web/móvil)
 .agents/skills/
+
+# Metadatos locales de herramientas y entornos
+.vercel/
+.engram/
+.idea/
+.atl/

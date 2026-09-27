@@ -38,5 +38,10 @@ docs/security/_raw/
 # Flutter legacy — do not extend or add
 mobile_flutter/
 
-# Local simulation evidence from 2026-08 E2E (keep historical tracked storage/)
-/server/storage/file-178781*
+# Local uploads from test/dev simulation
+server/storage/file-*
+
+# Marketing and Remotion video render outputs
+marketing/**/out/
+marketing/**/renders/
+video/out/

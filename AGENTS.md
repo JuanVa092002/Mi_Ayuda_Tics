@@ -22,6 +22,7 @@
 | [`docs/agents.md`](docs/agents.md) | 6 roles + review matrix |
 | [`docs/handoff-template.md`](docs/handoff-template.md) | Required output on every workstream |
 | [`context/current-mobile-agent-context.md`](context/current-mobile-agent-context.md) | Canonical mobile state for agents (2026-08) |
+| [`.agents/PROJECT-INDEX.md`](.agents/PROJECT-INDEX.md) | Project index, surfaces & scope rules |
 | [`llms.txt`](llms.txt) | LLM index — start here if you are another model |
 
 **Also:** [`docs/design-system.md`](docs/design-system.md), [`docs/analytics.md`](docs/analytics.md), [`docs/quality-bar.md`](docs/quality-bar.md)

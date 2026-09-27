@@ -25,6 +25,7 @@ export default function CasosPorResolverTabla(): ReactNode {
   const itemsPerPage = 8
   const [modalIsOpen, setModalIsOpen] = useState(false)
   const [selectedCase, setSelectedCase] = useState<CaseForResolution | null>(null)
+  const [activeCaseId, setActiveCaseId] = useState<string | null>(null)
   const [caseTypes, setCaseTypes] = useState<TipoCaso[]>([])
   const [loading, setLoading] = useState(true)
   const [workflowTarget, setWorkflowTarget] = useState<Solicitud | null>(null)
@@ -33,6 +34,7 @@ export default function CasosPorResolverTabla(): ReactNode {
   const [workflowError, setWorkflowError] = useState<unknown>(null)
   const [workflowLastPayload, setWorkflowLastPayload] = useState<unknown>(undefined)
   const [startRetry, setStartRetry] = useState<{ id: string; error: unknown } | null>(null)
+  const [previewImage, setPreviewImage] = useState<string | null>(null)
   const [queueFilter, setQueueFilter] = useState<
     'trabajo' | 'por_iniciar' | 'en_atencion' | 'esperando_funcionario' | 'esperando_confirmacion'
   >('trabajo')
@@ -41,7 +43,15 @@ export default function CasosPorResolverTabla(): ReactNode {
     const fetchCases = async (): Promise<void> => {
       try {
         const solicitudesAsignadas = await getCasosAsignados()
-        setCases(solicitudesAsignadas.filter(c => c.estado !== 'finalizado' && c.estado !== 'cerrado' && c.estado !== 'cancelado'))
+        const activeTickets = solicitudesAsignadas.filter(
+          c => c.estado !== 'finalizado' && c.estado !== 'cerrado' && c.estado !== 'cancelado'
+        )
+        setCases(activeTickets)
+        if (activeTickets.length > 0) {
+          // Default selection to either in_progress or first item
+          const inProgress = activeTickets.find(c => c.estado === 'en_progreso' || c.estado === 'en_atencion')
+          setActiveCaseId(inProgress ? inProgress._id : activeTickets[0]._id)
+        }
       } catch (error) {
         toast.error(getApiErrorMessage(error))
       }
@@ -94,7 +104,8 @@ export default function CasosPorResolverTabla(): ReactNode {
       : ''
     )
       .toLowerCase()
-      .includes(searchTerm.toLowerCase())
+      .includes(searchTerm.toLowerCase()) ||
+    (row.ambiente?.nombre || '').toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   const totalItems = filteredData.length
@@ -103,8 +114,8 @@ export default function CasosPorResolverTabla(): ReactNode {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage
   const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem)
 
-  // Current In-Progress Ticket for Focus Hero
-  const inProgressTicket = cases.find(c => c.estado === 'en_progreso' || c.estado === 'en_atencion')
+  // Current active inspected ticket
+  const inspectedCase = cases.find(c => c._id === activeCaseId) || currentItems[0] || null
 
   const openModal = (caseData: Solicitud): void => {
     setSelectedCase({
@@ -149,7 +160,10 @@ export default function CasosPorResolverTabla(): ReactNode {
 
   const refreshCases = async (): Promise<void> => {
     const solicitudesAsignadas = await getCasosAsignados()
-    setCases(solicitudesAsignadas.filter(c => c.estado !== 'finalizado' && c.estado !== 'cerrado' && c.estado !== 'cancelado'))
+    const active = solicitudesAsignadas.filter(
+      c => c.estado !== 'finalizado' && c.estado !== 'cerrado' && c.estado !== 'cancelado'
+    )
+    setCases(active)
   }
 
   const closeWorkflowModal = (): void => {
@@ -215,7 +229,7 @@ export default function CasosPorResolverTabla(): ReactNode {
       if (workflowKind === 'total') {
         await registrarSolucionTotal(workflowTarget._id, payload as { queSeHizo: string })
       }
-      toast.success('Acción registrada')
+      toast.success('Acción registrada con éxito')
       closeWorkflowModal()
       await refreshCases()
     } catch (error) {
@@ -238,291 +252,350 @@ export default function CasosPorResolverTabla(): ReactNode {
 
   return (
     <AppShell subtitleContext="Terminal Operativa Técnica">
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         
-        {/* Active Focus Header */}
-        <section className="rounded-3xl bg-linear-to-br from-[#04324d] via-[#032539] to-[#021824] text-white p-6 sm:p-8 shadow-[0_12px_36px_rgba(4,50,77,0.15)] border border-white/10">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-300">
-                <span className="w-2 h-2 rounded-full bg-[#39a900] animate-pulse" />
-                Panel de Trabajo de Soporte en Sitio
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-                Bandeja de Resolución de Incidentes
-              </h1>
-              <p className="text-xs sm:text-sm text-slate-300 font-medium">
-                Atiende requerimientos priorizados, registra bitácoras de campo y formaliza la solución técnica.
+        {/* Context Header */}
+        <section className="rounded-3xl bg-[#04324d] text-white p-6 sm:p-7 shadow-[0_12px_36px_rgba(4,50,77,0.12)] border border-[#dbe4e8]/20 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-1.5">
+            <div className="inline-flex items-center gap-2 px-3 py-0.5 rounded-full bg-white/10 backdrop-blur-md text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-300">
+              <span className="w-2 h-2 rounded-full bg-[#39a900] animate-pulse" />
+              Consola de Soporte y Resolución en Sitio
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+              Bandeja Operativa de Incidentes
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-300 font-medium max-w-2xl">
+              Inspecciona requerimientos asignados, documenta bitácoras en campo y registra soluciones con trazabilidad total.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4 bg-white/10 p-3 rounded-2xl border border-white/15 shrink-0">
+            <div className="text-center px-3 border-r border-white/15">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-300">Total Cola</p>
+              <p className="text-2xl font-black text-white">{cases.length}</p>
+            </div>
+            <div className="text-center px-3 border-r border-white/15">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-amber-300">En Curso</p>
+              <p className="text-2xl font-black text-amber-400">
+                {cases.filter(c => c.estado === 'en_progreso' || c.estado === 'en_atencion').length}
               </p>
             </div>
-
-            {/* Quick Metrics */}
-            <div className="flex items-center gap-4 bg-white/5 border border-white/10 p-4 rounded-2xl backdrop-blur-md shrink-0">
-              <div className="text-center px-3 border-r border-white/10">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Asignados</p>
-                <p className="text-2xl font-black text-white mt-0.5">{cases.length}</p>
-              </div>
-              <div className="text-center px-3 border-r border-white/10">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-amber-300">En Curso</p>
-                <p className="text-2xl font-black text-amber-400 mt-0.5">
-                  {cases.filter(c => c.estado === 'en_progreso' || c.estado === 'en_atencion').length}
-                </p>
-              </div>
-              <div className="text-center px-3">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">Por Iniciar</p>
-                <p className="text-2xl font-black text-emerald-400 mt-0.5">
-                  {cases.filter(c => c.estado === 'asignado').length}
-                </p>
-              </div>
+            <div className="text-center px-3">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">Por Iniciar</p>
+              <p className="text-2xl font-black text-emerald-400">
+                {cases.filter(c => c.estado === 'asignado').length}
+              </p>
             </div>
           </div>
         </section>
 
-        {/* Priority Focus Widget: If there is a ticket in progress, prominently guide the tech */}
-        {inProgressTicket ? (
-          <section className="rounded-3xl bg-white border hairline-border border-emerald-300/80 p-6 sm:p-7 shadow-[0_8px_24px_rgba(57,169,0,0.06)] relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-1.5 bg-[#39a900]" />
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-              <div className="space-y-1.5 max-w-2xl">
-                <div className="flex items-center gap-3">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200">
-                    <span className="w-2 h-2 rounded-full bg-[#39a900] animate-pulse" />
-                    En Atención Activa #{inProgressTicket.codigoCaso || inProgressTicket._id.slice(-6)}
-                  </span>
-                  <span className="text-xs font-semibold text-slate-500">
-                    Ambiente: <strong className="text-azul-sena">{inProgressTicket.ambiente?.nombre || 'General'}</strong>
-                  </span>
-                </div>
-                <h3 className="text-base sm:text-lg font-bold text-on-surface line-clamp-1">
-                  {inProgressTicket.descripcion}
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Solicitante: <strong className="text-slate-700">{typeof inProgressTicket.usuario === 'object' ? inProgressTicket.usuario?.nombre : 'Desconocido'}</strong> {inProgressTicket.telefono ? `· Tel: ${inProgressTicket.telefono}` : ''}
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2.5 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => { setWorkflowError(null); setWorkflowLastPayload(undefined); setWorkflowTarget(inProgressTicket); setWorkflowKind('update') }}
-                  className="px-4 py-2 rounded-xl border hairline-border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
-                >
-                  Bitácora
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setWorkflowError(null); setWorkflowLastPayload(undefined); setWorkflowTarget(inProgressTicket); setWorkflowKind('total') }}
-                  className="px-5 py-2 rounded-xl bg-[#39a900] hover:bg-[#329600] text-white text-xs font-black uppercase tracking-widest transition-all shadow-sm active:scale-98 cursor-pointer"
-                >
-                  Finalizar Solución
-                </button>
-              </div>
-            </div>
-          </section>
-        ) : null}
-
-        {/* Workflow Queues & Search Navigation Toolbar */}
-        <section className="space-y-4">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-4 rounded-2xl border hairline-border border-slate-200/80 shadow-xs">
-            <div className="flex flex-wrap gap-1.5">
-              {queueTabs.map(tab => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => {
-                    setQueueFilter(tab.id)
-                    setCurrentPage(1)
-                  }}
-                  className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    queueFilter === tab.id
-                      ? 'bg-azul-sena text-white shadow-xs'
-                      : 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-azul-sena'
-                  }`}
-                >
-                  <span>{tab.label}</span>
-                  <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-black ${
-                    queueFilter === tab.id ? 'bg-white/20 text-white' : 'bg-slate-200/70 text-slate-700'
-                  }`}>
-                    {tab.count}
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            <div className="w-full lg:w-80 shrink-0">
-              <SearchField
-                value={searchTerm}
-                onChange={setSearchTerm}
-                placeholder="Buscar ticket, solicitante o ambiente..."
-              />
-            </div>
+        {/* Queues & Filter Toolbar */}
+        <section className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-3.5 rounded-2xl border border-[#dbe4e8] shadow-xs">
+          <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Filtros de bandeja">
+            {queueTabs.map(tab => (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={queueFilter === tab.id}
+                onClick={() => {
+                  setQueueFilter(tab.id)
+                  setCurrentPage(1)
+                }}
+                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  queueFilter === tab.id
+                    ? 'bg-azul-sena text-white shadow-xs'
+                    : 'bg-[#f5f8f9] text-slate-600 hover:bg-slate-200/60 hover:text-azul-sena'
+                }`}
+              >
+                <span>{tab.label}</span>
+                <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-black ${
+                  queueFilter === tab.id ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
+                }`}>
+                  {tab.count}
+                </span>
+              </button>
+            ))}
           </div>
 
-          {/* Table View with Natural Flow */}
-          <div className="bg-white rounded-3xl border hairline-border border-slate-200/80 shadow-[0_8px_30px_rgba(4,50,77,0.03)] overflow-hidden">
-            <div className="premium-table-container">
-              <table className="premium-table">
-                <thead className="premium-thead">
-                  <tr>
-                    <th className="premium-th min-w-[110px]">Ticket</th>
-                    <th className="premium-th min-w-[120px]">Fecha</th>
-                    <th className="premium-th min-w-[150px]">Ambiente / Sede</th>
-                    <th className="premium-th min-w-[180px]">Funcionario</th>
-                    <th className="premium-th min-w-[280px]">Detalle del Incidente</th>
-                    <th className="premium-th text-center w-[80px]">Evidencia</th>
-                    <th className="premium-th min-w-[130px]">Estado</th>
-                    <th className="premium-th text-center w-[140px]">Acción Inmediata</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white">
-                  {loading ? (
-                    <tr>
-                      <td colSpan={8} className="py-20 text-center">
-                        <div className="flex flex-col items-center gap-3 opacity-60" role="status" aria-live="polite">
-                          <div className="h-9 w-9 animate-spin rounded-full border-3 border-slate-200 border-t-azul-sena" />
-                          <p className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">Sincronizando casos técnicos...</p>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : currentItems.length > 0 ? (
-                    currentItems.map((row) => (
-                      <tr key={row._id} className="premium-tr">
-                        <td className="premium-td">
-                          <div className="flex items-center gap-1.5">
-                            <span className="material-symbols-outlined !text-[16px] text-azul-sena font-variation-['wght'_300]">confirmation_number</span>
-                            <span className="font-mono text-xs font-bold text-azul-sena">#{row.codigoCaso || row._id?.slice(-6) || 'N/A'}</span>
-                          </div>
-                        </td>
-                        <td className="premium-td">
-                          <div className="flex items-center gap-1.5 text-xs font-medium text-on-surface">
-                            <span className="material-symbols-outlined !text-[15px] text-slate-400">calendar_today</span>
-                            <span>{row.fecha}</span>
-                          </div>
-                        </td>
-                        <td className="premium-td">
-                          <div className="flex items-center gap-1.5 text-xs font-bold text-on-surface">
-                            <span className="material-symbols-outlined !text-[16px] text-emerald-600 font-variation-['FILL'_1]">location_on</span>
-                            <span>{row.ambiente?.nombre || 'General'}</span>
-                          </div>
-                        </td>
-                        <td className="premium-td">
-                          <div className="flex flex-col gap-0.5">
-                            <span className="text-xs font-semibold text-on-surface truncate max-w-[160px]">
-                              {(typeof row.usuario === 'object' && row.usuario ? row.usuario.nombre : undefined) || 'N/A'}
-                            </span>
-                            <span className="text-[11px] text-slate-400 font-normal">{row.telefono || 'Sin teléfono'}</span>
-                          </div>
-                        </td>
-                        <td className="premium-td">
-                          <p className="text-xs font-normal text-on-surface leading-relaxed line-clamp-2 max-w-sm">
-                            {row.descripcion}
-                          </p>
-                        </td>
-                        <td className="premium-td text-center">
-                          {row.foto ? (
-                            <a href={row.foto.url} target="_blank" rel="noreferrer" className="inline-block group/thumb">
-                              <div className="w-9 h-9 rounded-lg overflow-hidden border border-slate-200 group-hover/thumb:border-azul-sena transition-all">
-                                <img src={row.foto.url} alt="Evidencia" className="w-full h-full object-cover" />
-                              </div>
-                            </a>
-                          ) : (
-                            <span className="text-[11px] text-slate-400 italic">Sin foto</span>
-                          )}
-                        </td>
-                        <td className="premium-td">
-                          <StatusBadge status={row.displayStatus ? row.estado : row.estado} />
-                        </td>
-                        <td className="premium-td text-center">
-                          <div className="flex flex-col items-center gap-1.5">
-                            {row.workflowVersion === 2 ? (
-                              <>
-                                {row.capabilities?.canStart ? (
-                                  <>
-                                    <button
-                                      type="button"
-                                      onClick={() => runStart(row._id)}
-                                      className="px-3.5 py-1.5 rounded-xl bg-azul-sena hover:bg-[#032539] text-white text-[11px] font-black uppercase tracking-wider transition-all shadow-xs cursor-pointer active:scale-98"
-                                    >
-                                      Iniciar Atención
-                                    </button>
-                                    {startRetry?.id === row._id ? (
-                                      <WorkflowManualRetryNotice
-                                        error={startRetry.error}
-                                        pending={false}
-                                        onRetry={() => runStart(row._id)}
-                                      />
-                                    ) : null}
-                                  </>
-                                ) : null}
-
-                                <div className="flex items-center gap-2">
-                                  {row.capabilities?.canUpdate ? (
-                                    <button
-                                      type="button"
-                                      onClick={() => { setWorkflowError(null); setWorkflowLastPayload(undefined); setWorkflowTarget(row); setWorkflowKind('update') }}
-                                      className="text-[11px] font-bold text-slate-600 hover:text-azul-sena underline cursor-pointer"
-                                    >
-                                      Avance
-                                    </button>
-                                  ) : null}
-                                  {row.capabilities?.canRequestInfo ? (
-                                    <button
-                                      type="button"
-                                      onClick={() => { setWorkflowError(null); setWorkflowLastPayload(undefined); setWorkflowTarget(row); setWorkflowKind('info') }}
-                                      className="text-[11px] font-bold text-slate-600 hover:text-azul-sena underline cursor-pointer"
-                                    >
-                                      Pedir info
-                                    </button>
-                                  ) : null}
-                                  {row.capabilities?.canResolve ? (
-                                    <button
-                                      type="button"
-                                      onClick={() => { setWorkflowError(null); setWorkflowLastPayload(undefined); setWorkflowTarget(row); setWorkflowKind('total') }}
-                                      className="text-[11px] font-black text-verde-sena hover:text-emerald-800 underline cursor-pointer"
-                                    >
-                                      Solucionar
-                                    </button>
-                                  ) : null}
-                                </div>
-                              </>
-                            ) : (
-                              <button 
-                                onClick={() => openModal(row)}
-                                className="px-3.5 py-1.5 rounded-xl bg-azul-sena hover:bg-[#032539] text-white text-[11px] font-black uppercase tracking-wider transition-all shadow-xs cursor-pointer active:scale-98"
-                              >
-                                Resolver
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={8} className="py-16 text-center">
-                        <div className="flex flex-col items-center gap-2 opacity-60">
-                          <span className="material-symbols-outlined !text-[48px] text-slate-400">task_alt</span>
-                          <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Todo al día en esta bandeja de soporte</p>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            <PaginationFooter
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalItems={totalItems}
-              itemsPerPage={itemsPerPage}
-              onPageChange={setCurrentPage}
-              itemLabel="casos asignados"
+          <div className="w-full lg:w-80 shrink-0">
+            <SearchField
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder="Buscar por ticket, solicitante o ambiente..."
+              label="Buscar en incidentes"
             />
           </div>
         </section>
+
+        {/* Master-Detail Split Workspace (Zero horizontal scroll) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          
+          {/* Left Panel: Prioritized Work Queue (5 cols on lg) */}
+          <div className="lg:col-span-5 flex flex-col gap-4">
+            <div className="bg-white rounded-3xl border border-[#dbe4e8] shadow-sm overflow-hidden flex flex-col">
+              <div className="px-5 py-4 border-b border-[#dbe4e8] bg-[#f5f8f9] flex items-center justify-between">
+                <span className="text-xs font-black uppercase tracking-wider text-azul-sena">
+                  Cola de Casos ({totalItems})
+                </span>
+                <span className="text-[11px] font-semibold text-slate-500">
+                  Página {currentPage} de {Math.max(1, totalPages)}
+                </span>
+              </div>
+
+              {loading ? (
+                <div className="py-24 text-center">
+                  <div className="h-8 w-8 mx-auto animate-spin rounded-full border-3 border-slate-200 border-t-azul-sena" />
+                  <p className="mt-3 text-xs font-bold uppercase tracking-wider text-slate-400">Cargando cola técnica...</p>
+                </div>
+              ) : currentItems.length === 0 ? (
+                <div className="py-20 text-center px-4">
+                  <span className="material-symbols-outlined !text-[44px] text-slate-300">task_alt</span>
+                  <p className="mt-2 text-sm font-bold text-slate-700">No hay tickets pendientes</p>
+                  <p className="text-xs text-slate-400 mt-0.5">La cola seleccionada se encuentra al día.</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-[#dbe4e8]/70" role="list">
+                  {currentItems.map((item) => {
+                    const isSelected = (inspectedCase?._id === item._id)
+                    const isFocus = item.estado === 'en_progreso' || item.estado === 'en_atencion'
+                    return (
+                      <button
+                        key={item._id}
+                        type="button"
+                        onClick={() => setActiveCaseId(item._id)}
+                        className={`w-full text-left p-4.5 transition-all cursor-pointer flex flex-col gap-2 relative ${
+                          isSelected
+                            ? 'bg-blue-50/50 ring-2 ring-inset ring-azul-sena/20 border-l-4 border-l-azul-sena'
+                            : 'hover:bg-slate-50 bg-white'
+                        }`}
+                      >
+                        {isFocus ? (
+                          <span className="absolute top-3 right-4 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800">
+                            En Atención
+                          </span>
+                        ) : null}
+
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs font-black text-azul-sena">
+                            #{item.codigoCaso || item._id.slice(-6)}
+                          </span>
+                          <span className="text-[11px] text-slate-400 font-medium">· {item.fecha}</span>
+                        </div>
+
+                        <h3 className="text-sm font-bold text-on-surface line-clamp-2">
+                          {item.descripcion}
+                        </h3>
+
+                        <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
+                          <span className="font-semibold text-slate-700 truncate max-w-[170px]">
+                            {typeof item.usuario === 'object' ? item.usuario?.nombre : 'Desconocido'}
+                          </span>
+                          <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
+                            {item.ambiente?.nombre || 'General'}
+                          </span>
+                        </div>
+
+                        <div className="mt-1 flex items-center justify-between">
+                          <StatusBadge status={item.estado} />
+                          <span className="text-[11px] font-bold text-azul-sena flex items-center gap-0.5">
+                            Ver inspección <span className="material-symbols-outlined !text-[14px]">chevron_right</span>
+                          </span>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+
+              <div className="p-3 border-t border-[#dbe4e8] bg-white">
+                <PaginationFooter
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={totalItems}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={setCurrentPage}
+                  itemLabel="casos"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Right Panel: Resolution Inspector & Action Panel (7 cols on lg) */}
+          <div className="lg:col-span-7">
+            {inspectedCase ? (
+              <div className="bg-white rounded-3xl border border-[#dbe4e8] shadow-sm overflow-hidden sticky top-24">
+                
+                {/* Header of Detail Pane */}
+                <div className="p-6 border-b border-[#dbe4e8] bg-[#f5f8f9]">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-sm font-black px-2.5 py-1 rounded-lg bg-white border border-[#dbe4e8] text-azul-sena shadow-2xs">
+                        #{inspectedCase.codigoCaso || inspectedCase._id.slice(-6)}
+                      </span>
+                      <StatusBadge status={inspectedCase.estado} />
+                    </div>
+
+                    <span className="text-xs text-slate-400 font-semibold">
+                      Radicado: {inspectedCase.fecha}
+                    </span>
+                  </div>
+
+                  <h2 className="text-lg font-bold text-on-surface mt-3 leading-snug">
+                    {inspectedCase.descripcion}
+                  </h2>
+                </div>
+
+                {/* Body Details */}
+                <div className="p-6 space-y-6">
+                  
+                  {/* Metadata Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="p-4 rounded-2xl bg-[#f5f8f9] border border-[#dbe4e8]">
+                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Funcionario Solicitante</p>
+                      <p className="text-sm font-bold text-azul-sena mt-1">
+                        {typeof inspectedCase.usuario === 'object' ? inspectedCase.usuario?.nombre : 'Desconocido'}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        {inspectedCase.telefono ? `Tel: ${inspectedCase.telefono}` : 'Sin teléfono registrado'}
+                      </p>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-[#f5f8f9] border border-[#dbe4e8]">
+                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Ubicación / Ambiente</p>
+                      <p className="text-sm font-bold text-azul-sena mt-1">
+                        {inspectedCase.ambiente?.nombre || 'General'}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-0.5">Sede Central CTPI</p>
+                    </div>
+                  </div>
+
+                  {/* Evidence Viewer if present */}
+                  {inspectedCase.foto ? (
+                    <div className="p-4 rounded-2xl border border-[#dbe4e8] bg-white">
+                      <p className="text-xs font-bold text-slate-700 mb-2.5 flex items-center gap-1.5">
+                        <span className="material-symbols-outlined !text-[18px] text-azul-sena">image</span>
+                        Evidencia Adjunta por el Usuario
+                      </p>
+                      <div className="flex items-center gap-4">
+                        <button
+                          type="button"
+                          onClick={() => setPreviewImage(inspectedCase.foto?.url || null)}
+                          className="h-24 w-32 rounded-xl overflow-hidden border border-[#dbe4e8] group relative cursor-pointer"
+                        >
+                          <img
+                            src={inspectedCase.foto.url}
+                            alt="Evidencia fotográfica"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                          />
+                          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                            <span className="material-symbols-outlined !text-[20px]">zoom_in</span>
+                          </div>
+                        </button>
+                        <div className="text-xs text-slate-500 space-y-1">
+                          <p className="font-semibold text-slate-700">Captura fotográfica adjunta</p>
+                          <p>Haz clic para ampliar la imagen en alta resolución.</p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {/* Immediate Operational Actions */}
+                  <div className="pt-2 border-t border-[#dbe4e8] space-y-3">
+                    <p className="text-xs font-black uppercase tracking-wider text-slate-400">
+                      Acciones Operativas Inmediatas
+                    </p>
+
+                    {inspectedCase.workflowVersion === 2 ? (
+                      <div className="flex flex-wrap gap-2.5">
+                        {inspectedCase.capabilities?.canStart ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => runStart(inspectedCase._id)}
+                              className="px-5 py-2.5 rounded-xl bg-azul-sena hover:bg-[#032539] text-white text-xs font-black uppercase tracking-wider shadow-sm transition-all cursor-pointer active:scale-98"
+                            >
+                              Iniciar Atención en Sitio
+                            </button>
+                            {startRetry?.id === inspectedCase._id ? (
+                              <WorkflowManualRetryNotice
+                                error={startRetry.error}
+                                pending={false}
+                                onRetry={() => runStart(inspectedCase._id)}
+                              />
+                            ) : null}
+                          </>
+                        ) : null}
+
+                        {inspectedCase.capabilities?.canUpdate ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setWorkflowError(null)
+                              setWorkflowLastPayload(undefined)
+                              setWorkflowTarget(inspectedCase)
+                              setWorkflowKind('update')
+                            }}
+                            className="px-4 py-2.5 rounded-xl border border-[#dbe4e8] hover:bg-slate-50 text-slate-700 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                          >
+                            Añadir Bitácora
+                          </button>
+                        ) : null}
+
+                        {inspectedCase.capabilities?.canRequestInfo ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setWorkflowError(null)
+                              setWorkflowLastPayload(undefined)
+                              setWorkflowTarget(inspectedCase)
+                              setWorkflowKind('info')
+                            }}
+                            className="px-4 py-2.5 rounded-xl border border-[#dbe4e8] hover:bg-slate-50 text-slate-700 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                          >
+                            Solicitar Información
+                          </button>
+                        ) : null}
+
+                        {inspectedCase.capabilities?.canResolve ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setWorkflowError(null)
+                              setWorkflowLastPayload(undefined)
+                              setWorkflowTarget(inspectedCase)
+                              setWorkflowKind('total')
+                            }}
+                            className="px-5 py-2.5 rounded-xl bg-[#39a900] hover:bg-[#329600] text-white text-xs font-black uppercase tracking-wider shadow-sm transition-all cursor-pointer active:scale-98"
+                          >
+                            Finalizar Caso Técnico
+                          </button>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => openModal(inspectedCase)}
+                        className="px-5 py-2.5 rounded-xl bg-azul-sena hover:bg-[#032539] text-white text-xs font-black uppercase tracking-wider shadow-sm transition-all cursor-pointer active:scale-98"
+                      >
+                        Formalizar Resolución del Caso
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white rounded-3xl border border-[#dbe4e8] p-12 text-center text-slate-400">
+                <span className="material-symbols-outlined !text-[48px] text-slate-300">visibility</span>
+                <p className="mt-2 text-sm font-bold text-slate-700">Selecciona un ticket de la cola</p>
+                <p className="text-xs text-slate-400 mt-1">Podrás inspeccionar detalles, historial y ejecutar acciones de soporte.</p>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
+      {/* Legacy/Modal Resolution */}
       {selectedCase && (
         <ResolutionModal
           isOpen={modalIsOpen}
@@ -538,10 +611,31 @@ export default function CasosPorResolverTabla(): ReactNode {
         />
       )}
 
+      {/* Image Preview Modal */}
+      {previewImage && (
+        <div 
+          className="fixed inset-0 z-[150] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setPreviewImage(null)}
+        >
+          <div className="relative max-w-4xl max-h-[90vh] bg-white rounded-2xl p-2 overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
+            <img src={previewImage} alt="Evidencia ampliada" className="max-h-[85vh] w-auto object-contain rounded-xl" />
+            <button
+              type="button"
+              onClick={() => setPreviewImage(null)}
+              className="absolute top-4 right-4 bg-black/70 hover:bg-black text-white p-2 rounded-full cursor-pointer"
+              aria-label="Cerrar vista previa"
+            >
+              <span className="material-symbols-outlined !text-[20px]">close</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Workflow Action Dialog */}
       {workflowTarget && workflowKind ? (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[120] p-4">
-          <div className="bg-white w-full max-w-lg rounded-3xl p-8 shadow-2xl animate-in fade-in zoom-in duration-200">
-            <h2 className="text-lg font-bold text-azul-sena mb-2">
+          <div className="bg-white w-full max-w-lg rounded-3xl p-8 shadow-2xl animate-in fade-in zoom-in duration-200 border border-[#dbe4e8]">
+            <h2 className="text-lg font-bold text-azul-sena mb-1.5">
               {workflowKind === 'update' && 'Registrar Avance en Bitácora'}
               {workflowKind === 'info' && 'Solicitar Información al Funcionario'}
               {workflowKind === 'partial' && 'Registrar Solución Parcial'}
@@ -551,7 +645,7 @@ export default function CasosPorResolverTabla(): ReactNode {
 
             {workflowKind === 'update' || workflowKind === 'info' ? (
               <textarea
-                className="w-full min-h-28 rounded-2xl border hairline-border border-slate-200 p-3 text-sm focus:border-azul-sena focus:outline-none"
+                className="w-full min-h-28 rounded-2xl border border-[#dbe4e8] p-3 text-sm focus:border-azul-sena focus:outline-none"
                 placeholder={workflowKind === 'update' ? 'Escribe qué pruebas o acciones realizaste en sitio...' : 'Indica qué datos requieres del funcionario...'}
                 value={workflowText.mensaje}
                 onChange={(event) => setWorkflowText((prev) => ({ ...prev, mensaje: event.target.value }))}
@@ -559,7 +653,7 @@ export default function CasosPorResolverTabla(): ReactNode {
             ) : (
               <div className="flex flex-col gap-3">
                 <textarea
-                  className="w-full min-h-24 rounded-2xl border hairline-border border-slate-200 p-3 text-sm focus:border-azul-sena focus:outline-none"
+                  className="w-full min-h-24 rounded-2xl border border-[#dbe4e8] p-3 text-sm focus:border-azul-sena focus:outline-none"
                   placeholder="Qué se solucionó concretamente..."
                   value={workflowText.queSeHizo}
                   onChange={(event) => setWorkflowText((prev) => ({ ...prev, queSeHizo: event.target.value }))}
@@ -567,13 +661,13 @@ export default function CasosPorResolverTabla(): ReactNode {
                 {workflowKind === 'partial' ? (
                   <>
                     <textarea
-                      className="w-full min-h-16 rounded-xl border hairline-border border-slate-200 p-3 text-sm"
+                      className="w-full min-h-16 rounded-xl border border-[#dbe4e8] p-3 text-sm"
                       placeholder="Qué parte queda pendiente..."
                       value={workflowText.queFalta}
                       onChange={(event) => setWorkflowText((prev) => ({ ...prev, queFalta: event.target.value }))}
                     />
                     <textarea
-                      className="w-full min-h-16 rounded-xl border hairline-border border-slate-200 p-3 text-sm"
+                      className="w-full min-h-16 rounded-xl border border-[#dbe4e8] p-3 text-sm"
                       placeholder="Siguiente acción requerida..."
                       value={workflowText.siguienteAccion}
                       onChange={(event) => setWorkflowText((prev) => ({ ...prev, siguienteAccion: event.target.value }))}
@@ -583,7 +677,7 @@ export default function CasosPorResolverTabla(): ReactNode {
               </div>
             )}
 
-            <div className="mt-6 flex justify-end gap-3 border-t hairline-border border-slate-100 pt-4">
+            <div className="mt-6 flex justify-end gap-3 border-t border-[#dbe4e8] pt-4">
               <button
                 type="button"
                 onClick={closeWorkflowModal}

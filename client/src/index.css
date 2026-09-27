@@ -8,9 +8,18 @@
   --color-primary: #04324d;
   --color-accent:  #39a900;
   --surface-color: #FFFFFF;
-  --background-color: #F1F5F9;
-  --border-color: #E2E8F0;
-  --hairline: 0.5px;
+  --background-color: #eef2f4;
+  --border-color: #dbe4e8;
+  --canvas: #eef2f4;
+  --surface-raised: #ffffff;
+  --surface-subtle: #f5f8f9;
+  --border-subtle: #dbe4e8;
+  --ink: #0b2636;
+  --ink-muted: #5f7480;
+  --brand-deep: #04324d;
+  --brand-green: #39a900;
+  --focus: #0b76a8;
+  --hairline: 1px;
 }
 
 body, * {

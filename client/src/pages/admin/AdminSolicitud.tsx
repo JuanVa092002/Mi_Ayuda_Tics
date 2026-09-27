@@ -1,66 +1,64 @@
-import { useEffect, useState } from 'react'
-import { asignarSolicitudTecnico, cancelarSolicitud, getSolicitudesPendientes, LeaderMediaThumb, WorkflowManualRetryNotice } from '@/features/tickets'
+import { useState, useEffect, type ReactNode } from 'react'
+import {
+  asignarSolicitudTecnico,
+  cancelarSolicitud,
+  getSolicitudesPendientes,
+  WorkflowManualRetryNotice,
+} from '@/features/tickets'
+import { formatSolicitudFecha, workflowLabel } from '@/features/tickets/leader-inbox'
 import { getTecnicosAprobados } from '@/features/users'
 import { toast } from 'react-toastify'
 import { getApiErrorMessage } from '@/shared/api/apiError'
+import { AppShell, SearchField, PaginationFooter, StatusBadge } from '@/shared/ui'
 import { classifyWorkflowMutationFailure } from '@/features/tickets/api/workflow-retry-policy'
 import { clearWorkflowAttemptKey } from '@/features/tickets/api/workflow-idempotency'
-import {
-  canLeaderAssign,
-  canLeaderCancel,
-  formatSolicitudFecha,
-  sortSolicitudesNewest,
-  validateRequiredMotivo,
-  workflowLabel,
-} from '@/features/tickets/leader-inbox'
-import { AppShell, SearchField, PaginationFooter, StatusBadge } from '@/shared/ui'
 import type { Solicitud, User } from '@/shared/types'
 
-export default function AdminSolicitud() {
+
+export default function AdminSolicitud(): ReactNode {
   const [solicitudes, setSolicitudes] = useState<Solicitud[]>([])
-  const [showModal, setShowModal] = useState(false)
-  const [tecnicos, setTecnicos] = useState<User[]>([])
-  const [selectedSolicitud, setSelectedSolicitud] = useState<Solicitud | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState<string | null>(null)
-  const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
-  const [cancelTarget, setCancelTarget] = useState<Solicitud | null>(null)
-  const [cancelMotivo, setCancelMotivo] = useState('')
-  const [cancelError, setCancelError] = useState<unknown>(null)
-  const [cancelLastPayload, setCancelLastPayload] = useState<{ motivo: string } | undefined>(undefined)
-  const [assignError, setAssignError] = useState<unknown>(null)
-  const [assignLastPayload, setAssignLastPayload] = useState<{ tecnico: string } | undefined>(undefined)
-  const [assigning, setAssigning] = useState(false)
-  const [cancelling, setCancelling] = useState(false)
-  const [loadingTecnicos, setLoadingTecnicos] = useState(false)
   const itemsPerPage = 8
 
+  const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null)
+  const [tecnicos, setTecnicos] = useState<User[]>([])
+  const [loadingTecnicos, setLoadingTecnicos] = useState(false)
+  const [assigning, setAssigning] = useState(false)
+  const [assignError, setAssignError] = useState<unknown>(null)
+  const [assignLastPayload, setAssignLastPayload] = useState<{ tecnico: string } | undefined>(undefined)
+
+  const [cancelTarget, setCancelTarget] = useState<Solicitud | null>(null)
+  const [cancelMotivo, setCancelMotivo] = useState('')
+  const [cancelling, setCancelling] = useState(false)
+  const [cancelError, setCancelError] = useState<unknown>(null)
+  const [cancelLastPayload, setCancelLastPayload] = useState<{ motivo: string } | undefined>(undefined)
+  const [previewImage, setPreviewImage] = useState<string | null>(null)
+
   useEffect(() => {
-    async function fetchSolicitudes() {
-      setLoading(true)
-      setFetchError(null)
-      try {
-        const data = await getSolicitudesPendientes()
-        setSolicitudes(sortSolicitudesNewest(data))
-      } catch (error) {
-        setFetchError(getApiErrorMessage(error))
-      } finally {
-        setLoading(false)
-      }
-    }
     void fetchSolicitudes()
+    void fetchTecnicos()
   }, [])
 
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [searchTerm])
+  const fetchSolicitudes = async () => {
+    setLoading(true)
+    setFetchError(null)
+    try {
+      const data: Solicitud[] = await getSolicitudesPendientes()
+      setSolicitudes(data)
+      if (data.length > 0) {
+        setSelectedCaseId(prev => prev ?? data[0]._id)
+      }
+    } catch (error) {
+      setFetchError(getApiErrorMessage(error))
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  const handleShareClick = async (solicitud: Solicitud) => {
-    setSelectedSolicitud(solicitud)
-    setAssignError(null)
-    setAssignLastPayload(undefined)
-    setShowModal(true)
+  const fetchTecnicos = async () => {
     setLoadingTecnicos(true)
     try {
       const data = await getTecnicosAprobados()
@@ -75,7 +73,13 @@ export default function AdminSolicitud() {
   const handleCancelSubmit = async (payloadOverride?: { motivo: string }) => {
     if (!cancelTarget || cancelling) return
     const motivoValue = (payloadOverride?.motivo ?? cancelMotivo).trim()
-    const validationError = validateRequiredMotivo(motivoValue)
+    const validationError =
+      motivoValue.length < 5
+        ? 'El motivo debe tener al menos 5 caracteres.'
+        : motivoValue.length > 500
+          ? 'El motivo no puede exceder los 500 caracteres.'
+          : null
+
     if (validationError) {
       toast.error(validationError)
       return
@@ -83,7 +87,7 @@ export default function AdminSolicitud() {
     setCancelling(true)
     try {
       await cancelarSolicitud(cancelTarget._id, motivoValue)
-      toast.success('Solicitud cancelada')
+      toast.success('Solicitud cancelada correctamente')
       setSolicitudes(prev => prev.filter(item => item._id !== cancelTarget._id))
       setCancelTarget(null)
       setCancelMotivo('')
@@ -101,22 +105,20 @@ export default function AdminSolicitud() {
     }
   }
 
-  const handleAssignClick = async (tecnicoId: User, payloadOverride?: { tecnico: string }) => {
-    if (!selectedSolicitud || assigning) return
-    const tecnico = payloadOverride?.tecnico ?? tecnicoId._id
+  const handleAssignClick = async (tecnico: User, targetSolicitudId?: string, payloadOverride?: { tecnico: string }) => {
+    const solicitudId = targetSolicitudId || selectedCaseId
+    if (!solicitudId || assigning) return
+    const tecnicoIdStr = payloadOverride?.tecnico ?? tecnico._id
     setAssigning(true)
     try {
-      await asignarSolicitudTecnico(selectedSolicitud._id, { tecnico })
-      toast.success('Solicitud asignada al especialista exitosamente')
-      setSolicitudes(prevSolicitudes =>
-        prevSolicitudes.filter(solicitud => solicitud._id !== selectedSolicitud._id)
-      )
-      setShowModal(false)
+      await asignarSolicitudTecnico(solicitudId, { tecnico: tecnicoIdStr })
+      toast.success(`Solicitud asignada a ${tecnico.nombre} exitosamente`)
+      setSolicitudes(prev => prev.filter(solicitud => solicitud._id !== solicitudId))
       setAssignError(null)
       setAssignLastPayload(undefined)
     } catch (error) {
       setAssignError(error)
-      setAssignLastPayload({ tecnico })
+      setAssignLastPayload({ tecnico: tecnicoIdStr })
       const failure = classifyWorkflowMutationFailure(error)
       if (!failure.offersManualRetry) {
         toast.error(getApiErrorMessage(error))
@@ -138,269 +140,330 @@ export default function AdminSolicitud() {
   const totalItems = filteredData.length
   const totalPages = Math.ceil(totalItems / itemsPerPage)
   const currentItems = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-  const nuevosV2 = solicitudes.filter((row) => row.estado === 'nuevo').length
-  const solicitadosV1 = solicitudes.filter((row) => row.estado === 'solicitado').length
+  
+  const selectedSolicitud = solicitudes.find(s => s._id === selectedCaseId) || currentItems[0] || null
 
   return (
     <AppShell subtitleContext="Centro de Mando TIC">
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         
         {/* Command Header */}
-        <section className="rounded-3xl bg-linear-to-br from-[#04324d] via-[#032539] to-[#021824] text-white p-6 sm:p-8 shadow-[0_12px_36px_rgba(4,50,77,0.15)] border border-white/10">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-300">
-                <span className="w-2 h-2 rounded-full bg-[#39a900] animate-pulse" />
-                Despacho y Asignación de Solicitudes
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-                Mesa de Control de Nuevas Incidencias
-              </h1>
-              <p className="text-xs sm:text-sm text-slate-300 font-medium">
-                Evalúa requerimientos recién radicados, previene cuellos de botella y asigna personal técnico especializado.
-              </p>
+        <section className="rounded-3xl bg-[#04324d] text-white p-6 sm:p-7 shadow-[0_12px_36px_rgba(4,50,77,0.12)] border border-[#dbe4e8]/20 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-1.5">
+            <div className="inline-flex items-center gap-2 px-3 py-0.5 rounded-full bg-white/10 backdrop-blur-md text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-300">
+              <span className="w-2 h-2 rounded-full bg-[#39a900] animate-pulse" />
+              Despacho y Asignación de Solicitudes
             </div>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+              Mesa de Control de Nuevas Incidencias
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-300 font-medium max-w-2xl">
+              Evalúa requerimientos recién radicados, analiza evidencia técnica y asigna especialistas con un solo clic.
+            </p>
+          </div>
 
-            {/* Live Operational Metrics */}
-            <div className="flex items-center gap-4 bg-white/5 border border-white/10 p-4 rounded-2xl backdrop-blur-md shrink-0">
-              <div className="text-center px-3 border-r border-white/10">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Por Despachar</p>
-                <p className="text-2xl font-black text-white mt-0.5">{solicitudes.length}</p>
-              </div>
-              <div className="text-center px-3 border-r border-white/10">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">Nuevos v2</p>
-                <p className="text-2xl font-black text-emerald-400 mt-0.5">{nuevosV2}</p>
-              </div>
-              <div className="text-center px-3">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-300">Cola legacy</p>
-                <p className="text-2xl font-black text-slate-200 mt-0.5">{solicitadosV1}</p>
-              </div>
+          <div className="flex items-center gap-4 bg-white/10 p-3 rounded-2xl border border-white/15 shrink-0">
+            <div className="text-center px-4 border-r border-white/15">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-300">Por Despachar</p>
+              <p className="text-2xl font-black text-white">{solicitudes.length}</p>
+            </div>
+            <div className="text-center px-4">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">Técnicos Activos</p>
+              <p className="text-2xl font-black text-emerald-400">{tecnicos.length}</p>
             </div>
           </div>
         </section>
 
-        {/* Toolbar & Filters */}
-        <section className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border hairline-border border-slate-200/80 shadow-xs">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              {totalItems} tickets pendientes de asignación en tiempo real
-            </p>
-            <div className="w-full sm:w-80">
-              <SearchField
-                value={searchTerm}
-                onChange={setSearchTerm}
-                placeholder="Filtrar por ticket, ambiente o funcionario..."
-              />
-            </div>
+        {/* Search & Actions Toolbar */}
+        <section className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-3.5 rounded-2xl border border-[#dbe4e8] shadow-xs">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-black uppercase tracking-wider text-azul-sena">
+              Cola de Triaje y Despacho
+            </span>
+            <span className="px-2 py-0.5 rounded-full bg-blue-50 text-azul-sena text-[11px] font-bold">
+              {totalItems} pendientes
+            </span>
           </div>
 
-          {/* Table Container */}
-          <div className="bg-white rounded-3xl border hairline-border border-slate-200/80 shadow-[0_8px_30px_rgba(4,50,77,0.03)] overflow-hidden">
-            <div className="premium-table-container">
-              <table className="premium-table">
-                <thead className="premium-thead">
-                  <tr>
-                    <th className="premium-th min-w-[120px]">Registro</th>
-                    <th className="premium-th min-w-[150px]">Ambiente / Ubicación</th>
-                    <th className="premium-th min-w-[180px]">Funcionario Solicitante</th>
-                    <th className="premium-th min-w-[320px]">Detalle de Incidencia</th>
-                    <th className="premium-th text-center w-[90px]">Evidencia</th>
-                    <th className="premium-th text-center min-w-[140px]">Despacho</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white">
-                  {loading ? (
-                    <tr>
-                      <td colSpan={6} className="py-20 text-center">
-                        <div className="flex flex-col items-center gap-3 opacity-60" role="status" aria-live="polite">
-                          <div className="h-9 w-9 animate-spin rounded-full border-3 border-slate-200 border-t-azul-sena" />
-                          <p className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">Cargando cola de despacho...</p>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : fetchError ? (
-                    <tr>
-                      <td colSpan={6} className="py-20 text-center text-red-600 font-semibold">{fetchError}</td>
-                    </tr>
-                  ) : currentItems.length > 0 ? (
-                    currentItems.map((row) => (
-                      <tr key={row._id} className="premium-tr">
-                        <td className="premium-td">
-                          <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-1.5">
-                              <span className="material-symbols-outlined !text-[16px] text-azul-sena font-variation-['wght'_300]">confirmation_number</span>
-                              <span className="font-mono text-xs font-bold text-azul-sena">#{row.codigoCaso || row._id.slice(-6)}</span>
-                            </div>
-                            <span className="text-[11px] font-medium text-slate-400">
-                              {formatSolicitudFecha(row.fecha)}
-                            </span>
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                              <StatusBadge status={row.estado} label={row.displayStatus || row.estado} />
-                              <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
-                                {workflowLabel(row.workflowVersion)}
-                              </span>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="premium-td">
-                          <div className="flex items-center gap-1.5 text-xs font-bold text-on-surface">
-                            <span className="material-symbols-outlined !text-[16px] text-emerald-600 font-variation-['FILL'_1]">location_on</span>
-                            <span>{row.ambiente?.nombre || 'General'}</span>
-                          </div>
-                        </td>
-                        <td className="premium-td">
-                          <div className="flex flex-col gap-0.5">
-                            <span className="text-xs font-semibold text-on-surface truncate max-w-[160px]">
-                              {(typeof row.usuario === 'object' && row.usuario ? row.usuario.nombre : undefined) || 'Desconocido'}
-                            </span>
-                            <span className="text-[11px] text-slate-400 font-normal">{row.telefono || 'Sin teléfono'}</span>
-                          </div>
-                        </td>
-                        <td className="premium-td">
-                          <p className="text-xs font-normal text-on-surface leading-relaxed line-clamp-3 italic text-slate-700 max-w-md">
-                            "{row.descripcion}"
-                          </p>
-                        </td>
-                        <td className="premium-td text-center">
-                          <LeaderMediaThumb foto={row.foto} alt={`Evidencia de ${row.codigoCaso || 'solicitud'}`} />
-                        </td>
-                        <td className="premium-td text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            {canLeaderAssign(row) ? (
-                              <button
-                                type="button"
-                                disabled={loadingTecnicos}
-                                onClick={() => void handleShareClick(row)}
-                                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-azul-sena hover:bg-[#032539] active:scale-98 text-white text-[11px] font-black uppercase tracking-wider transition-all shadow-xs disabled:opacity-50 cursor-pointer"
-                              >
-                                <span>Asignar</span>
-                                <span className="material-symbols-outlined !text-[15px]">person_add</span>
-                              </button>
-                            ) : null}
-                            {canLeaderCancel(row) ? (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setCancelTarget(row)
-                                  setCancelMotivo('')
-                                }}
-                                className="inline-flex items-center px-2.5 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer"
-                              >
-                                Cancelar
-                              </button>
-                            ) : null}
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={6} className="py-20 text-center">
-                        <div className="flex flex-col items-center gap-3 opacity-60">
-                          <span className="material-symbols-outlined !text-[48px] text-emerald-600">verified</span>
-                          <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Mesa de control al día · No hay incidencias por asignar</p>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            <PaginationFooter
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalItems={totalItems}
-              itemsPerPage={itemsPerPage}
-              onPageChange={setCurrentPage}
-              itemLabel="solicitudes por despachar"
+          <div className="w-full sm:w-80 shrink-0">
+            <SearchField
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder="Buscar por ticket, ambiente o funcionario..."
+              label="Buscar en incidencias nuevas"
             />
           </div>
         </section>
-      </div>
 
-      {/* Modern Technical Dispatch Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-[100] animate-in fade-in duration-200 p-4" role="presentation">
-          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in duration-200" role="dialog" aria-modal="true" aria-labelledby="assign-tech-title">
-            <div className="p-6 sm:p-8 border-b hairline-border border-slate-100 flex justify-between items-center bg-slate-50/50">
-              <div>
-                <h2 id="assign-tech-title" className="text-lg sm:text-xl font-bold text-azul-sena">Despachar Caso a Especialista Técnico</h2>
-                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mt-1">
-                  Ticket #{selectedSolicitud?.codigoCaso || selectedSolicitud?._id.slice(-6)} · Asignación en un clic
-                </p>
+        {/* Master-Detail Split Workspace (Zero horizontal scroll) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          
+          {/* Left Panel: Incoming Ticket Queue (5 cols) */}
+          <div className="lg:col-span-5 bg-white rounded-3xl border border-[#dbe4e8] shadow-sm overflow-hidden flex flex-col">
+            <div className="px-5 py-4 border-b border-[#dbe4e8] bg-[#f5f8f9] flex items-center justify-between">
+              <span className="text-xs font-black uppercase tracking-wider text-azul-sena">
+                Requerimientos Entrantes ({totalItems})
+              </span>
+              <span className="text-[11px] font-semibold text-slate-500">
+                Página {currentPage} de {Math.max(1, totalPages)}
+              </span>
+            </div>
+
+            {loading ? (
+              <div className="py-24 text-center">
+                <div className="h-8 w-8 mx-auto animate-spin rounded-full border-3 border-slate-200 border-t-azul-sena" />
+                <p className="mt-3 text-xs font-bold uppercase tracking-wider text-slate-400">Cargando cola de despacho...</p>
               </div>
-              <button 
-                type="button" 
-                onClick={() => { if (selectedSolicitud) clearWorkflowAttemptKey('assign', selectedSolicitud._id); setShowModal(false); setAssignError(null) }} 
-                aria-label="Cerrar modal" 
-                className="w-9 h-9 rounded-xl flex items-center justify-center hover:bg-slate-100 transition-colors text-slate-400 cursor-pointer"
-              >
-                <span className="material-symbols-outlined">close</span>
-              </button>
-            </div>
-
-            <div className="max-h-[380px] overflow-auto hairline-scrollbar p-2">
-              {tecnicos.length === 0 ? (
-                <p className="p-8 text-sm font-semibold text-slate-500 text-center">
-                  No hay técnicos habilitados en la base de datos.
-                </p>
-              ) : (
-                <div className="grid grid-cols-1 divide-y divide-slate-100">
-                  {tecnicos.map((tecnico) => (
-                    <div key={tecnico._id} className="flex items-center justify-between p-4 hover:bg-slate-50/80 rounded-2xl transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-azul-sena/10 flex items-center justify-center text-azul-sena shrink-0">
-                          <span className="material-symbols-outlined !text-[20px]">engineering</span>
+            ) : fetchError ? (
+              <div className="p-8 text-center text-red-600 font-bold text-sm">
+                {fetchError}
+              </div>
+            ) : currentItems.length === 0 ? (
+              <div className="py-20 text-center px-4">
+                <span className="material-symbols-outlined !text-[44px] text-slate-300">task_alt</span>
+                <p className="mt-2 text-sm font-bold text-slate-700">Mesa de despacho al día</p>
+                <p className="text-xs text-slate-400 mt-0.5">No hay requerimientos pendientes de asignación.</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-[#dbe4e8]/70" role="list">
+                {currentItems.map((item) => {
+                  const isSelected = selectedSolicitud?._id === item._id
+                  return (
+                    <button
+                      key={item._id}
+                      type="button"
+                      onClick={() => setSelectedCaseId(item._id)}
+                      className={`w-full text-left p-4.5 transition-all cursor-pointer flex flex-col gap-2 relative ${
+                        isSelected
+                          ? 'bg-blue-50/50 ring-2 ring-inset ring-azul-sena/20 border-l-4 border-l-azul-sena'
+                          : 'hover:bg-slate-50 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs font-black text-azul-sena">
+                            #{item.codigoCaso || item._id.slice(-6)}
+                          </span>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                            {workflowLabel(item.workflowVersion)}
+                          </span>
                         </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-bold text-on-surface truncate">{tecnico.nombre}</p>
-                          <p className="text-xs text-slate-400 truncate">{tecnico.correo} {tecnico.telefono ? `· ${tecnico.telefono}` : ''}</p>
-                        </div>
+                        <StatusBadge status={item.estado} label={item.displayStatus || item.estado} />
                       </div>
-                      <button
-                        type="button"
-                        disabled={assigning}
-                        onClick={() => void handleAssignClick(tecnico)}
-                        className="px-4 py-2 rounded-xl bg-azul-sena hover:bg-[#03283e] text-white text-xs font-black uppercase tracking-wider transition-all shadow-xs cursor-pointer active:scale-98 disabled:opacity-50"
-                      >
-                        {assigning ? 'Asignando…' : 'Asignar Caso'}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
 
-            <div className="p-4 bg-slate-50 border-t hairline-border border-slate-100 text-center">
-              <WorkflowManualRetryNotice
-                error={assignError}
-                lastPayload={assignLastPayload}
-                currentPayload={assignLastPayload}
-                onRetry={() => {
-                  if (!assignLastPayload || !selectedSolicitud) return
-                  const tecnico = tecnicos.find((item) => item._id === assignLastPayload.tecnico)
-                  if (tecnico) void handleAssignClick(tecnico, assignLastPayload)
-                }}
+                      <h3 className="text-sm font-bold text-on-surface line-clamp-2">
+                        {item.descripcion}
+                      </h3>
+
+                      <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
+                        <span className="font-semibold text-slate-700 truncate max-w-[160px]">
+                          {typeof item.usuario === 'object' ? item.usuario?.nombre : 'Desconocido'}
+                        </span>
+                        <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
+                          {item.ambiente?.nombre || 'General'}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1">
+                        <span className="text-[11px] text-slate-400 font-medium">
+                          {formatSolicitudFecha(item.fecha)}
+                        </span>
+                        <span className="text-[11px] font-bold text-azul-sena flex items-center gap-0.5">
+                          Despachar <span className="material-symbols-outlined !text-[14px]">chevron_right</span>
+                        </span>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+
+            <div className="p-3 border-t border-[#dbe4e8] bg-white">
+              <PaginationFooter
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                itemLabel="requerimientos"
               />
             </div>
+          </div>
+
+          {/* Right Panel: Dispatch Inspector & Specialist Assignment (7 cols) */}
+          <div className="lg:col-span-7">
+            {selectedSolicitud ? (
+              <div className="bg-white rounded-3xl border border-[#dbe4e8] shadow-sm overflow-hidden sticky top-24 space-y-6 p-6">
+                
+                {/* Header */}
+                <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#dbe4e8]">
+                  <div className="flex items-center gap-2.5">
+                    <span className="font-mono text-sm font-black px-2.5 py-1 rounded-lg bg-[#f5f8f9] border border-[#dbe4e8] text-azul-sena">
+                      #{selectedSolicitud.codigoCaso || selectedSolicitud._id.slice(-6)}
+                    </span>
+                    <StatusBadge status={selectedSolicitud.estado} label={selectedSolicitud.displayStatus || selectedSolicitud.estado} />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-400 font-semibold">
+                      {formatSolicitudFecha(selectedSolicitud.fecha)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCancelTarget(selectedSolicitud)
+                        setCancelMotivo('')
+                      }}
+                      className="px-2.5 py-1 rounded-lg text-xs font-bold text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                      title="Cancelar solicitud con justificación"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Detalle de la Incidencia</p>
+                  <p className="text-sm font-medium text-slate-800 mt-1 leading-relaxed bg-[#f5f8f9] p-4 rounded-2xl border border-[#dbe4e8]">
+                    {selectedSolicitud.descripcion}
+                  </p>
+                </div>
+
+                {/* Metadata Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-2xl bg-[#f5f8f9] border border-[#dbe4e8]">
+                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Funcionario Solicitante</p>
+                    <p className="text-sm font-bold text-azul-sena mt-1">
+                      {typeof selectedSolicitud.usuario === 'object' ? selectedSolicitud.usuario?.nombre : 'Desconocido'}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {selectedSolicitud.telefono ? `Tel: ${selectedSolicitud.telefono}` : 'Sin teléfono'}
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-[#f5f8f9] border border-[#dbe4e8]">
+                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Ambiente Afectado</p>
+                    <p className="text-sm font-bold text-azul-sena mt-1">
+                      {selectedSolicitud.ambiente?.nombre || 'General'}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-0.5">Sede Central CTPI</p>
+                  </div>
+                </div>
+
+                {/* Evidence Viewer if present */}
+                {selectedSolicitud.foto ? (
+                  <div className="p-4 rounded-2xl border border-[#dbe4e8] bg-white">
+                    <p className="text-xs font-bold text-slate-700 mb-2 flex items-center gap-1.5">
+                      <span className="material-symbols-outlined !text-[18px] text-azul-sena">image</span>
+                      Evidencia Adjunta
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewImage(selectedSolicitud.foto?.url || null)}
+                      className="h-24 w-32 rounded-xl overflow-hidden border border-[#dbe4e8] group relative cursor-pointer"
+                    >
+                      <img
+                        src={selectedSolicitud.foto.url}
+                        alt="Evidencia adjunta"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                      />
+                    </button>
+                  </div>
+                ) : null}
+
+                {/* Specialist Assignment Section */}
+                <div className="pt-2 border-t border-[#dbe4e8] space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-black uppercase tracking-wider text-azul-sena">
+                      Asignar Especialista Técnico
+                    </p>
+                    <span className="text-[11px] text-slate-400 font-medium">
+                      {tecnicos.length} disponibles
+                    </span>
+                  </div>
+
+                  {loadingTecnicos ? (
+                    <div className="p-6 text-center text-xs text-slate-400">Cargando personal técnico...</div>
+                  ) : tecnicos.length === 0 ? (
+                    <div className="p-4 rounded-2xl bg-amber-50 text-amber-800 text-xs font-semibold">
+                      No hay técnicos aprobados disponibles actualmente.
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-[#dbe4e8] border border-[#dbe4e8] rounded-2xl overflow-hidden max-h-60 overflow-y-auto hairline-scrollbar">
+                      {tecnicos.map((tecnico) => (
+                        <div key={tecnico._id} className="p-3.5 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                          <div className="min-w-0 pr-3">
+                            <p className="text-xs font-bold text-on-surface truncate">{tecnico.nombre}</p>
+                            <p className="text-[11px] text-slate-400 truncate">{tecnico.correo} {tecnico.telefono ? `· ${tecnico.telefono}` : ''}</p>
+                          </div>
+                          <button
+                            type="button"
+                            disabled={assigning}
+                            onClick={() => void handleAssignClick(tecnico, selectedSolicitud._id)}
+                            className="shrink-0 px-3.5 py-1.5 rounded-xl bg-azul-sena hover:bg-[#03283e] text-white text-[11px] font-black uppercase tracking-wider shadow-2xs transition-all cursor-pointer active:scale-98 disabled:opacity-50"
+                          >
+                            {assigning ? 'Asignando...' : 'Asignar'}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <WorkflowManualRetryNotice
+                    error={assignError}
+                    lastPayload={assignLastPayload}
+                    currentPayload={assignLastPayload}
+                    onRetry={() => {
+                      if (!assignLastPayload || !selectedSolicitud) return
+                      const tecnico = tecnicos.find((item) => item._id === assignLastPayload.tecnico)
+                      if (tecnico) void handleAssignClick(tecnico, selectedSolicitud._id, assignLastPayload)
+                    }}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white rounded-3xl border border-[#dbe4e8] p-12 text-center text-slate-400">
+                <span className="material-symbols-outlined !text-[48px] text-slate-300">dashboard_customize</span>
+                <p className="mt-2 text-sm font-bold text-slate-700">Selecciona un requerimiento para despachar</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Image Preview Modal */}
+      {previewImage && (
+        <div 
+          className="fixed inset-0 z-[150] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setPreviewImage(null)}
+        >
+          <div className="relative max-w-4xl max-h-[90vh] bg-white rounded-2xl p-2 overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
+            <img src={previewImage} alt="Evidencia ampliada" className="max-h-[85vh] w-auto object-contain rounded-xl" />
+            <button
+              type="button"
+              onClick={() => setPreviewImage(null)}
+              className="absolute top-4 right-4 bg-black/70 hover:bg-black text-white p-2 rounded-full cursor-pointer"
+              aria-label="Cerrar vista previa"
+            >
+              <span className="material-symbols-outlined !text-[20px]">close</span>
+            </button>
           </div>
         </div>
       )}
 
-      {/* Cancel Modal */}
+      {/* Cancel Justification Modal */}
       {cancelTarget ? (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-[110] p-4">
-          <div className="bg-white w-full max-w-lg rounded-3xl p-8 shadow-2xl animate-in fade-in zoom-in duration-200" role="dialog" aria-modal="true">
-            <h2 className="text-xl font-bold text-on-surface mb-2">Cancelar Solicitud de Incidencia</h2>
+          <div className="bg-white w-full max-w-lg rounded-3xl p-8 shadow-2xl animate-in fade-in zoom-in duration-200 border border-[#dbe4e8]" role="dialog" aria-modal="true">
+            <h2 className="text-xl font-bold text-on-surface mb-1.5">Cancelar Solicitud de Incidencia</h2>
             <p className="text-xs text-slate-500 mb-4">Caso #{cancelTarget.codigoCaso}. El ticket se preservará en el histórico con trazabilidad del motivo.</p>
             <textarea
-              className="w-full min-h-28 rounded-2xl border hairline-border border-slate-200 p-4 text-sm focus:border-azul-sena focus:outline-none"
+              className="w-full min-h-28 rounded-2xl border border-[#dbe4e8] p-4 text-sm focus:border-azul-sena focus:outline-none"
               placeholder="Indica el motivo justificado de la cancelación..."
               value={cancelMotivo}
               onChange={(event) => setCancelMotivo(event.target.value)}
             />
-            <div className="mt-6 flex justify-end gap-3 border-t hairline-border border-slate-100 pt-4">
+            <div className="mt-6 flex justify-end gap-3 border-t border-[#dbe4e8] pt-4">
               <button 
                 type="button" 
                 className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-600 hover:bg-slate-100 rounded-xl"

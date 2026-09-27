@@ -152,10 +152,10 @@ export default function AppShell({ children, subtitleContext = 'Mesa de servicio
   )
 
   return (
-    <div className="flex min-h-screen bg-[#F4F7F8] text-slate-800">
+    <div className="flex min-h-screen bg-[#eef2f4] text-slate-800">
       {/* Desktop Sidebar */}
       <aside
-        className={`hidden shrink-0 border-r border-slate-100 bg-white lg:block transition-all duration-200 ${
+        className={`hidden shrink-0 border-r border-[#dbe4e8] bg-white lg:block transition-all duration-200 ${
           collapsed ? 'w-[88px]' : 'w-[272px]'
         }`}
       >
@@ -180,7 +180,7 @@ export default function AppShell({ children, subtitleContext = 'Mesa de servicio
       {/* Main Column */}
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Sticky Header */}
-        <header className="sticky top-0 z-40 flex h-20 items-center justify-between gap-4 border-b border-slate-100 bg-white/90 px-4 backdrop-blur sm:px-8">
+        <header className="sticky top-0 z-40 flex h-20 items-center justify-between gap-4 border-b border-[#dbe4e8] bg-white/95 px-4 backdrop-blur sm:px-8">
           <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"

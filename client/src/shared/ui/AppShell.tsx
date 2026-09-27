@@ -11,15 +11,39 @@ export interface AppShellProps {
   subtitleContext?: string
 }
 
-function formatRoleLabel(role: string | undefined): { title: string; subtitle: string; homeLink: string } {
+function formatRoleLabel(role: string | undefined): {
+  title: string
+  subtitle: string
+  homeLink: string
+  workspaceTitle: string
+  tone: 'dispatch' | 'care' | 'focus'
+} {
   const r = (role || '').toLowerCase()
   if (r === 'lider' || r === 'líder' || r === 'administrador') {
-    return { title: 'Líder TIC', subtitle: 'CTPI · Líder TIC', homeLink: '/adminSolicitud' }
+    return {
+      title: 'Líder TIC',
+      subtitle: 'Mesa de despacho',
+      homeLink: '/adminSolicitud',
+      workspaceTitle: 'Despacho de solicitudes',
+      tone: 'dispatch',
+    }
   }
   if (r === 'tecnico' || r === 'técnico') {
-    return { title: 'Técnico', subtitle: 'CTPI · Técnico', homeLink: '/casos-por-resolver' }
+    return {
+      title: 'Técnico',
+      subtitle: 'Cola de atención',
+      homeLink: '/casos-por-resolver',
+      workspaceTitle: 'Casos por resolver',
+      tone: 'focus',
+    }
   }
-  return { title: 'Funcionario', subtitle: 'CTPI · Funcionario', homeLink: '/funcionario' }
+  return {
+    title: 'Funcionario',
+    subtitle: 'Acompañamiento',
+    homeLink: '/funcionario',
+    workspaceTitle: 'Seguimiento de tu solicitud',
+    tone: 'care',
+  }
 }
 
 function formatRelativeTime(dateString: string | undefined): string {
@@ -100,7 +124,7 @@ export default function AppShell({ children, subtitleContext = 'Mesa de servicio
           <BrandWordmark
             size={collapsed ? 'sm' : 'md'}
             stacked={collapsed}
-            subtitle={collapsed ? undefined : roleInfo.subtitle}
+            subtitle={collapsed ? undefined : subtitleContext}
           />
         </Link>
         <button
@@ -143,7 +167,7 @@ export default function AppShell({ children, subtitleContext = 'Mesa de servicio
           {collapsed ? null : (
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-bold text-azul-sena">{user?.nombre || roleInfo.title}</p>
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-verde-sena">{roleInfo.title}</p>
+              <p className="text-[13px] font-medium text-ink-muted">{roleInfo.title}</p>
             </div>
           )}
         </Link>
@@ -152,11 +176,20 @@ export default function AppShell({ children, subtitleContext = 'Mesa de servicio
   )
 
   return (
-    <div className="flex min-h-screen bg-[#eef2f4] text-slate-800">
+    <div
+      data-role-tone={roleInfo.tone}
+      className="flex min-h-screen bg-canvas text-ink"
+    >
       {/* Desktop Sidebar */}
       <aside
-        className={`hidden shrink-0 border-r border-[#dbe4e8] bg-white lg:block transition-all duration-200 ${
+        className={`hidden shrink-0 border-r border-border-subtle bg-surface lg:block transition-all duration-200 motion-reduce:transition-none ${
           collapsed ? 'w-[88px]' : 'w-[272px]'
+        } ${
+          roleInfo.tone === 'dispatch'
+            ? 'border-l-4 border-l-brand-deep'
+            : roleInfo.tone === 'focus'
+              ? 'border-l-4 border-l-warning'
+              : 'border-l-4 border-l-brand-green'
         }`}
       >
         <div className="sticky top-0 h-screen">{sidebar}</div>
@@ -180,19 +213,19 @@ export default function AppShell({ children, subtitleContext = 'Mesa de servicio
       {/* Main Column */}
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Sticky Header */}
-        <header className="sticky top-0 z-40 flex h-20 items-center justify-between gap-4 border-b border-[#dbe4e8] bg-white/95 px-4 backdrop-blur sm:px-8">
+        <header className="sticky top-0 z-40 flex h-20 items-center justify-between gap-4 border-b border-border-subtle bg-surface px-4 sm:px-8">
           <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
-              className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-azul-sena hover:bg-slate-100 lg:hidden"
+              className="flex h-11 w-11 items-center justify-center rounded-xl bg-surface-subtle text-brand-deep hover:bg-canvas lg:hidden"
               onClick={() => setMobileOpen(true)}
               aria-label="Abrir menú"
             >
               <span className="material-symbols-outlined">menu</span>
             </button>
             <div className="min-w-0">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-verde-sena">{subtitleContext}</p>
-              <h1 className="truncate text-xl font-black text-azul-sena sm:text-2xl">Hola, {firstName}</h1>
+              <p className="text-[13px] font-medium text-ink-muted">{subtitleContext} · {firstName}</p>
+              <h1 className="truncate text-[28px] font-bold leading-tight text-ink">{roleInfo.workspaceTitle}</h1>
             </div>
           </div>
 
@@ -282,7 +315,7 @@ export default function AppShell({ children, subtitleContext = 'Mesa de servicio
                   <div className="border-b border-slate-100 px-3 py-2.5">
                     <p className="truncate text-xs font-bold text-azul-sena">{user?.nombre || roleInfo.title}</p>
                     <p className="truncate text-[11px] text-slate-400">{user?.correo || ''}</p>
-                    <span className="mt-1 inline-block rounded-full bg-[#E8F5E0] px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-verde-sena">
+                    <span className="mt-1 inline-block rounded-md bg-surface-selected px-2 py-0.5 text-[12px] font-semibold text-brand-deep">
                       {roleInfo.title}
                     </span>
                   </div>

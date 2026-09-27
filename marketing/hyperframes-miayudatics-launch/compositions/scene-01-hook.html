@@ -1,0 +1,134 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        #root {
+          position: absolute;
+          inset: 0;
+          width: 1080px;
+          height: 1920px;
+          background: radial-gradient(circle at 50% 40%, #082338 0%, #021422 100%);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 180px 60px 240px 60px;
+          overflow: hidden;
+          font-family: 'Inter', -apple-system, sans-serif;
+          color: #FFFFFF;
+        }
+        .scene-header-01 {
+          text-align: center;
+          margin-bottom: 40px;
+          z-index: 10;
+        }
+        .scene-tag-01 {
+          display: inline-flex;
+          align-items: center;
+          padding: 8px 20px;
+          background: rgba(239, 68, 68, 0.15);
+          color: #FCA5A5;
+          border: 1px solid rgba(239, 68, 68, 0.3);
+          border-radius: 9999px;
+          font-size: 18px;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          margin-bottom: 20px;
+        }
+        .scene-title-01 {
+          font-size: 52px;
+          font-weight: 900;
+          color: #FFFFFF;
+          line-height: 1.15;
+          letter-spacing: -0.02em;
+          max-width: 900px;
+        }
+        .chaos-container {
+          position: relative;
+          width: 860px;
+          height: 620px;
+          margin-top: 30px;
+        }
+        .chaos-card {
+          position: absolute;
+          padding: 24px 32px;
+          border-radius: 20px;
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+          font-weight: 700;
+          font-size: 24px;
+          line-height: 1.4;
+          max-width: 500px;
+        }
+        .chaos-card.yellow {
+          background: #FEF08A;
+          color: #713F12;
+          top: 30px;
+          left: 20px;
+        }
+        .chaos-card.red {
+          background: #FEE2E2;
+          color: #991B1B;
+          top: 170px;
+          right: 20px;
+        }
+        .chaos-card.white {
+          background: #FFFFFF;
+          color: #334155;
+          bottom: 70px;
+          left: 80px;
+        }
+        .chaos-card.slate {
+          background: #334155;
+          color: #F1F5F9;
+          top: 330px;
+          right: 120px;
+          font-size: 20px;
+        }
+      </style>
+
+      <div id="root" data-composition-id="scene-01" data-width="1080" data-height="1920">
+        <div class="scene-header-01">
+          <div class="scene-tag-01">SOPORTE TÉCNICO TRADICIONAL</div>
+          <h1 class="scene-title-01">
+            ¿Tus incidencias todavía se pierden entre mensajes y llamadas?
+          </h1>
+        </div>
+
+        <div class="chaos-container">
+          <div id="c1-card-1" class="chaos-card yellow">
+            ⚠️ URGENTE: Proyector sala A-201 no da imagen!! ¿Quién viene?
+          </div>
+          <div id="c1-card-2" class="chaos-card red">
+            📞 3ra llamada sin respuesta... el técnico no llegó a tiempo.
+          </div>
+          <div id="c1-card-3" class="chaos-card white">
+            📝 Nota en papel: "Reportado el martes a Juan". ¿Hay radicado?
+          </div>
+          <div id="c1-card-4" class="chaos-card slate">
+            💬 Chat: "Reenviando mensaje sin responsable asignado..."
+          </div>
+        </div>
+      </div>
+
+      <script>
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+
+        tl.fromTo("#c1-card-1", { opacity: 0, y: -40, rotation: -6 }, { opacity: 1, y: 0, rotation: -4, duration: 0.5, ease: "power2.out" }, 0.2);
+        tl.fromTo("#c1-card-2", { opacity: 0, y: -40, rotation: 6 }, { opacity: 1, y: 0, rotation: 5, duration: 0.5, ease: "power2.out" }, 0.5);
+        tl.fromTo("#c1-card-3", { opacity: 0, y: 40, rotation: -3 }, { opacity: 1, y: 0, rotation: -2, duration: 0.5, ease: "power2.out" }, 0.8);
+        tl.fromTo("#c1-card-4", { opacity: 0, y: 40, rotation: 4 }, { opacity: 1, y: 0, rotation: 3, duration: 0.5, ease: "power2.out" }, 1.1);
+
+        tl.to(["#c1-card-1", "#c1-card-2", "#c1-card-3", "#c1-card-4"], { opacity: 0, scale: 0.9, duration: 0.35, ease: "power2.in" }, 2.5);
+        tl.set(["#c1-card-1", "#c1-card-2", "#c1-card-3", "#c1-card-4"], { opacity: 0 }, 3.0);
+
+        window.__timelines["scene-01"] = tl;
+      </script>
+    </template>
+  </body>
+</html>

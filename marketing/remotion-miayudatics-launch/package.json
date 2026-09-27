@@ -1,0 +1,39 @@
+{
+  "name": "remotion-miayudatics-launch",
+  "version": "1.0.0",
+  "description": "Video institucional y de lanzamiento de producto para MiAyudaTIC desarrollado con Remotion",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "remotion studio src/index.ts",
+    "preview": "remotion studio src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "render:preview": "remotion render src/index.ts PreviewFullWithVoice out/preview-full-with-voice.mp4 --scale=0.5",
+    "render:preview:short": "remotion render src/index.ts PreviewShort out/preview-short-with-voice.mp4 --scale=0.5",
+    "render:vertical": "remotion render src/index.ts MiAyudaTICLaunchVertical out/miayudatics-launch-vertical.mp4",
+    "render:vertical:voice": "remotion render src/index.ts MiAyudaTICLaunchVertical out/miayudatics-launch-vertical-with-voice.mp4",
+    "render:horizontal": "remotion render src/index.ts MiAyudaTICLaunchHorizontal out/miayudatics-launch-horizontal.mp4",
+    "render:stills": "remotion still src/index.ts Scene01-Hook out/still-01-hook.png --frame=45 && remotion still src/index.ts Scene02-Positioning out/still-02-positioning.png --frame=60 && remotion still src/index.ts Scene03-Funcionario out/still-03-funcionario.png --frame=90 && remotion still src/index.ts Scene04-Trust out/still-04-trust.png --frame=60 && remotion still src/index.ts Scene05-WebLeader out/still-05-leader.png --frame=90 && remotion still src/index.ts Scene06-Technician out/still-06-technician.png --frame=90 && remotion still src/index.ts Scene07-Progress out/still-07-progress.png --frame=60 && remotion still src/index.ts Scene08-Solution out/still-08-solution.png --frame=60 && remotion still src/index.ts Scene09-Ecosystem out/still-09-ecosystem.png --frame=60 && remotion still src/index.ts Scene10-CTA out/still-10-cta.png --frame=60"
+  },
+  "keywords": [
+    "remotion",
+    "miayudatics",
+    "launch-video",
+    "institutional-support",
+    "product-video"
+  ],
+  "author": "MiAyudaTIC Team",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@remotion/cli": "4.0.522",
+    "@remotion/shapes": "4.0.522",
+    "@remotion/transitions": "4.0.522",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "remotion": "4.0.522"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.31",
+    "@types/react-dom": "18.3.7",
+    "typescript": "6.0.3"
+  }
+}

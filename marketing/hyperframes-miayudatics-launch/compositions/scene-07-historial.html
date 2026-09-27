@@ -1,0 +1,189 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        #root {
+          position: absolute;
+          inset: 0;
+          width: 1080px;
+          height: 1920px;
+          background: #F8FAFC;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 160px 60px 220px 60px;
+          overflow: hidden;
+          font-family: 'Inter', -apple-system, sans-serif;
+          color: #0F172A;
+        }
+        .header-07 {
+          text-align: center;
+          margin-bottom: 32px;
+        }
+        .tag-07 {
+          display: inline-flex;
+          align-items: center;
+          padding: 8px 20px;
+          background: #EBF3F8;
+          color: #04324D;
+          border: 1px solid #D6E4ED;
+          border-radius: 9999px;
+          font-size: 18px;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          margin-bottom: 14px;
+        }
+        .title-07 {
+          font-size: 48px;
+          font-weight: 900;
+          color: #04324D;
+          line-height: 1.15;
+          max-width: 900px;
+        }
+        .subtitle-07 {
+          font-size: 24px;
+          color: #475569;
+          margin-top: 10px;
+          line-height: 1.4;
+        }
+        .timeline-box-07 {
+          width: 880px;
+          background: #FFFFFF;
+          border-radius: 28px;
+          padding: 40px;
+          box-shadow: 0 20px 50px rgba(4, 50, 77, 0.08);
+          border: 1px solid #E2E8F0;
+        }
+        .t-item-07 {
+          display: flex;
+          gap: 24px;
+          position: relative;
+          padding-bottom: 32px;
+        }
+        .t-item-07:last-child {
+          padding-bottom: 0;
+        }
+        .t-line-07 {
+          position: absolute;
+          left: 19px;
+          top: 40px;
+          bottom: 0;
+          width: 3px;
+          background: #E2E8F0;
+        }
+        .t-node-07 {
+          width: 42px;
+          height: 42px;
+          border-radius: 50%;
+          background: #EBF3F8;
+          border: 3px solid #04324D;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 800;
+          font-size: 16px;
+          color: #04324D;
+          z-index: 2;
+          flex-shrink: 0;
+        }
+        .t-node-07.success {
+          background: #DCFCE7;
+          border-color: #39A900;
+          color: #39A900;
+        }
+        .t-content-07 {
+          flex: 1;
+        }
+        .t-time-07 {
+          font-size: 13px;
+          font-weight: 800;
+          color: #94A3B8;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        .t-title-07 {
+          font-size: 20px;
+          font-weight: 800;
+          color: #0F172A;
+          margin-top: 4px;
+        }
+        .t-desc-07 {
+          font-size: 16px;
+          color: #475569;
+          margin-top: 6px;
+          line-height: 1.4;
+        }
+      </style>
+
+      <div id="root" data-composition-id="scene-07" data-width="1080" data-height="1920">
+        <div class="header-07">
+          <div class="tag-07">HISTORIAL INMUTABLE</div>
+          <h2 class="title-07">Cada avance queda registrado</h2>
+          <p class="subtitle-07">Una solución parcial no oculta lo que falta.</p>
+        </div>
+
+        <div id="timeline-card-07" class="timeline-box-07">
+          <div class="t-item-07" id="t-node-1">
+            <div class="t-line-07"></div>
+            <div class="t-node-07">1</div>
+            <div class="t-content-07">
+              <div class="t-time-07">08:30 AM · Reporte Inicial</div>
+              <div class="t-title-07">Solicitud creada por Laura Martínez</div>
+              <div class="t-desc-07">Ambiente Laboratorio A-201. Evidencia fotográfica cargada.</div>
+            </div>
+          </div>
+
+          <div class="t-item-07" id="t-node-2">
+            <div class="t-line-07"></div>
+            <div class="t-node-07">2</div>
+            <div class="t-content-07">
+              <div class="t-time-07">08:45 AM · Asignación</div>
+              <div class="t-title-07">Asignada a Andrés Rojas</div>
+              <div class="t-desc-07">Coordinación TIC designó responsable de campo.</div>
+            </div>
+          </div>
+
+          <div class="t-item-07" id="t-node-3">
+            <div class="t-line-07"></div>
+            <div class="t-node-07">3</div>
+            <div class="t-content-07">
+              <div class="t-time-07">09:10 AM · En Atención</div>
+              <div class="t-title-07">Atención iniciada en sitio</div>
+              <div class="t-desc-07">Técnico valida cableado y puerto HDMI de proyector.</div>
+            </div>
+          </div>
+
+          <div class="t-item-07" id="t-node-4">
+            <div class="t-node-07 success">4</div>
+            <div class="t-content-07">
+              <div class="t-time-07" style="color: #15803D;">09:35 AM · Solución Parcial</div>
+              <div class="t-title-07" style="color: #15803D;">Cable HDMI temporal instalado</div>
+              <div class="t-desc-07">
+                Proyector operativo para la clase. Se programa reemplazo definitivo de toma hembra en pared.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <script>
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+
+        tl.fromTo("#timeline-card-07", { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" }, 0.2);
+        tl.fromTo("#t-node-1", { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.5, ease: "power2.out" }, 0.8);
+        tl.fromTo("#t-node-2", { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.5, ease: "power2.out" }, 1.8);
+        tl.fromTo("#t-node-3", { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.5, ease: "power2.out" }, 2.8);
+        tl.fromTo("#t-node-4", { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.5, ease: "power2.out" }, 3.8);
+
+        window.__timelines["scene-07"] = tl;
+      </script>
+    </template>
+  </body>
+</html>

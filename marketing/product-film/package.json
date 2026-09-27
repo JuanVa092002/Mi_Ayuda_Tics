@@ -1,0 +1,29 @@
+{
+  "name": "video",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "remotion preview src/index.ts",
+    "build": "remotion render src/index.ts MiAyudaTicsProduct out/miayudatics-showcase.mp4",
+    "render": "remotion render src/index.ts MiAyudaTicsProduct out/miayudatics-showcase.mp4",
+    "render:stills": "remotion still src/index.ts Scene2-Reveal out/still-scene2.png && remotion still src/index.ts Scene3-Mobile out/still-scene3.png && remotion still src/index.ts Scene4-Web out/still-scene4.png && remotion still src/index.ts Scene6-Climax out/still-scene6.png"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.34.3",
+  "dependencies": {
+    "@remotion/cli": "^4.0.522",
+    "@remotion/shapes": "^4.0.522",
+    "@remotion/transitions": "^4.0.522",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "^4.0.522"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "typescript": "^6.0.3"
+  }
+}

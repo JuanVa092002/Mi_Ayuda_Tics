@@ -1,0 +1,163 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        #root {
+          position: absolute;
+          inset: 0;
+          width: 1080px;
+          height: 1920px;
+          background: radial-gradient(circle at 50% 30%, #064063 0%, #021B2B 100%);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 160px 60px 220px 60px;
+          overflow: hidden;
+          font-family: 'Inter', -apple-system, sans-serif;
+          color: #FFFFFF;
+        }
+        .brand-logo-10 {
+          display: flex;
+          align-items: center;
+          gap: 20px;
+          margin-bottom: 24px;
+        }
+        .brand-logo-10 img {
+          height: 76px;
+          filter: brightness(0) invert(1);
+        }
+        .brand-name-10 {
+          font-size: 68px;
+          font-weight: 900;
+          color: #FFFFFF;
+          letter-spacing: -0.02em;
+        }
+        .brand-name-10 span {
+          color: #39A900;
+        }
+        .header-10 {
+          text-align: center;
+          margin-bottom: 36px;
+        }
+        .title-10 {
+          font-size: 46px;
+          font-weight: 900;
+          color: #FFFFFF;
+          line-height: 1.2;
+        }
+        .subtitle-10 {
+          font-size: 24px;
+          color: #94A3B8;
+          margin-top: 10px;
+        }
+        .pillars-grid-10 {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 20px;
+          width: 880px;
+          margin-bottom: 48px;
+        }
+        .pillar-card-10 {
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          backdrop-filter: blur(16px);
+          border-radius: 20px;
+          padding: 28px 24px;
+          text-align: left;
+        }
+        .pillar-tag-10 {
+          font-size: 14px;
+          font-weight: 800;
+          color: #39A900;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          margin-bottom: 8px;
+        }
+        .pillar-head-10 {
+          font-size: 26px;
+          font-weight: 900;
+          color: #FFFFFF;
+          margin-bottom: 6px;
+        }
+        .pillar-text-10 {
+          font-size: 16px;
+          color: #94A3B8;
+          line-height: 1.4;
+        }
+        .btn-cta-10 {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          background: #39A900;
+          color: #FFFFFF;
+          font-size: 26px;
+          font-weight: 800;
+          padding: 20px 54px;
+          border-radius: 9999px;
+          box-shadow: 0 12px 30px rgba(57, 169, 0, 0.4);
+          cursor: pointer;
+        }
+      </style>
+
+      <div id="root" data-composition-id="scene-10" data-width="1080" data-height="1920">
+        <div id="brand-box-10" class="brand-logo-10">
+          <img src="assets/logoSena.png" alt="SENA" />
+          <div class="brand-name-10">MiAyuda<span>TIC</span></div>
+        </div>
+
+        <div class="header-10">
+          <h2 class="title-10">Soporte técnico institucional</h2>
+          <p class="subtitle-10">La plataforma de trazabilidad para centros de formación.</p>
+        </div>
+
+        <div class="pillars-grid-10">
+          <div class="pillar-card-10" id="p-card-1">
+            <div class="pillar-tag-10">Pilar 01</div>
+            <div class="pillar-head-10">Una solicitud</div>
+            <div class="pillar-text-10">Radicado único y trazable desde el primer segundo.</div>
+          </div>
+          <div class="pillar-card-10" id="p-card-2">
+            <div class="pillar-tag-10">Pilar 02</div>
+            <div class="pillar-head-10">Un responsable</div>
+            <div class="pillar-text-10">Asignación clara sin mensajes ni llamadas perdidas.</div>
+          </div>
+          <div class="pillar-card-10" id="p-card-3">
+            <div class="pillar-tag-10">Pilar 03</div>
+            <div class="pillar-head-10">Un historial</div>
+            <div class="pillar-text-10">Avances y evidencias documentados de forma inmutable.</div>
+          </div>
+          <div class="pillar-card-10" id="p-card-4">
+            <div class="pillar-tag-10">Pilar 04</div>
+            <div class="pillar-head-10">Una solución</div>
+            <div class="pillar-text-10">Verificada y confirmada por el solicitante.</div>
+          </div>
+        </div>
+
+        <div style="text-align: center;">
+          <div id="cta-button-el" class="btn-cta-10">
+            Conoce MiAyudaTIC
+          </div>
+          <div style="font-size: 15px; color: #94A3B8; margin-top: 14px; font-weight: 500;">
+            Sistema de Gestión de Soporte Institucional
+          </div>
+        </div>
+      </div>
+
+      <script>
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+
+        tl.fromTo("#brand-box-10", { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, 0.2);
+        tl.fromTo(["#p-card-1", "#p-card-2", "#p-card-3", "#p-card-4"], { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.4, stagger: 0.15, ease: "power2.out" }, 0.5);
+        tl.fromTo("#cta-button-el", { opacity: 0, scale: 0.92 }, { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.5)" }, 1.3);
+
+        window.__timelines["scene-10"] = tl;
+      </script>
+    </template>
+  </body>
+</html>

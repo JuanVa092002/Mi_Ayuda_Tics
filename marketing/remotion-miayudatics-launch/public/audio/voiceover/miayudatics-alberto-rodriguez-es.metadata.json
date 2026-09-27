@@ -1,0 +1,10 @@
+{
+  "assetFile": "miayudatics-voiceover-es-co.mp3",
+  "voiceName": "Alberto Rodriguez",
+  "voiceId": "l1zE9xgNpUTaQCZzpNJa",
+  "language": "es",
+  "accent": "latin-american",
+  "model": "eleven_multilingual_v2",
+  "durationSeconds": 75.93,
+  "purpose": "MiAyudaTIC launch video preview voiceover"
+}

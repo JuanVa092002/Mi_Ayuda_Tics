@@ -1,0 +1,16 @@
+{
+  "plugins": {
+    "mongodb": {
+      "enabled": true
+    },
+    "vercel": {
+      "enabled": true
+    },
+    "render": {
+      "enabled": true
+    },
+    "cloudinary": {
+      "enabled": true
+    }
+  }
+}

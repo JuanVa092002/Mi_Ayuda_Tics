@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="es" data-resolution="portrait">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>MiAyudaTIC — Video de Lanzamiento Oficial</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html, body {
+        margin: 0;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: #000;
+        font-family: 'Inter', -apple-system, sans-serif;
+      }
+      #root {
+        position: relative;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+      }
+      [data-composition-id="main"] > div[data-composition-src] {
+        position: absolute;
+        inset: 0;
+        width: 1080px;
+        height: 1920px;
+      }
+
+      /* Global Subtitle / Caption bar */
+      .caption-overlay {
+        position: absolute;
+        bottom: 180px;
+        left: 60px;
+        right: 60px;
+        z-index: 1000;
+        display: flex;
+        justify-content: center;
+        pointer-events: none;
+      }
+      .caption-pill {
+        background: rgba(4, 50, 77, 0.94);
+        backdrop-filter: blur(12px);
+        color: #FFFFFF;
+        padding: 16px 36px;
+        border-radius: 9999px;
+        font-size: 28px;
+        font-weight: 700;
+        text-align: center;
+        line-height: 1.35;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        max-width: 900px;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="85"
+      data-width="1080"
+      data-height="1920"
+    >
+      <!-- Sub-compositions mounting the 10 sequential scenes -->
+      <div
+        id="scene-01"
+        data-composition-id="scene-01"
+        data-composition-src="compositions/scene-01-hook.html"
+        data-start="0"
+        data-duration="3"
+        data-track-index="1"
+        data-width="1080"
+        data-height="1920"
+      ></div>
+
+      <div
+        id="scene-02"
+        data-composition-id="scene-02"
+        data-composition-src="compositions/scene-02-orden.html"
+        data-start="3"
+        data-duration="4"
+        data-track-index="2"
+        data-width="1080"
+        data-height="1920"
+      ></div>
+
+      <div
+        id="scene-03"
+        data-composition-id="scene-03"
+        data-composition-src="compositions/scene-03-funcionario.html"
+        data-start="7"
+        data-duration="9"
+        data-track-index="1"
+        data-width="1080"
+        data-height="1920"
+      ></div>
+
+      <div
+        id="scene-04"
+        data-composition-id="scene-04"
+        data-composition-src="compositions/scene-04-confianza.html"
+        data-start="16"
+        data-duration="7"
+        data-track-index="2"
+        data-width="1080"
+        data-height="1920"
+      ></div>
+
+      <div
+        id="scene-05"
+        data-composition-id="scene-05"
+        data-composition-src="compositions/scene-05-lider.html"
+        data-start="23"
+        data-duration="11"
+        data-track-index="1"
+        data-width="1080"
+        data-height="1920"
+      ></div>
+
+      <div
+        id="scene-06"
+        data-composition-id="scene-06"
+        data-composition-src="compositions/scene-06-tecnico.html"
+        data-start="34"
+        data-duration="12"
+        data-track-index="2"
+        data-width="1080"
+        data-height="1920"
+      ></div>
+
+      <div
+        id="scene-07"
+        data-composition-id="scene-07"
+        data-composition-src="compositions/scene-07-historial.html"
+        data-start="46"
+        data-duration="12"
+        data-track-index="1"
+        data-width="1080"
+        data-height="1920"
+      ></div>
+
+      <div
+        id="scene-08"
+        data-composition-id="scene-08"
+        data-composition-src="compositions/scene-08-solucion.html"
+        data-start="58"
+        data-duration="10"
+        data-track-index="2"
+        data-width="1080"
+        data-height="1920"
+      ></div>
+
+      <div
+        id="scene-09"
+        data-composition-id="scene-09"
+        data-composition-src="compositions/scene-09-ecosistema.html"
+        data-start="68"
+        data-duration="12"
+        data-track-index="1"
+        data-width="1080"
+        data-height="1920"
+      ></div>
+
+      <div
+        id="scene-10"
+        data-composition-id="scene-10"
+        data-composition-src="compositions/scene-10-cierre.html"
+        data-start="80"
+        data-duration="5"
+        data-track-index="2"
+        data-width="1080"
+        data-height="1920"
+      ></div>
+
+      <!-- Synchronized Subtitles / Captions -->
+      <div class="caption-overlay">
+        <div id="master-caption" class="caption-pill">
+          ¿Tus incidencias todavía se pierden entre mensajes y llamadas?
+        </div>
+      </div>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+
+      const captions = [
+        { start: 0.1, text: "¿Tus incidencias todavía se pierden entre mensajes y llamadas?" },
+        { start: 3.1, text: "MiAyudaTIC: Soporte técnico con trazabilidad real." },
+        { start: 7.1, text: "Reporta desde el lugar donde ocurre, con evidencia en segundos." },
+        { start: 16.1, text: "Cada solicitud queda registrada desde el primer momento." },
+        { start: 23.1, text: "El Líder TIC ve la operación y asigna con claridad." },
+        { start: 34.1, text: "El técnico llega con el contexto que necesita." },
+        { start: 46.1, text: "Cada avance queda registrado: una solución parcial no oculta lo que falta." },
+        { start: 58.1, text: "No se trata de cerrar tickets. Se trata de resolver problemas." },
+        { start: 68.1, text: "Campo y operación. Mobile y web. Una sola fuente de verdad." },
+        { start: 80.1, text: "Una solicitud. Un responsable. Un historial. Una solución verificable." }
+      ];
+
+      const captionEl = document.getElementById("master-caption");
+      captions.forEach((cap) => {
+        tl.call(() => {
+          if (captionEl) captionEl.textContent = cap.text;
+        }, null, cap.start);
+      });
+
+      // Register master root timeline
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

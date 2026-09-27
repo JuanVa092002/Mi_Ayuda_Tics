@@ -25,4 +25,4 @@ alwaysApply: true
 2. Declare scope (in / out) and pick subagent from `.cursor/agents/`.
 3. Complete `docs/handoff-template.md` when done.
 
-**Code truth:** `archive/audits/` when docs conflict with code.
+**Code truth:** `docs/history/audits/` when docs conflict with code.

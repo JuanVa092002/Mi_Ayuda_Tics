@@ -1,0 +1,201 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        #root {
+          position: absolute;
+          inset: 0;
+          width: 1080px;
+          height: 1920px;
+          background: #F8FAFC;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 160px 60px 220px 60px;
+          overflow: hidden;
+          font-family: 'Inter', -apple-system, sans-serif;
+          color: #0F172A;
+        }
+        .header-04 {
+          text-align: center;
+          margin-bottom: 30px;
+        }
+        .tag-04 {
+          display: inline-flex;
+          align-items: center;
+          padding: 8px 20px;
+          background: #EBF3F8;
+          color: #04324D;
+          border: 1px solid #D6E4ED;
+          border-radius: 9999px;
+          font-size: 18px;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          margin-bottom: 14px;
+        }
+        .title-04 {
+          font-size: 48px;
+          font-weight: 900;
+          color: #04324D;
+          line-height: 1.15;
+          max-width: 900px;
+        }
+        .subtitle-04 {
+          font-size: 24px;
+          color: #475569;
+          margin-top: 10px;
+          line-height: 1.4;
+        }
+        .phone-case-04 {
+          position: relative;
+          width: 660px;
+          height: 1140px;
+          background: #0F172A;
+          border-radius: 56px;
+          padding: 12px;
+          box-shadow: 0 25px 60px -15px rgba(4, 50, 77, 0.25);
+          display: flex;
+          flex-direction: column;
+        }
+        .phone-inner-04 {
+          position: relative;
+          width: 100%;
+          height: 100%;
+          background: #FFFFFF;
+          border-radius: 46px;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+        }
+        .notch-04 {
+          position: absolute;
+          top: 12px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 160px;
+          height: 30px;
+          background: #0F172A;
+          border-radius: 20px;
+          z-index: 50;
+        }
+        .status-bar-04 {
+          height: 48px;
+          padding: 14px 28px 0 28px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          font-size: 14px;
+          font-weight: 700;
+          color: #0F172A;
+          z-index: 40;
+        }
+        .body-04 {
+          flex: 1;
+          padding: 24px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+        }
+        .check-circle-04 {
+          width: 96px;
+          height: 96px;
+          border-radius: 50%;
+          background: #DCFCE7;
+          color: #15803D;
+          font-size: 48px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 20px;
+          border: 4px solid #86EFAC;
+        }
+        .ticket-box-04 {
+          width: 100%;
+          background: #F1F5F9;
+          border: 2px dashed #CBD5E1;
+          border-radius: 20px;
+          padding: 24px;
+          margin-bottom: 24px;
+        }
+        .code-title-04 {
+          font-size: 13px;
+          font-weight: 800;
+          color: #64748B;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+        }
+        .code-val-04 {
+          font-size: 36px;
+          font-weight: 900;
+          color: #04324D;
+          font-family: 'JetBrains Mono', monospace;
+          margin-top: 8px;
+        }
+        .badge-enviada {
+          background: #E0F2FE;
+          color: #0369A1;
+          border: 1px solid #BAE6FD;
+          padding: 10px 24px;
+          border-radius: 9999px;
+          font-size: 16px;
+          font-weight: 800;
+        }
+      </style>
+
+      <div id="root" data-composition-id="scene-04" data-width="1080" data-height="1920">
+        <div class="header-04">
+          <div class="tag-04">TRAZABILIDAD GARANTIZADA</div>
+          <h2 class="title-04">Cada solicitud queda registrada desde el primer momento</h2>
+          <p class="subtitle-04">Código único y visible para auditoría y seguimiento.</p>
+        </div>
+
+        <div id="phone-box-04" class="phone-case-04">
+          <div class="notch-04"></div>
+          <div class="phone-inner-04">
+            <div class="status-bar-04">
+              <span>09:42</span>
+              <span>5G · 100%</span>
+            </div>
+            <div class="body-04">
+              <div id="check-icon-04" class="check-circle-04">✓</div>
+              <h3 style="font-size: 26px; font-weight: 900; color: #0F172A; margin-bottom: 6px;">
+                ¡Solicitud Registrada!
+              </h3>
+              <p style="font-size: 15px; color: #64748B; margin-bottom: 26px;">
+                Tu requerimiento ya se encuentra en la mesa técnica.
+              </p>
+
+              <div class="ticket-box-04">
+                <div class="code-title-04">CÓDIGO DE RADICADO</div>
+                <div id="code-text-04" class="code-val-04">2026-09-00042</div>
+              </div>
+
+              <div>
+                <span class="badge-enviada">Estado: Enviada a Mesa</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <script>
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+
+        tl.fromTo("#phone-box-04", { opacity: 0, scale: 0.94 }, { opacity: 1, scale: 1, duration: 0.7, ease: "power3.out" }, 0.2);
+        tl.fromTo("#check-icon-04", { scale: 0, rotation: -30 }, { scale: 1, rotation: 0, duration: 0.6, ease: "back.out(1.7)" }, 0.8);
+        tl.fromTo("#code-text-04", { opacity: 0, y: 15 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, 1.5);
+
+        window.__timelines["scene-04"] = tl;
+      </script>
+    </template>
+  </body>
+</html>

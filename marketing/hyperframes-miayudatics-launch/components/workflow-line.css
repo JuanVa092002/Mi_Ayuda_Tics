@@ -1,0 +1,89 @@
+/* Workflow Line & Pipeline Components */
+.workflow-container {
+  width: 100%;
+  max-width: 920px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: #FFFFFF;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 32px 28px;
+  box-shadow: 0 15px 35px rgba(4, 50, 77, 0.08);
+}
+
+.workflow-steps {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+
+.workflow-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  z-index: 2;
+}
+
+.workflow-icon {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: #F1F5F9;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 800;
+  border: 2px solid #E2E8F0;
+  transition: all 0.3s ease;
+}
+
+.workflow-step.active .workflow-icon {
+  background: var(--primary);
+  color: #FFFFFF;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 6px rgba(4, 50, 77, 0.15);
+}
+
+.workflow-step.completed .workflow-icon {
+  background: var(--secondary);
+  color: #FFFFFF;
+  border-color: var(--secondary);
+}
+
+.workflow-label {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.workflow-step.active .workflow-label {
+  color: var(--primary);
+}
+
+.workflow-step.completed .workflow-label {
+  color: var(--secondary);
+}
+
+.workflow-connector-line {
+  position: absolute;
+  top: 29px;
+  left: 30px;
+  right: 30px;
+  height: 4px;
+  background: #E2E8F0;
+  z-index: 1;
+}
+
+.workflow-progress-line {
+  height: 100%;
+  width: 0%;
+  background: var(--secondary);
+  transition: width 0.5s ease;
+}

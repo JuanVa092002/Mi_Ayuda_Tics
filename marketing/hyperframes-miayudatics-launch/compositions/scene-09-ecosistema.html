@@ -1,0 +1,195 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <template>
+      <style>
+        #root {
+          position: absolute;
+          inset: 0;
+          width: 1080px;
+          height: 1920px;
+          background: #F0F4F8;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 160px 50px 220px 50px;
+          overflow: hidden;
+          font-family: 'Inter', -apple-system, sans-serif;
+          color: #0F172A;
+        }
+        .header-09 {
+          text-align: center;
+          margin-bottom: 24px;
+        }
+        .tag-09 {
+          display: inline-flex;
+          align-items: center;
+          padding: 8px 20px;
+          background: #EBF3F8;
+          color: #04324D;
+          border: 1px solid #D6E4ED;
+          border-radius: 9999px;
+          font-size: 18px;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          margin-bottom: 14px;
+        }
+        .title-09 {
+          font-size: 46px;
+          font-weight: 900;
+          color: #04324D;
+          line-height: 1.15;
+          max-width: 920px;
+        }
+        .subtitle-09 {
+          font-size: 24px;
+          color: #475569;
+          margin-top: 8px;
+          line-height: 1.4;
+        }
+        .triad-box-09 {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 16px;
+          width: 980px;
+          margin-bottom: 24px;
+        }
+        .triad-card-mobile {
+          width: 290px;
+          height: 520px;
+          border-radius: 32px;
+          background: #0F172A;
+          padding: 8px;
+          box-shadow: 0 20px 40px rgba(0,0,0,0.18);
+        }
+        .triad-card-web {
+          width: 440px;
+          height: 580px;
+          border-radius: 20px;
+          background: #FFFFFF;
+          border: 1px solid #CBD5E1;
+          box-shadow: 0 25px 50px rgba(4, 50, 77, 0.2);
+          z-index: 5;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+        }
+        .flow-pill-wrap {
+          display: flex;
+          justify-content: space-between;
+          width: 880px;
+          background: #FFFFFF;
+          border: 1px solid #E2E8F0;
+          border-radius: 20px;
+          padding: 16px 24px;
+          box-shadow: 0 10px 25px rgba(4, 50, 77, 0.06);
+        }
+        .flow-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 14px;
+          font-weight: 800;
+          color: #04324D;
+          text-transform: uppercase;
+        }
+        .flow-check {
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background: #DCFCE7;
+          color: #15803D;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 12px;
+        }
+      </style>
+
+      <div id="root" data-composition-id="scene-09" data-width="1080" data-height="1920">
+        <div class="header-09">
+          <div class="tag-09">ECOSISTEMA INTEGRAL</div>
+          <h2 class="title-09">Campo y operación. Mobile y web.</h2>
+          <p class="subtitle-09">Una sola fuente de verdad para toda la institución.</p>
+        </div>
+
+        <div id="triad-inner-09" class="triad-box-09">
+          <!-- Mobile Funcionario -->
+          <div class="triad-card-mobile">
+            <div style="height: 100%; background: #FFFFFF; border-radius: 26px; padding: 16px; display: flex; flex-direction: column;">
+              <span style="font-size: 10px; font-weight: 800; color: #04324D; text-transform: uppercase;">Funcionario</span>
+              <div style="font-size: 16px; font-weight: 800; color: #04324D; margin-top: 2px;">Reporta & Valida</div>
+              <div style="margin-top: 14px; background: #F1F5F9; border-radius: 12px; padding: 10px; font-size: 12px;">
+                Lab A-201 · Proyector
+              </div>
+              <div style="margin-top: auto;">
+                <div style="background: #39A900; color: #fff; text-align: center; border-radius: 10px; padding: 8px; font-size: 12px; font-weight: 800;">
+                  Confirmado ✓
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Web Líder TIC -->
+          <div class="triad-card-web">
+            <div style="height: 36px; background: #F1F5F9; border-bottom: 1px solid #E2E8F0; display: flex; align-items: center; padding: 0 14px; gap: 6px;">
+              <div style="width: 9px; height: 9px; border-radius: 50%; background: #EF4444;"></div>
+              <div style="width: 9px; height: 9px; border-radius: 50%; background: #F59E0B;"></div>
+              <div style="width: 9px; height: 9px; border-radius: 50%; background: #10B981;"></div>
+            </div>
+            <div style="padding: 18px; flex: 1;">
+              <div style="font-size: 16px; font-weight: 900; color: #04324D;">Mesa Web Líder TIC</div>
+              <div style="font-size: 12px; color: #64748B;">/adminSolicitud · Control total</div>
+              <div style="margin-top: 18px; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 12px;">
+                <div style="font-size: 13px; font-weight: 800; color: #04324D;">2026-09-00042</div>
+                <div style="font-size: 12px; color: #475569; margin-top: 4px;">Técnico: Andrés Rojas</div>
+                <span style="display: inline-block; background: #DCFCE7; color: #15803D; font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 9999px; margin-top: 8px;">
+                  Resuelta y Validada
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mobile Técnico -->
+          <div class="triad-card-mobile">
+            <div style="height: 100%; background: #FFFFFF; border-radius: 26px; padding: 16px; display: flex; flex-direction: column;">
+              <span style="font-size: 10px; font-weight: 800; color: #39A900; text-transform: uppercase;">Técnico TIC</span>
+              <div style="font-size: 16px; font-weight: 800; color: #04324D; margin-top: 2px;">Trabajo en Campo</div>
+              <div style="margin-top: 14px; background: #F1F5F9; border-radius: 12px; padding: 10px; font-size: 12px;">
+                Contexto + Repuestos
+              </div>
+              <div style="margin-top: auto;">
+                <div style="background: #04324D; color: #fff; text-align: center; border-radius: 10px; padding: 8px; font-size: 12px; font-weight: 800;">
+                  Atendido ✓
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flow-pill-wrap">
+          <div class="flow-item"><div class="flow-check">✓</div>Reportar</div>
+          <div class="flow-item"><div class="flow-check">✓</div>Asignar</div>
+          <div class="flow-item"><div class="flow-check">✓</div>Atender</div>
+          <div class="flow-item"><div class="flow-check">✓</div>Resolver</div>
+          <div class="flow-item"><div class="flow-check">✓</div>Confirmar</div>
+        </div>
+      </div>
+
+      <script>
+        window.__timelines = window.__timelines || {};
+        const tl = gsap.timeline({ paused: true });
+
+        tl.fromTo("#triad-inner-09", { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.9, ease: "power3.out" }, 0.2);
+
+        window.__timelines["scene-09"] = tl;
+      </script>
+    </template>
+  </body>
+</html>

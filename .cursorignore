@@ -1,0 +1,33 @@
+# Archivos históricos y forenses
+docs/history/
+docs/case-study/
+docs/baseline/
+docs/security/_raw/
+
+# Artefactos y binarios multimedia pesados
+marketing/**/out/
+marketing/**/renders/
+*.mp4
+*.fig
+*.zip
+*.pdf
+
+# Archivos de pruebas locales y evidencias de runtime
+server/storage/file-*
+test-results/
+playwright-report/
+e2e/.reports/
+coverage/
+**/coverage/
+mobile/**/.expo/
+mobile/**/.gradle/
+**/.cache/
+
+# Skills multimedia masivas bajo demanda (evita sobrecargar el contexto de desarrollo web/móvil)
+.agents/skills/
+
+# Metadatos locales de herramientas y entornos
+.vercel/
+.engram/
+.idea/
+.atl/

@@ -1,0 +1,182 @@
+{
+  "workspace": "./",
+  "branch": "chore/measured-production-system",
+  "head": "b18ff21",
+  "rootDirectories": [
+    ".agents",
+    ".atl",
+    ".cursor",
+    ".engram",
+    ".github",
+    ".husky",
+    ".idea",
+    ".vercel",
+    "client",
+    "docs",
+    "e2e",
+    "marketing",
+    "mobile",
+    "node_modules",
+    "packages",
+    "scripts",
+    "server",
+    "test-results"
+  ],
+  "targetDomains": [
+    "client/",
+    "server/",
+    "mobile/",
+    "docs/",
+    "marketing/"
+  ],
+  "toolingExceptions": [
+    {
+      "path": ".agents/",
+      "reason": "Antigravity/ATL workspace customizations root for skills and project rules",
+      "requiredAtRoot": true
+    },
+    {
+      "path": ".cursor/",
+      "reason": "Cursor IDE rules, subagents, and hooks configuration",
+      "requiredAtRoot": true
+    },
+    {
+      "path": ".github/",
+      "reason": "GitHub Actions CI/CD workflows required at .github/workflows",
+      "requiredAtRoot": true
+    },
+    {
+      "path": ".husky/",
+      "reason": "Git hooks runner required by git and prepare script",
+      "requiredAtRoot": true
+    },
+    {
+      "path": "packages/",
+      "reason": "pnpm workspace member packages/contracts with monorepo exports",
+      "requiredAtRoot": true
+    },
+    {
+      "path": "e2e/",
+      "reason": "Playwright end-to-end test directory referenced by playwright.config.ts and CI",
+      "requiredAtRoot": true
+    },
+    {
+      "path": "scripts/",
+      "reason": "Operational bash and node automation referenced in root package.json",
+      "requiredAtRoot": true
+    },
+    {
+      "path": ".vercel/",
+      "reason": "Vercel project linking metadata for client deployment",
+      "requiredAtRoot": true
+    },
+    {
+      "path": ".atl/",
+      "reason": "Local Antigravity runtime cache, ignored in .gitignore",
+      "requiredAtRoot": true
+    },
+    {
+      "path": ".engram/",
+      "reason": "Local Engram memory database, ignored in .gitignore",
+      "requiredAtRoot": true
+    },
+    {
+      "path": ".idea/",
+      "reason": "JetBrains IDE configuration, ignored in .gitignore",
+      "requiredAtRoot": true
+    },
+    {
+      "path": "node_modules/",
+      "reason": "Root dependencies directory, ignored in .gitignore",
+      "requiredAtRoot": true
+    },
+    {
+      "path": "test-results/",
+      "reason": "Playwright output directory, ignored in .gitignore",
+      "requiredAtRoot": true
+    }
+  ],
+  "pathReferences": [
+    {
+      "path": "docs/current/",
+      "usedBy": ["AGENTS.md", ".agents/PROJECT-INDEX.md", "llms.txt"],
+      "classification": "documentation",
+      "status": "CONSOLIDATED"
+    },
+    {
+      "path": "docs/history/",
+      "usedBy": ["AGENTS.md", ".agents/PROJECT-INDEX.md", "README.md", "PROJECT_SIGNAL_REPORT.md", ".cursor/rules/00-founder-os.mdc"],
+      "classification": "history",
+      "status": "CONSOLIDATED"
+    },
+    {
+      "path": "docs/design/",
+      "usedBy": [".cursor/rules/40-design-system.mdc"],
+      "classification": "documentation",
+      "status": "CONSOLIDATED"
+    },
+    {
+      "path": "docs/specs/",
+      "usedBy": ["opencode.json"],
+      "classification": "documentation",
+      "status": "CONSOLIDATED"
+    },
+    {
+      "path": "marketing/product-film/",
+      "usedBy": [".agents/PROJECT-INDEX.md", ".gitignore"],
+      "classification": "marketing_video",
+      "status": "CONSOLIDATED"
+    },
+    {
+      "path": "packages/",
+      "usedBy": ["pnpm-workspace.yaml", ".github/workflows/ci.yml", "package.json", "AGENTS.md", ".agents/PROJECT-INDEX.md", "README.md", "llms.txt"],
+      "classification": "technical_support",
+      "status": "KEPT_AT_ROOT"
+    },
+    {
+      "path": "scripts/",
+      "usedBy": ["package.json", "AGENTS.md", ".agents/PROJECT-INDEX.md", "PROJECT_SIGNAL_REPORT.md"],
+      "classification": "technical_support",
+      "status": "KEPT_AT_ROOT"
+    },
+    {
+      "path": "e2e/",
+      "usedBy": ["package.json", "playwright.config.ts", ".agents/PROJECT-INDEX.md"],
+      "classification": "technical_support",
+      "status": "KEPT_AT_ROOT"
+    }
+  ],
+  "fileCounts": {
+    ".agents": 937,
+    ".atl": 2,
+    ".cursor": 27,
+    ".engram": 4,
+    ".github": 2,
+    ".husky": 20,
+    ".idea": 9,
+    ".vercel": 1,
+    "client": 278,
+    "docs": 117,
+    "e2e": 12,
+    "marketing": 817,
+    "mobile": 41789,
+    "packages": 20,
+    "scripts": 4,
+    "server": 477,
+    "test-results": 1
+  },
+  "phaseStatus": {
+    "Fase0_Inventario": "DONE",
+    "Fase1_AuditoriaReferencias": "DONE",
+    "Fase2_ValidarExcepciones": "DONE",
+    "Fase3_DisenoReduccion": "DONE",
+    "Fase4_Propuesta": "DONE",
+    "Fase5_1_ConsolidarDocs": "DONE",
+    "Fase5_2_ConsolidarMarketingVideo": "DONE",
+    "Fase5_3_SoporteTecnico": "DONE",
+    "Fase6_LimpiezaRaiz": "DONE",
+    "Fase7_ValidacionIntegral": "DONE",
+    "Fase8_Commits": "DONE",
+    "Fase9_ReporteFinal": "IN_PROGRESS"
+  }
+}

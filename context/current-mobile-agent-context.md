@@ -294,11 +294,11 @@ Filtros (no cambiar): Pendientes de asignación = `solicitado`; En proceso = `as
 
 ### P2 — Worklets (solo incidente)
 
-Metro: mismatch C++ 0.10.2 vs JS 0.9.2 (`react-native-worklets`). LogBox en emulador. No nuevas deps. Posible rebuild nativo. Escribir `docs/incidents/` al estilo `2026-08-27-solicitud-sendmail-post-201.md`.
+Metro: mismatch C++ 0.10.2 vs JS 0.9.2 (`react-native-worklets`). LogBox en emulador. No nuevas deps. Posible rebuild nativo. Escribir incidentes al estilo `archive/incidents/2026-08-27-solicitud-sendmail-post-201.md`.
 
 ### Deuda backend (no tocar en P1 mobile)
 
-`crearSolicitud` envía **201** y luego `await sendMail`. Si mail falla, el mismo `catch` puede mandar **segunda respuesta HTTP**. Incidente: `docs/incidents/2026-08-27-solicitud-sendmail-post-201.md`. Listen local stubbea Brevo.
+`crearSolicitud` envía **201** y luego `await sendMail`. Si mail falla, el mismo `catch` puede mandar **segunda respuesta HTTP**. Incidente: `archive/incidents/2026-08-27-solicitud-sendmail-post-201.md`. Listen local stubbea Brevo.
 
 ### Técnico UI
 

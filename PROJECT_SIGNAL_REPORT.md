@@ -223,7 +223,7 @@ Each transition has a designated actor, API endpoint, RBAC gate, and (where appl
 | **Complexity** | **Medium** — prod incident resolved (IP block); fallback SMTP path documented |
 | **Why it matters** | Password recovery is P0; institutional trust requires reliable transactional email |
 
-**Evidence:** `server/src/shared/utils/handleEmail.ts`, `docs/incidents/2026-06-14-forgot-password-prod.md`, `server/src/tests/handleEmail.test.ts`, commit `a76951f`.
+**Evidence:** `server/src/shared/utils/handleEmail.ts`, `archive/incidents/2026-06-14-forgot-password-prod.md`, `server/src/tests/handleEmail.test.ts`, commit `a76951f`.
 
 ---
 
@@ -418,7 +418,7 @@ Each transition has a designated actor, API endpoint, RBAC gate, and (where appl
 | Production smoke suite (12+ checks) | Release confidence | `scripts/smoke-prod.sh` |
 | Ticket lifecycle E2E script | API integration verification | `scripts/e2e-ticket-lifecycle.sh` |
 | War-room release audit | Structured pre-release QA | `archive/audits/2026-06-14-release-war-room/` |
-| Incident postmortem | Operational maturity | `docs/incidents/2026-06-14-forgot-password-prod.md` |
+| Incident postmortem | Operational maturity | `archive/incidents/2026-06-14-forgot-password-prod.md` |
 | Cursor Agent OS (6 roles, skills, hooks) | AI-native development operating model | `AGENTS.md`, `docs/agents.md`, `.cursor/` |
 
 ---
@@ -718,7 +718,7 @@ Each transition has a designated actor, API endpoint, RBAC gate, and (where appl
 
 **Why:** Existing smoke scripts, war-room audits, incident docs — structured ops data.
 
-**Insertion point:** `scripts/smoke-prod.sh` output, Render logs, `docs/incidents/`.
+**Insertion point:** `scripts/smoke-prod.sh` output, Render logs, `archive/incidents/`.
 
 **Capability:** Agent parses smoke failures, suggests fixes, drafts incident reports (already using Cursor agents per `AGENTS.md`).
 
@@ -990,7 +990,7 @@ Each transition has a designated actor, API endpoint, RBAC gate, and (where appl
 | Agent OS | `AGENTS.md`, `docs/agents.md`, `.cursor/` |
 | Mobile architecture | `mobile/MiAyudaTIC-Mobile/mobile-context-architecture.md` |
 | War-room audit | `archive/audits/2026-06-14-release-war-room/` |
-| Incident | `docs/incidents/2026-06-14-forgot-password-prod.md` |
+| Incident | `archive/incidents/2026-06-14-forgot-password-prod.md` |
 | CI | `.github/workflows/ci.yml` |
 | Smoke / E2E | `scripts/smoke-prod.sh`, `scripts/e2e-ticket-lifecycle.sh` |
 | Server entry | `server/src/index.ts`, `server/src/core/app.ts` |

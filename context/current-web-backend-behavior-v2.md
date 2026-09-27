@@ -812,4 +812,4 @@ Ver tabla completa en Appendix. Patrón: `authMiddleware` + `checkRol([...])` en
 
 ---
 
-*Generado desde código en `MiAyudaTics_v1.0/`. v1 permanece en `context/current-web-backend-behavior.md` sin modificar.*
+*Generado desde código en `MiAyudaTics_v1.0/`. v1 permanece en `archive/context-v1/current-web-backend-behavior.md` sin modificar.*

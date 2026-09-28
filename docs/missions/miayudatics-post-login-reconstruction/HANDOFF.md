@@ -1,45 +1,66 @@
-# Handoff Operativo — Misión P0.1: Auditoría de Evidencia y Corrección Post-Login
+# Handoff Operativo — Misión Final: Cierre de Evidencia Visual Post-Login
 
 Fecha: 2026-09-27
-Estado de la Misión: COMPLETED
-Tipo de Intervención: Auditoría de Evidencia, Verificación de Claims y Cierre de Contradicciones
+Estado Final de la Misión: COMPLETED
+Tipo de Intervención: Cierre de Evidencia Visual en Navegador (Browser Subagent), Capturas Sanitizadas y Claim Ledger Definitivo
 
 ---
 
-## 1. Resumen de la Auditoría P0.1
+## 1. Resumen de la Ejecución y Evidencia Capturada
 
-1. **Resolución de Contradicciones Documentales:**
-   - `MISSION.md` ahora refleja con exactitud el estado `COMPLETED` con todas sus fases marcadas (`[x]`).
-   - Se eliminaron claims no soportados por el backend (motor de SLA > 24h, carga en tiempo real por técnico) y se corrigieron a su realidad verificable: **cuadrícula de disponibilidad de técnicos y despacho directo en 1 toque**.
-2. **Validación del Gate Visual:**
-   - Los 3 roles pasaron el Gate de Diferencia Visual con veredicto **PASS**.
-   - La primera pantalla de cada rol tiene una composición única e intransferible.
-3. **Validación de Componentes e Interacciones:**
-   - `SlideOverDrawer` opera limpiamente para formularios secundarios y cancelaciones defensivas.
-   - La consola superior de técnico ("Focus Case") sitúa el trabajo operativo en el foco inmediato.
-   - El Stepper continuo de 4 fases (Google PAIR) guía al funcionario con claridad sobre el estado de su ticket.
+La misión ha verificado empíricamente en navegador real (`http://localhost:5173/`) las tres experiencias post-login en 3 viewports distintos (1440×900, 1280×800 y 390×844 mobile), confirmando:
+1. **Líder TIC (`/adminSolicitud`):**
+   - Centro de Decisión y Despacho Operativo.
+   - Mando con indicadores ejecutivos (Sin Asignar: 18, Técnicos Activos: 3).
+   - Cuadrícula horizontal de disponibilidad de especialistas con despacho inmediato en 1 toque.
+   - Cero scroll horizontal (`hasHorizontalOverflow: false`).
+   - Evidencia capturada: `lider-desktop-1440.png`, `lider-1280.png`, `lider-mobile.png`.
+2. **Funcionario (`/funcionario`):**
+   - Centro de Acompañamiento y Tranquilidad Técnica.
+   - Saludo personalizado ("Hola, Juan") y Hero con Stepper continuo de 4 fases (Google PAIR: *Radicado -> Asignado -> En Atención -> Solucionado*).
+   - Tarjeta de acompañamiento técnico y radicación en `SlideOverDrawer` sin distorsión de la pantalla.
+   - Cero scroll horizontal (`hasHorizontalOverflow: false`).
+   - Evidencia capturada: `funcionario-desktop-1440.png`, `funcionario-1280.png`, `funcionario-mobile.png`.
+3. **Técnico (`/casos-por-resolver`):**
+   - Consola de Resolución Operativa de Alta Densidad.
+   - Focus Case Console superior con el caso prioritario (#2026-06-00001) y botones de acción directa ("Resolver caso", "Ver en inspector").
+   - Pestañas con contadores vivos (Cola de Trabajo: 10, En Atención Activa: 10) e inspector contextual con modal de resolución.
+   - Cero scroll horizontal (`hasHorizontalOverflow: false`).
+   - Evidencia capturada: `tecnico-desktop-1440.png`, `tecnico-1280.png`, `tecnico-mobile.png`.
 
 ---
 
-## 2. Inventario de Documentación Auditada
+## 2. Inventario de Documentación y Artefactos
 
 ```text
 docs/missions/miayudatics-post-login-reconstruction/
-  ├── MISSION.md          (Contrato y checklist de fases actualizado a COMPLETED)
-  ├── REOPEN-AUDIT.md     (Auditoría de topología git y commits analizados)
-  ├── CLAIM-LEDGER.md     (Cotejo riguroso de cada claim vs implementación y backend)
-  ├── VISUAL-GATE.md      (Evaluación del gate de diferencia visual con veredicto PASS)
-  ├── ROLE-EVIDENCE.md    (Detalle de composición e interacción de las 3 pantallas)
-  ├── BASELINE.md         (Línea base previa de auditoría)
-  ├── DESIGN-SPEC.md      (Especificaciones de diseño por rol)
-  ├── TASKS.md            (Registro de tareas y skills ejecutadas)
-  └── HANDOFF.md          (Handoff final consolidado)
+  ├── evidence/
+  │     ├── lider-desktop-1440.png
+  │     ├── lider-1280.png
+  │     ├── lider-mobile.png
+  │     ├── funcionario-desktop-1440.png
+  │     ├── funcionario-1280.png
+  │     ├── funcionario-mobile.png
+  │     ├── tecnico-desktop-1440.png
+  │     ├── tecnico-1280.png
+  │     └── tecnico-mobile.png
+  ├── VISUAL-EVIDENCE-MATRIX.md (Matriz de evidencia de viewports y estados)
+  ├── CLAIM-LEDGER.md           (Clasificación sincera de claims con evidencia browser)
+  ├── ROLE-EVIDENCE.md          (Detalle de composición e interacción verificadas)
+  ├── VISUAL-GATE.md            (Veredicto PASS del gate de diferencia visual)
+  ├── MISSION.md                (Contrato final COMPLETED)
+  ├── BASELINE.md               (Línea base previa)
+  ├── DESIGN-SPEC.md            (Especificación de diseño por rol)
+  ├── TASKS.md                  (Checklist y skills aplicadas)
+  ├── REOPEN-AUDIT.md           (Auditoría topológica de commits)
+  └── HANDOFF.md                (Este documento de cierre)
 ```
 
 ---
 
-## 3. Próxima Acción Sugerida
+## 3. Seguridad y Restricciones Cumplidas
 
-Para la siguiente misión de producto:
-- Extender el patrón de foco preatencional a las vistas secundarias del técnico (`/mis-casos` y `/casos-resueltos`).
-- Conservar intacta la regla de CERO PUSH / CERO DEPLOY en el repositorio local.
+- **Superficie autorizada respetada:** Exclusivamente `client/` y documentación en `docs/missions/miayudatics-post-login-reconstruction/`.
+- **Cero modificaciones fuera de alcance:** `server/`, `mobile/` y `packages/contracts/` intactos.
+- **Cero push y cero deploy:** Todo permanece exclusivamente en el repositorio local.
+- **Cero credenciales en archivos o reportes.**

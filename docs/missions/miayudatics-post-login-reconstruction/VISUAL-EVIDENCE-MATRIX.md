@@ -1,0 +1,28 @@
+# Matriz de Evidencia Visual Post-Login — Misión Final
+
+Fecha de auditoría: 2026-09-27
+Auditor: Antigravity Frontier Agent (Browser Subagent Execution)
+Entorno: Browser subagent en `http://localhost:5173/` conectado al backend real.
+
+---
+
+## 1. Matriz de Evidencia por Rol y Viewport
+
+| Rol | Ruta Real | Viewport | Estado en Vista | Elementos Observados | Interacciones Probadas | Resultado | Evidencia en Archivo | Veredicto |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Líder TIC** | `/adminSolicitud` | 1440×900 | Cargado (18 pendientes, 3 técnicos) | Mando Operativo CTPI, KPIs directos (Sin asignar: 18, Técnicos activos: 3), Cuadrícula horizontal de técnicos con avatares (Rafael Pastas, QA Tec, War Room), Split Workspace con Cola Priorizada e Inspector lateral con foto adjunta. | Apertura de modal/drawer de cancelación justificada. Selección de ticket en cola. | Cero overflow horizontal (`hasHorizontalOverflow: false`). Jerarquía clara de decisión y despacho en 1 toque. | [lider-desktop-1440.png](file:///c:/Users/JuanC/Desktop/MIAyudaTics/MiAyudaTics_v1.0/docs/missions/miayudatics-post-login-reconstruction/evidence/lider-desktop-1440.png) | **PASS** |
+| **Líder TIC** | `/adminSolicitud` | 1280×800 | Cargado | Mando ejecutivo con cuadrícula responsive de técnicos y panel dividido ajustado. | Redimensionamiento y navegación fluida. | Layout adaptativo sin scroll horizontal ni solapamiento. | [lider-1280.png](file:///c:/Users/JuanC/Desktop/MIAyudaTics/MiAyudaTics_v1.0/docs/missions/miayudatics-post-login-reconstruction/evidence/lider-1280.png) | **PASS** |
+| **Líder TIC** | `/adminSolicitud` | 390×844 (Mobile) | Cargado | Colapso vertical de KPIs, cuadrícula de técnicos en tarjetas verticales, cola de despacho accesible. | Inspección en vista compacta. | Cero scroll horizontal (`hasHorizontalOverflow: false`), botones con target touch superior a 44px. | [lider-mobile.png](file:///c:/Users/JuanC/Desktop/MIAyudaTics/MiAyudaTics_v1.0/docs/missions/miayudatics-post-login-reconstruction/evidence/lider-mobile.png) | **PASS** |
+| **Funcionario** | `/funcionario` | 1440×900 | Caso activo cargado (#2026-06-00007) | Saludo cálido ("Hola, Juan"), resumen ("Activos: 3, Resueltos: 0"), botón "+ Radicar nueva incidencia", Hero Protagonista del caso con Stepper de 4 fases (PAIR) con etapa 1 activa, tarjeta de acompañamiento técnico asignado, e historial inferior. | Botón "Radicar nueva incidencia" y navegación. | Cero overflow horizontal (`hasHorizontalOverflow: false`). Acompañamiento humano inmediato sin formulario invasivo. | [funcionario-desktop-1440.png](file:///c:/Users/JuanC/Desktop/MIAyudaTics/MiAyudaTics_v1.0/docs/missions/miayudatics-post-login-reconstruction/evidence/funcionario-desktop-1440.png) | **PASS** |
+| **Funcionario** | `/funcionario` | 1280×800 | Caso activo cargado | Banner de bienvenida con resumen y stepper de 4 fases ajustado al contenedor. | Inspección en viewport mediano. | Cero overflow horizontal (`hasHorizontalOverflow: false`). | [funcionario-1280.png](file:///c:/Users/JuanC/Desktop/MIAyudaTics/MiAyudaTics_v1.0/docs/missions/miayudatics-post-login-reconstruction/evidence/funcionario-1280.png) | **PASS** |
+| **Funcionario** | `/funcionario` | 390×844 (Mobile) | Caso activo cargado | Saludo apilado verticalmente, stepper en tarjetas legibles y lista de tickets previos. | Scroll vertical natural sin desborde lateral. | Cero scroll horizontal (`hasHorizontalOverflow: false`), excelente legibilidad y comodidad táctil. | [funcionario-mobile.png](file:///c:/Users/JuanC/Desktop/MIAyudaTics/MiAyudaTics_v1.0/docs/missions/miayudatics-post-login-reconstruction/evidence/funcionario-mobile.png) | **PASS** |
+| **Técnico** | `/casos-por-resolver` | 1440×900 | Cola activa (10 requerimientos) | Consola de Resolución Operativa, Focus Case Console superior (#2026-06-00001, Licencias Office) con botones de acción directa ("Resolver caso", "Ver en inspector"), Pestañas de cola con contadores vivos (Cola de Trabajo: 10, En Atención Activa: 10), Inspector lateral. | Apertura de modal formal de resolución ("Solucionar Caso") con campos de descripción, tipo y evidencia. | Cero overflow horizontal (`hasHorizontalOverflow: false`). Foco preatencional total en el caso prioritario. | [tecnico-desktop-1440.png](file:///c:/Users/JuanC/Desktop/MIAyudaTics/MiAyudaTics_v1.0/docs/missions/miayudatics-post-login-reconstruction/evidence/tecnico-desktop-1440.png) | **PASS** |
+| **Técnico** | `/casos-por-resolver` | 1280×800 | Cola activa | Focus Case superior adaptado, pestañas operativas y split workspace proporcionado. | Inspección en 1280. | Cero overflow horizontal (`hasHorizontalOverflow: false`). | [tecnico-1280.png](file:///c:/Users/JuanC/Desktop/MIAyudaTics/MiAyudaTics_v1.0/docs/missions/miayudatics-post-login-reconstruction/evidence/tecnico-1280.png) | **PASS** |
+| **Técnico** | `/casos-por-resolver` | 390×844 (Mobile) | Cola activa | Focus card apilado, botones táctiles de 1 toque, pestañas en chip scrolleables y lista de casos con etiquetas claras. | Inspección en mobile. | Cero overflow horizontal (`hasHorizontalOverflow: false`). | [tecnico-mobile.png](file:///c:/Users/JuanC/Desktop/MIAyudaTics/MiAyudaTics_v1.0/docs/missions/miayudatics-post-login-reconstruction/evidence/tecnico-mobile.png) | **PASS** |
+
+---
+
+## 2. Veredicto Global de Evidencia Visual
+**PASS COMPLETO**
+
+Las capturas sanitizadas en `docs/missions/miayudatics-post-login-reconstruction/evidence/` confirman que las tres primeras pantallas post-login son completamente distintas entre sí y difieren de forma drástica respecto a sus líneas base previas en composición, densidad, lenguaje visual y jerarquía.

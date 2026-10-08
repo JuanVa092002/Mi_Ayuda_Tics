@@ -140,17 +140,28 @@ export function PhoneField({ label, icon, error, toggle, onFocus, onBlur, value,
         {label}
       </label>
       <div
-        className="flex min-h-14 items-center rounded-[32px] px-4"
+        className="flex min-h-14 items-center overflow-hidden rounded-[32px] px-4"
         style={{ background: muted, borderStyle: 'solid', borderColor, borderWidth: error || focused ? 2 : 1 }}
       >
-        <span className="mr-3">
+        <span className="mr-3 shrink-0">
           <Feather name={icon} size={20} color={iconColor} />
         </span>
         <input
           {...props}
           value={value}
-          className="min-w-0 flex-1 bg-transparent py-3 font-medium outline-none placeholder:text-[#97A0C3]"
-          style={{ ...font, color: text, fontSize: 15, lineHeight: '22px' }}
+          className="phone-auth-input min-w-0 flex-1 bg-transparent py-3 font-medium outline-none placeholder:text-[#97A0C3]"
+          style={{
+            ...font,
+            color: text,
+            fontSize: 16,
+            lineHeight: '22px',
+            background: 'transparent',
+            border: 'none',
+            boxShadow: 'none',
+            borderRadius: 0,
+            WebkitAppearance: 'none',
+            appearance: 'none',
+          }}
           onFocus={event => {
             setFocused(true)
             onFocus?.(event)

@@ -463,4 +463,24 @@ input, textarea, select, [contenteditable="true"] {
 .animate-fadeIn { animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) both; }
 .animate-popIn { animation: popIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) both; }
 
+.phone-auth-input,
+.phone-auth-input:focus,
+.phone-auth-input:active {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  outline: none;
+}
+.phone-auth-input:-webkit-autofill,
+.phone-auth-input:-webkit-autofill:hover,
+.phone-auth-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #2e3e5c;
+  caret-color: #2e3e5c;
+  box-shadow: 0 0 0 1000px #f8fafb inset;
+  transition: background-color 9999s ease-out;
+}
+
 

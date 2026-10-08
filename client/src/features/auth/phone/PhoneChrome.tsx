@@ -130,7 +130,7 @@ type FieldProps = InputHTMLAttributes<HTMLInputElement> & {
   toggle?: { visible: boolean; onToggle: () => void }
 }
 
-export function PhoneField({ label, icon, error, toggle, onFocus, onBlur, value, ...props }: FieldProps): ReactNode {
+export function PhoneField({ label, icon, error, toggle, onFocus, onBlur, value: _ignored, ...props }: FieldProps): ReactNode {
   const [focused, setFocused] = useState(false)
   const borderColor = error ? '#D32F2F' : focused ? green : border
   const iconColor = error ? '#D32F2F' : focused ? green : secondary
@@ -148,11 +148,13 @@ export function PhoneField({ label, icon, error, toggle, onFocus, onBlur, value,
         </span>
         <input
           {...props}
-          value={value}
-          className="phone-auth-input min-w-0 flex-1 bg-transparent py-3 font-medium outline-none placeholder:text-[#97A0C3]"
+          className="phone-auth-input min-w-0 flex-1 bg-transparent py-3 font-medium outline-none"
           style={{
             ...font,
-            color: text,
+            color: '#2E3E5C',
+            WebkitTextFillColor: '#2E3E5C',
+            caretColor: '#2E3E5C',
+            opacity: 1,
             fontSize: 16,
             lineHeight: '22px',
             background: 'transparent',

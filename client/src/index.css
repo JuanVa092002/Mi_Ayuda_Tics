@@ -475,7 +475,12 @@ input, textarea, select, [contenteditable="true"] {
   outline: none;
   color: #2e3e5c;
   -webkit-text-fill-color: #2e3e5c;
-  caret-color: #04324d;
+  caret-color: #2e3e5c;
+  opacity: 1;
+}
+.phone-auth-input::placeholder {
+  color: #97a0c3;
+  -webkit-text-fill-color: #97a0c3;
   opacity: 1;
 }
 .phone-auth-input:-webkit-autofill,

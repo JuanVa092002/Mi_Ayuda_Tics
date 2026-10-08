@@ -6,10 +6,11 @@ on:
       - develop
 
 env:
-  # Variables de entorno para contexto del workflow
-  RENDER_SERVICE: srv-db41o3ei0phs73em0aeg
+  # Variables para contexto del workflow
   NODE_VERSION: '20'
   PORT: '3000'
+  # Render service configuration
+  RENDER_SERVICE: srv-db41o3ei0phs73em0aeg
 
 jobs:
   build-and-deploy:
@@ -35,22 +36,16 @@ jobs:
       - name: Build Docker image
         run: |
           docker build -t qa-backend:latest -f server/Dockerfile .
-          docker tag qa-backend:latest registry.soul
+          echo "Docker image built successfully"
 
-            image: ${{ secrets.RENDER_IMAGE }}
-            email: ${{ secrets.RENDER_EMAIL }}
-
-      - name: Deploy to Render
+      - name: Configure Render credentials
         run: |
-          # Docker registry - to be configured
-          echo "Docker image will be deployed to Render"
-          echo "Service ID: $ENV_RENDER_SERVICE"
-          echo "Branch: develop"
-        
-        env:
-          RENDER_IMAGE: ${{ secrets.RENDER_IMAGE }}
-          RENDER_EMAIL: ${{ secrets.RENDER_EMAIL }}
-          RENDER_TOKEN: ${{ secrets.RENDER_TOKEN }}
+          # Configurar credenciales para deploy a Render
+          # Exportar credenciales como variables de entorno
+          EXPORT RENDER_TOKEN="${{ secrets.RENDER_TOKEN }}"
+          EXPORT RENDER_SERVICE="srv-db41o3ei0phs73em0aeg"
+          echo "Render service ID: $RENDER_SERVICE"
+          echo "Render token configured"
 
   verify-tasks:
     runs-on: ubuntu-latest

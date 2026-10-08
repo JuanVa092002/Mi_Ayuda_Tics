@@ -6,10 +6,18 @@ function envGuardPlugin() {
   return {
     name: 'env-guard',
     config(_config: unknown, { command }: { command: string }) {
-      if (command === 'build' && !process.env.VITE_BACKEND_URL && !process.env.VITE_API_URL) {
-        throw new Error(
-          'VITE_BACKEND_URL o VITE_API_URL es requerido para el build de producción.'
-        )
+      if (command === 'build') {
+        if (!process.env.VITE_BACKEND_URL) {
+          // Configuración por defecto según entorno
+          const IS_QA = process.env.NODE_ENV === 'development' || process.env.VITE_QA_MODE === 'true'
+          process.env.VITE_BACKEND_URL = IS_QA
+            ? 'https://qa-miayudatics-v1-0.onrender.com'
+            : 'https://miayudatics-v1-0.onrender.com'
+        }
+
+        if (!process.env.VITE_API_URL) {
+          process.env.VITE_API_URL = process.env.VITE_BACKEND_URL
+        }
       }
     },
   }

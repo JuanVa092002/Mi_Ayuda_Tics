@@ -17,7 +17,11 @@
     "context:web": "node scripts/context/surface.mjs web",
     "context:backend": "node scripts/context/surface.mjs backend",
     "context:mobile": "node scripts/context/surface.mjs mobile",
-    "context:video": "node scripts/context/surface.mjs video"
+    "context:video": "node scripts/context/surface.mjs video",
+    "deploy:prod": "firebase deploy --only hosting:miayudatics-prod",
+    "deploy:qa": "firebase deploy --only hosting:qa",
+    "firebase:prod": "firebase use miayudatics-prod && firebase deploy",
+    "firebase:qa": "firebase use miayudatics-qa && firebase deploy"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.5.0",

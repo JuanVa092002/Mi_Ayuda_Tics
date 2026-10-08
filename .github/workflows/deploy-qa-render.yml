@@ -1,0 +1,73 @@
+name: Deploy QA to Render
+
+on:
+  push:
+    branches:
+      - develop
+
+env:
+  # Variables de entorno para contexto del workflow
+  RENDER_SERVICE: srv-db41o3ei0phs73em0aeg
+  NODE_VERSION: '20'
+  PORT: '3000'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm -C server run build
+
+      - name: Build Docker image
+        run: |
+          docker build -t qa-backend:latest -f server/Dockerfile .
+          docker tag qa-backend:latest registry.soul
+
+            image: ${{ secrets.RENDER_IMAGE }}
+            email: ${{ secrets.RENDER_EMAIL }}
+
+      - name: Deploy to Render
+        run: |
+          # Docker registry - to be configured
+          echo "Docker image will be deployed to Render"
+          echo "Service ID: $ENV_RENDER_SERVICE"
+          echo "Branch: develop"
+        
+        env:
+          RENDER_IMAGE: ${{ secrets.RENDER_IMAGE }}
+          RENDER_EMAIL: ${{ secrets.RENDER_EMAIL }}
+          RENDER_TOKEN: ${{ secrets.RENDER_TOKEN }}
+
+  verify-tasks:
+    runs-on: ubuntu-latest
+    needs: build-and-deploy
+
+    steps:
+      - name: Verify deployment
+        run: |
+          echo "Verifying QA deployment..."
+          sleep 30  # Render needs time to initialize
+
+      - name: Health check
+        run: |
+          HEALTH_URL="https://qa-miayudatics-v1-0.onrender.com/api/health"
+          if curl -f $HEALTH_URL; then
+            echo "✅ QA deployment successful"
+          else
+            echo "❌ QA deployment health check failed"
+            exit 1
+          fi

@@ -140,7 +140,7 @@ export function PhoneField({ label, icon, error, toggle, onFocus, onBlur, value,
         {label}
       </label>
       <div
-        className="flex min-h-14 items-center overflow-hidden rounded-[32px] px-4"
+        className="flex min-h-14 items-center rounded-[32px] px-4"
         style={{ background: muted, borderStyle: 'solid', borderColor, borderWidth: error || focused ? 2 : 1 }}
       >
         <span className="mr-3 shrink-0">

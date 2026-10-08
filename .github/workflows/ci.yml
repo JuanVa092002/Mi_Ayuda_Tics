@@ -70,13 +70,13 @@ jobs:
           node-version: '22'
 
       - name: Install mobile dependencies
-        working-directory: mobile/MiAyudaTIC-Mobile
+        working-directory: mobile
         run: pnpm install --ignore-workspace --frozen-lockfile
 
       - name: Mobile typecheck
-        working-directory: mobile/MiAyudaTIC-Mobile
+        working-directory: mobile
         run: pnpm typecheck
 
       - name: Mobile unit tests
-        working-directory: mobile/MiAyudaTIC-Mobile
+        working-directory: mobile
         run: pnpm test

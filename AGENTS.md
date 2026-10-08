@@ -1,6 +1,6 @@
-# MiAyudaTIC — Agent Operating System
+# MiAyudaTIC — Agent entry
 
-> Cursor entrypoint. Canonical detail lives in `docs/`. Code wins on conflict.
+> Portable contract: [`docs/agent-os/gentle-ai-ide-agnostic-architecture.md`](docs/agent-os/gentle-ai-ide-agnostic-architecture.md). Product truth lives in `docs/` and the code. Gentle-AI owns orchestration, Engram, review and the skill registry. Paths under `.cursor/` are a Cursor adapter, not the product architecture.
 
 ## Cursor project layout
 
@@ -178,3 +178,13 @@ Memory is organized under the `miayudatics` project in Engram. Key topics:
 
 - Web: `https://miayudatics.vercel.app`
 - API: `https://miayudatics-v1-0.onrender.com`
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues via gh CLI. See docs/agents/issue-tracker.md.
+
+### Domain docs
+
+Single-context (CONTEXT.md / docs/adr/). See docs/agents/domain.md.

@@ -26,27 +26,27 @@ export default function PaginationFooter({
 
   return (
     <div
-      className={`p-4 sm:p-6 border-t hairline-border border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50/60 ${className}`}
+      className={`p-3 sm:p-4 border-t hairline-border border-slate-100 flex flex-wrap items-center justify-between gap-2.5 bg-slate-50/60 ${className}`}
     >
-      <p className="text-xs font-medium text-slate-500">
+      <p className="text-[11px] sm:text-xs font-medium text-slate-500 truncate">
         Mostrando <span className="font-bold text-azul-sena">{startItem}</span> a{' '}
         <span className="font-bold text-azul-sena">{endItem}</span> de{' '}
         <span className="font-bold text-azul-sena">{totalItems}</span> {itemLabel}
       </p>
 
       {totalPages > 1 ? (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
             type="button"
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage <= 1}
-            className="pagination-btn"
+            className="pagination-btn h-7 w-7 text-xs flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40"
             aria-label="Página anterior"
           >
-            <span className="material-symbols-outlined !text-[18px]">chevron_left</span>
+            <span className="material-symbols-outlined !text-[16px]">chevron_left</span>
           </button>
 
-          <span className="px-3 py-1 text-xs font-bold text-azul-sena">
+          <span className="px-2 py-0.5 text-[11px] font-bold text-azul-sena">
             {currentPage} / {totalPages}
           </span>
 
@@ -54,10 +54,10 @@ export default function PaginationFooter({
             type="button"
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage >= totalPages}
-            className="pagination-btn"
+            className="pagination-btn h-7 w-7 text-xs flex items-center justify-center rounded-lg border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40"
             aria-label="Página siguiente"
           >
-            <span className="material-symbols-outlined !text-[18px]">chevron_right</span>
+            <span className="material-symbols-outlined !text-[16px]">chevron_right</span>
           </button>
         </div>
       ) : null}

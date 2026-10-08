@@ -3,7 +3,7 @@ import { getApiErrorMessage, notifyUnauthorized } from './apiError'
 import { clearAllWorkflowAttemptKeys } from '@/features/tickets/api/workflow-idempotency'
 import { clearSessionToken, getSessionToken } from './sessionToken'
 
-function resolveApiBaseUrl(): string {
+export function resolveApiBaseUrl(): string {
   const raw = (import.meta.env.VITE_BACKEND_URL ||
     import.meta.env.VITE_API_URL) as string | undefined
   if (!raw?.trim()) return ''
@@ -12,7 +12,7 @@ function resolveApiBaseUrl(): string {
   return `${trimmed}/api`
 }
 
-const apiBaseUrl = resolveApiBaseUrl()
+export const apiBaseUrl = resolveApiBaseUrl()
 
 if (!apiBaseUrl && import.meta.env.DEV) {
   console.warn('[api] Define VITE_BACKEND_URL (local) o VITE_API_URL (producción)')

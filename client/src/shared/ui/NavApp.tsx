@@ -7,7 +7,7 @@ import { resolveUserPhotoUrl, userInitials } from '@/shared/media/user-photo'
 
 export default function NavApp(): ReactNode {
   const { user, setUser, setIsAuthenticated, isAuthenticated } = useAuth()
-  const { notificaciones, noLeidas, marcarLeida, marcarTodas } = useNotificaciones(isAuthenticated)
+  const { notificaciones, noLeidas, marcarLeida, marcarTodas, isLive } = useNotificaciones(isAuthenticated)
   const [showNotifications, setShowNotifications] = useState(false)
   const [showProfileMenu, setShowProfileMenu] = useState(false)
 
@@ -91,16 +91,21 @@ export default function NavApp(): ReactNode {
           <div className="flex items-center gap-1 relative" ref={notificationsRef}>
             <button
               onClick={() => setShowNotifications(!showNotifications)}
+              title={isLive ? 'Conectado en vivo (SSE)' : 'Notificaciones'}
               className={`group w-10 h-10 rounded-full transition-all flex items-center justify-center relative ${showNotifications ? 'bg-primary-container text-white shadow-md' : 'text-on-surface-variant hover:bg-primary-container/5'}`}
             >
               <span className="material-symbols-outlined !text-[22px] transition-all group-hover:font-variation-['FILL'_1]">
                 notifications
               </span>
-              {noLeidas > 0 && (
-                <span className="absolute top-2.5 right-2.5 min-w-[14px] h-[14px] px-1 bg-red-500 text-white text-[8px] font-black rounded-full ring-2 ring-white flex items-center justify-center">
+              {/* Badge contador de no leídas */}
+              {noLeidas > 0 ? (
+                <span className="absolute top-2.5 right-2.5 min-w-[14px] h-[14px] px-1 bg-red-500 text-white text-[8px] font-black rounded-full ring-2 ring-white flex items-center justify-center animate-pulse">
                   {noLeidas}
                 </span>
-              )}
+              ) : isLive ? (
+                /* Indicador vivo sutil cuando está conectado y al día */
+                <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white" title="Conexión en vivo activa" />
+              ) : null}
             </button>
 
             {showNotifications && (

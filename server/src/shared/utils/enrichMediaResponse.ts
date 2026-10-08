@@ -15,9 +15,16 @@ export function enrichStorageRecord(
   if (!plain.url) return record
 
   const filename = typeof plain.filename === 'string' ? plain.filename : ''
-  return {
-    ...plain,
-    optimizedUrl: getOptimizedMediaUrl({ url: plain.url, filename }, { width: 1200 }),
+  try {
+    return {
+      ...plain,
+      optimizedUrl: getOptimizedMediaUrl({ url: plain.url, filename }, { width: 1200 }),
+    }
+  } catch {
+    return {
+      ...plain,
+      optimizedUrl: plain.url,
+    }
   }
 }
 

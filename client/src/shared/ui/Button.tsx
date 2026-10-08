@@ -10,6 +10,8 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   loading?: boolean
   icon?: string
   iconTrailing?: string
+  /** Opts out of the 0.96 press scale when motion would distract. */
+  static?: boolean
 }
 
 export default function Button({
@@ -21,10 +23,11 @@ export default function Button({
   iconTrailing,
   className = '',
   disabled,
+  static: isStatic = false,
   ...props
 }: ButtonProps): ReactNode {
   const baseStyles =
-    'inline-flex items-center justify-center font-semibold transition-colors select-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.985] motion-reduce:transform-none disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100'
+    'inline-flex items-center justify-center font-semibold transition-[color,background-color,border-color,scale] duration-150 ease-out select-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 motion-reduce:transform-none disabled:cursor-not-allowed disabled:opacity-50'
 
   const sizeStyles = {
     sm: 'h-9 px-3.5 rounded-lg text-xs gap-1.5 min-h-[36px]',
@@ -49,7 +52,7 @@ export default function Button({
     <button
       type="button"
       disabled={disabled || loading}
-      className={`${baseStyles} ${sizeStyles} ${variantStyles} ${className}`}
+      className={`${baseStyles} ${sizeStyles} ${variantStyles} ${isStatic ? '' : 'enabled:active:scale-[0.96]'} ${className}`}
       {...props}
     >
       {loading ? (

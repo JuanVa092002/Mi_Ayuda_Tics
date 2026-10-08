@@ -57,9 +57,9 @@ export function SlideOverDrawer({
         aria-hidden="true"
       />
 
-      <div className="fixed inset-y-0 right-0 flex max-w-full pl-10">
+      <div className="fixed inset-y-0 right-0 flex max-w-full pl-0 sm:pl-10">
         <div
-          className={`w-screen ${widthClasses[width]} transform transition duration-300 ease-out`}
+          className={`w-full ${widthClasses[width]} transform transition duration-300 ease-out`}
         >
           <div className="flex h-full flex-col bg-surface shadow-2xl border-l" style={{ borderColor: 'var(--border-c)' }}>
             {/* Header */}
@@ -81,10 +81,9 @@ export function SlideOverDrawer({
                 type="button"
                 onClick={onClose}
                 aria-label="Cerrar panel"
-                className="rounded-lg p-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
-                style={{ color: 'var(--ink-3)' }}
+                className="rounded-lg p-1.5 transition-colors text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azul-sena focus-visible:ring-offset-1"
               >
-                <span className="material-symbols-outlined !text-[20px]">close</span>
+                <span className="material-symbols-outlined !text-[20px]" aria-hidden="true">close</span>
               </button>
             </div>
 

@@ -119,9 +119,10 @@ export const sendMail = async (mailOptions: SendMailOptions): Promise<void> => {
   try {
     const hasSmtp =
       Boolean(process.env.BREVO_USER?.trim()) && Boolean(process.env.BREVO_PASSWORD?.trim())
+    const hasApiKey = Boolean(process.env.BREVO_API_KEY?.trim())
     const preferSmtp = process.env.BREVO_PREFER_SMTP === 'true'
 
-    if (process.env.BREVO_API_KEY && !preferSmtp) {
+    if (hasApiKey && !preferSmtp) {
       try {
         await sendViaBrevoApi(mailOptions)
         return
@@ -135,11 +136,16 @@ export const sendMail = async (mailOptions: SendMailOptions): Promise<void> => {
       }
     }
 
-    if (!hasSmtp) {
-      throw new Error('BREVO_API_KEY o credenciales SMTP (BREVO_USER/BREVO_PASSWORD) requeridas')
+    if (hasSmtp) {
+      await sendViaSmtp(mailOptions)
+      return
     }
 
-    await sendViaSmtp(mailOptions)
+    // Si no hay API Key ni credenciales SMTP configuradas en el entorno
+    const errorMsg =
+      'BREVO_API_KEY o credenciales SMTP (BREVO_USER/BREVO_PASSWORD) requeridas en el archivo .env para enviar correos.'
+    console.warn(`[EMAIL WARNING] No se pudo despachar el correo: ${errorMsg}`)
+    throw new Error(errorMsg)
   } catch (error) {
     logError('Error al enviar correo con Brevo', error)
     throw error

@@ -31,6 +31,7 @@ import { handleUploadError } from '../../../shared/middleware/uploadError'
 import { uploadLimiter } from '../../../shared/config/rateLimit'
 import { validarSolicitud } from '../../../shared/validators/solicitud'
 import {
+  validarAsignarTecnico,
   validarMensajeWorkflow,
   validarMotivoWorkflow,
   validarReasignarTecnico,
@@ -73,7 +74,13 @@ router.get(
 /** @deprecated Hard delete. Use POST /:id/cancelar for workflow v2. Planned retirement when no consumers remain. */
 router.delete('/:id', authMiddleware, checkRol(['lider']), deleteSolicitud)
 
-router.put('/:id/asignarTecnico', authMiddleware, checkRol(['lider']), asignarTecnicoSolicitud)
+router.put(
+  '/:id/asignarTecnico',
+  authMiddleware,
+  checkRol(['lider']),
+  validarAsignarTecnico,
+  asignarTecnicoSolicitud
+)
 router.put(
   '/:id/reasignarTecnico',
   authMiddleware,

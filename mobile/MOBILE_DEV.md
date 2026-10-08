@@ -56,7 +56,7 @@ Si el skin `Galaxy_S26_Ultra` falta, arranca con resolución del AVD:
 emulator -avd Samsung_26_Ultra -no-snapshot-load -skin 1344x2992
 ```
 
-En `mobile/MiAyudaTIC-Mobile` (Git Bash):
+En `MiAyudaTics_v1.0/mobile` (Git Bash):
 
 ```bash
 pnpm dev              # un solo Metro IPv4; API = Render HTTPS; si ya corre en :8081, no abre otro

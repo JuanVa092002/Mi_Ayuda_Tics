@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, type ReactNode } from 'react'
 import type { SelectOption } from '@/shared/types'
 
 export interface CustomSelectProps {
-  label: string
+  label?: string
   options: SelectOption[]
   value?: string
   onChange: (value: string) => void
@@ -31,17 +31,20 @@ export default function CustomSelect({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const selectedOption = options.find(opt => opt._id === value)
-  const listboxId = `${label.replace(/\s+/g, '-').toLowerCase()}-listbox`
+  const selectedOption = options.find(opt => opt._id === value || opt.nombre === value)
+  const safeLabel = label || placeholder || 'select'
+  const listboxId = `${safeLabel.replace(/\s+/g, '-').toLowerCase()}-listbox`
 
   return (
     <div className="space-y-1.5 relative" ref={dropdownRef}>
-      <label
-        id={`${listboxId}-label`}
-        className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant ml-1"
-      >
-        {label}
-      </label>
+      {label && (
+        <label
+          id={`${listboxId}-label`}
+          className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant ml-1"
+        >
+          {label}
+        </label>
+      )}
 
       <div
         role="combobox"

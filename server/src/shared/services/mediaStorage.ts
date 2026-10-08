@@ -146,16 +146,24 @@ export function getOptimizedMediaUrl(
   record: { filename: string; url: string },
   options?: { width?: number; height?: number }
 ): string {
-  if (!isCloudinaryUrl(record.url)) {
+  if (!isCloudinaryUrl(record.url) || !isCloudinaryEnabled()) {
     return record.url
   }
 
-  ensureCloudinaryConfig()
-  return cloudinary.url(record.filename, {
-    fetch_format: 'auto',
-    quality: 'auto',
-    crop: options?.width || options?.height ? 'limit' : undefined,
-    width: options?.width,
-    height: options?.height,
-  })
+  try {
+    ensureCloudinaryConfig()
+    return cloudinary.url(record.filename, {
+      fetch_format: 'auto',
+      quality: 'auto',
+      crop: options?.width || options?.height ? 'limit' : undefined,
+      width: options?.width,
+      height: options?.height,
+    })
+  } catch (error) {
+    logError('Error al optimizar URL de Cloudinary, usando URL original', error, {
+      url: record.url,
+      filename: record.filename,
+    })
+    return record.url
+  }
 }

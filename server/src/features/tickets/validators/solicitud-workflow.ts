@@ -15,6 +15,7 @@ export const reasignarTecnicoBodySchema = z.object({
   tecnico: objectId,
   motivo: requiredText('El motivo'),
   operationId,
+  expectedRevision: z.number().int().nonnegative().optional(),
 })
 
 export const mensajeBodySchema = z.object({

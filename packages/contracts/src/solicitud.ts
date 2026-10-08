@@ -37,3 +37,49 @@ export const solicitudWorkflowActionFields = {
   }),
   motivo: z.object({ motivo: z.string().trim().min(3) }),
 }
+
+export const CASE_ROLES = [
+  'SOLICITANTE',
+  'TECNICO_ASIGNADO',
+  'MESA_TIC',
+  'UNKNOWN',
+] as const
+
+export type CaseRole = (typeof CASE_ROLES)[number]
+
+export const caseRoleSchema = z.enum(CASE_ROLES)
+
+export const historialEventAuthorSchema = z.object({
+  id: z.string(),
+  nombre: z.string(),
+  rol: z.enum(['funcionario', 'lider', 'tecnico']),
+})
+
+export type HistorialEventAuthor = z.infer<typeof historialEventAuthorSchema>
+
+export const historialEventRecipientSchema = z.object({
+  id: z.string(),
+  role: caseRoleSchema,
+})
+
+export type HistorialEventRecipient = z.infer<typeof historialEventRecipientSchema>
+
+export const publicHistorialEventContractSchema = z.object({
+  id: z.string(),
+  type: z.string(),
+  message: z.string(),
+  createdAt: z.string(),
+  author: historialEventAuthorSchema.optional(),
+  caseRole: caseRoleSchema,
+  recipient: historialEventRecipientSchema.optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+  attachment: z
+    .object({
+      id: z.string().optional(),
+      url: z.string().optional(),
+      filename: z.string().optional(),
+    })
+    .optional(),
+})
+
+export type PublicHistorialEventContract = z.infer<typeof publicHistorialEventContractSchema>

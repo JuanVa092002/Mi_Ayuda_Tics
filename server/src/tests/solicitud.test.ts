@@ -3,6 +3,7 @@ import request from 'supertest'
 import { app } from '../core/app'
 import models from '../core/models'
 import { tokenSign } from '../shared/utils/handleJwt'
+import { Types } from 'mongoose'
 
 // Mocking sendMail to avoid real emails
 vi.mock('../shared/utils/handleEmail', () => ({
@@ -45,13 +46,16 @@ describe('Caso Feliz Crtico - Solicitudes', () => {
     // 3. Mockear Creacin de Solicitud y Consecutivo
     const createSolicitudSpy = vi.spyOn(models.solicitudModel, 'create')
     // @ts-expect-error: Mocking specific return type for create method
-    createSolicitudSpy.mockResolvedValue({ _id: 'new-sol-id', codigoCaso: 'SOL-001' })
+    createSolicitudSpy.mockResolvedValue({ _id: new Types.ObjectId(), codigoCaso: 'SOL-001' })
 
     const findOneConsecutivoSpy = vi.spyOn(models.consecutivoCasoModel, 'findOneAndUpdate')
     findOneConsecutivoSpy.mockResolvedValue({ yearMonth: '2024-04', sequence: 1 } as never)
 
     const findOneStorageSpy = vi.spyOn(models.storageModel, 'findOne')
     findOneStorageSpy.mockResolvedValue({ _id: 'storage-id', filename: 'test.png' })
+
+    const createHistorialSpy = vi.spyOn(models.historialSolicitudModel, 'create')
+    createHistorialSpy.mockResolvedValue({} as never)
 
     // 4. Token
     const token = await tokenSign(dummyUser)

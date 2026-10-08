@@ -14,7 +14,7 @@ function withKey(idempotencyKey: string) {
 
 export const reasignarTecnico = async (
   solicitudId: string,
-  payload: { tecnico: string; motivo: string }
+  payload: { tecnico: string; motivo: string; expectedRevision?: number }
 ): Promise<WorkflowResponse> => {
   return runWithWorkflowAttempt('reassign', solicitudId, async (key) => {
     const response = await apiClient.put<WorkflowResponse>(

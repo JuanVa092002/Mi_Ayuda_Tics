@@ -1,0 +1,9 @@
+# Jobs-to-be-Done (ROLE-JOBS-TO-BE-DONE.md)
+
+## Matriz de Trabajos Operativos y Fricciones
+
+| Rol | Situación | Motivación (Job to be Done) | Resultado Esperado | Fricción Actual | Solución de Reconstrucción |
+|---|---|---|---|---|---|
+| **Funcionario** | Está en su aula/oficina y su equipo o proyector falló | Quiere tranquilidad y certeza de que las clases o labores no se suspenderán | Saber exactamente quién viene, en qué etapa va y qué debe hacer él ahora mismo | Interfaz tipo base de datos, estados crudos, falta de cara humana y sin instrucciones claras | **Centro de Acompañamiento:** Saludo personalizado, caso activo protagonista, línea de vida clara (Radicado → Asignado → En sitio → Listo), contacto del técnico asignado y botón rápido de radicación |
+| **Técnico** | Llega a la sede con una lista de incidencias en diversos ambientes | Quiere intervenir rápidamente, solucionar y documentar sin fricción | Saber cuál es el caso prioritario, dónde queda el ambiente, quién es el contacto y registrar la solución | Tabla genérica, tener que buscar la evidencia o teléfono en modales separados | **Consola Operativa de Resolución:** Caso prioritario en foco (Focus Case) con CTA contextual único según estado ("Iniciar atención" o "Finalizar caso"), inspector de ambiente/foto y cola segmentada por estado real de trabajo |
+| **Líder TIC** | Llega al centro y monitorea la operación de soporte técnico | Quiere balancear la carga del equipo, desatorar solicitudes y garantizar servicio | Identificar cuellos de botella en tiempo real y asignar la incidencia al técnico ideal en 1 segundo | Lista plana sin visibilidad de capacidad técnica ni prioridades claras de despacho | **Centro de Comando y Despacho:** Métricas de cuello de botella, cuadrícula de disponibilidad técnica en vivo, cola de solicitudes por orden de necesidad y despacho directo con un solo toque |

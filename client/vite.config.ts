@@ -23,6 +23,15 @@ export default defineConfig({
     },
     dedupe: ['react', 'react-dom'],
   },
+  server: {
+    watch: {
+      usePolling: true,
+      interval: 100,
+    },
+    hmr: {
+      overlay: true,
+    },
+  },
   test: {
     globals: true,
     environment: 'jsdom',

@@ -171,6 +171,25 @@ describe('workflow v2 HTTP (real Mongo simulation)', () => {
     expect(reassign.status).toBe(200)
     expect(reassign.body.solicitud.estado).toBe('asignado')
 
+    const stale = await request(app)
+      .put(`/api/solicitud/${ticketId}/reasignarTecnico`)
+      .set('Authorization', `Bearer ${liderToken}`)
+      .set('Idempotency-Key', `${stamp}-reassign-stale`)
+      .send({
+        tecnico: String(technician._id),
+        motivo: 'Intento con revision vieja',
+        expectedRevision: 0,
+      })
+    expect(stale.status).toBe(409)
+    expect(String(stale.body.message)).toMatch(/cambió desde que abriste/)
+
+    const still = await request(app)
+      .get(`/api/solicitud/${ticketId}`)
+      .set('Authorization', `Bearer ${liderToken}`)
+    const tecnico = still.body.data?.tecnico
+    const tecnicoId = typeof tecnico === 'object' ? tecnico?._id : tecnico
+    expect(String(tecnicoId)).toBe(String(otherTech._id))
+
     const startB = await request(app)
       .post(`/api/solicitud/${ticketId}/iniciarAtencion`)
       .set('Authorization', `Bearer ${otherToken}`)

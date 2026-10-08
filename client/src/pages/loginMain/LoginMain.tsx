@@ -1,6 +1,11 @@
 import { LoginForm } from '@/features/auth'
+import PhoneWelcome from '@/features/auth/phone/PhoneWelcome'
+import { usePhoneLayout } from '@/features/auth/phone/usePhoneLayout'
 
 export default function LoginMain() {
+  const phone = usePhoneLayout()
+  if (phone) return <PhoneWelcome />
+
   return (
     <main className="flex min-h-screen w-full bg-[#f9f9ff]">
       {/* Left Side: Info (Hidden on mobile, visible on lg screens) */}

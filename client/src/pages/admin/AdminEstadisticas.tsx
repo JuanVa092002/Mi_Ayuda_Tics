@@ -105,15 +105,15 @@ export default function AdminEstadisticas() {
             <h1 className="text-2xl font-black tracking-tight text-azul-sena">Estadísticas</h1>
             <p className="text-sm text-on-surface-variant mt-1 mb-8">Distribución por ambiente y mes.</p>
 
-            <div className="mb-6">
-              <label htmlFor="yearSelect" className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">
-                Año
+            <div className="mb-6 max-w-xs">
+              <label htmlFor="yearSelect" className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Año de Análisis
               </label>
               <select
                 id="yearSelect"
                 value={year}
                 onChange={e => setYear(Number(e.target.value))}
-                className="mt-2 block solid-input rounded-xl px-4 py-2 text-sm"
+                className="mt-2 block w-full rounded-xl border border-border-subtle bg-surface px-4 py-2.5 text-sm font-semibold text-ink focus:outline-none focus:ring-2 focus:ring-brand"
               >
                 {Array.from({ length: 5 }, (_, i) => (
                   <option key={i} value={new Date().getFullYear() - i}>

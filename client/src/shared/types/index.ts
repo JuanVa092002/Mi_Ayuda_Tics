@@ -11,6 +11,7 @@ export type {
   SolicitudEstado,
   SolicitudCapabilities,
   SolicitudHistorialEvent,
+  CaseRole,
   Solicitud,
   CaseForResolution,
   LoginCredentials,

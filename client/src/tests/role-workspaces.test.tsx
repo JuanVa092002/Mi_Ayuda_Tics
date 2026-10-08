@@ -5,14 +5,16 @@ import AdminSolicitud from '@/pages/admin/AdminSolicitud'
 import Funcionario from '@/pages/funcionario/Funcionario'
 import CasosPorResolverTabla from '@/pages/tecnico/CasosPorResolverTabla'
 
+let mockUser = { _id: 'u1', nombre: 'Admin User', rol: 'lider', correo: 'admin@test.com' }
+
 // Mock services
 vi.mock('@/features/auth', () => ({
-  useAuth: () => ({
-    user: { _id: 'u1', nombre: 'Admin User', rol: 'lider', correo: 'admin@test.com' },
+  useAuth: vi.fn(() => ({
+    user: mockUser,
     isAuthenticated: true,
     setUser: vi.fn(),
     setIsAuthenticated: vi.fn(),
-  }),
+  })),
   logout: vi.fn(),
 }))
 
@@ -97,6 +99,7 @@ vi.mock('@/features/tickets', () => ({
 
 describe('Role Contextual Workspaces', () => {
   it('renders Líder TIC Dispatch Workspace with split queue and detail inspector', async () => {
+    mockUser = { _id: 'u1', nombre: 'Admin User', rol: 'lider', correo: 'admin@test.com' }
     render(
       <MemoryRouter>
         <AdminSolicitud />
@@ -104,15 +107,14 @@ describe('Role Contextual Workspaces', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Cola de Despacho Priorizada' })).toBeDefined()
-      expect(screen.getAllByText('#CASO-101').length).toBeGreaterThan(0)
+      expect(screen.getByText(/Mando Operativo y Despacho de Soporte/i)).toBeDefined()
       expect(screen.getAllByText('Falla de conectividad en Sala 304').length).toBeGreaterThan(0)
-      expect(screen.getByText('Despachar a Especialista en 1 Toque')).toBeDefined()
+      expect(screen.getByText(/Tickets Pendientes/i)).toBeDefined()
     })
 
-    // Click second item in queue to switch inspection detail
-    const secondItem = screen.getByText('#CASO-102')
-    fireEvent.click(secondItem)
+    // Select second item in queue to switch inspection detail
+    const select = screen.getByRole('combobox')
+    fireEvent.change(select, { target: { value: 'sol-2' } })
 
     await waitFor(() => {
       expect(screen.getAllByText('Impresora sin tóner en Oficina TIC').length).toBeGreaterThan(0)
@@ -120,6 +122,7 @@ describe('Role Contextual Workspaces', () => {
   })
 
   it('renders Funcionario Workspace with request list and progress stepper', async () => {
+    mockUser = { _id: 'u1', nombre: 'Carlos Usuario', rol: 'funcionario', correo: 'carlos@sena.edu.co' }
     render(
       <MemoryRouter>
         <Funcionario />
@@ -127,13 +130,14 @@ describe('Role Contextual Workspaces', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /Radicar nueva incidencia/i })).toBeDefined()
-      expect(screen.getByText('Historial y Seguimiento de Incidencias')).toBeDefined()
-      expect(screen.getByText('Línea de Vida y Progreso del Requerimiento')).toBeDefined()
+      expect(screen.getByRole('button', { name: /radicar solicitud/i })).toBeDefined()
+      expect(screen.getAllByText('Falla de conectividad en Sala 304').length).toBeGreaterThan(0)
+      expect(screen.getByText(/Atención en Sitio Activa|Especialista Designado|Recepción & Programación/i)).toBeDefined()
     })
   })
 
   it('renders Técnico Workspace with priority queue and immediate resolution actions', async () => {
+    mockUser = { _id: 'u1', nombre: 'Carlos Técnico', rol: 'tecnico', correo: 'carlos@sena.edu.co' }
     render(
       <MemoryRouter>
         <CasosPorResolverTabla />
@@ -141,9 +145,9 @@ describe('Role Contextual Workspaces', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Cola Operativa Clasificada' })).toBeDefined()
-      expect(screen.getByText('Acciones Operativas Disponibles')).toBeDefined()
-      expect(screen.getAllByText('Finalizar caso').length).toBeGreaterThan(0)
+      expect(screen.getByText(/Consola Operativa Técnica/i)).toBeDefined()
+      expect(screen.getAllByText('Falla de conectividad en Sala 304').length).toBeGreaterThan(0)
+      expect(screen.getByRole('button', { name: /formalizar solución/i })).toBeDefined()
     })
   })
 })

@@ -118,7 +118,7 @@ export default function AppShell({ children, subtitleContext = 'Mesa de servicio
 
   const sidebar = (
     <div className="flex h-full flex-col">
-      <div className={`flex items-center ${collapsed ? 'justify-center px-2 py-6' : 'justify-between px-5 py-6'}`}>
+      <div className={`flex items-center ${collapsed ? 'flex-col gap-3 px-3 py-6' : 'justify-between px-5 py-6'}`}>
         <Link to={roleInfo.homeLink} className="min-w-0">
           <BrandWordmark
             size={collapsed ? 'sm' : 'md'}
@@ -128,7 +128,7 @@ export default function AppShell({ children, subtitleContext = 'Mesa de servicio
         </Link>
         <button
           type="button"
-          className="hidden h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 lg:flex"
+          className="hidden h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 lg:flex transition-colors"
           onClick={() => setCollapsed((value) => !value)}
           aria-label={collapsed ? 'Expandir menú' : 'Colapsar menú'}
         >
@@ -182,7 +182,7 @@ export default function AppShell({ children, subtitleContext = 'Mesa de servicio
       {/* Desktop Sidebar */}
       <aside
         className={`hidden shrink-0 border-r bg-surface lg:block transition-all duration-200 motion-reduce:transition-none ${
-          collapsed ? 'w-[72px]' : 'w-[248px]'
+          collapsed ? 'w-[84px]' : 'w-[248px]'
         }`}
         style={{ borderColor: 'var(--border-c)' }}
       >
@@ -343,10 +343,58 @@ export default function AppShell({ children, subtitleContext = 'Mesa de servicio
           </div>
         </header>
 
-        {/* Content Container with Natural Scroll Flow */}
-        <div className="min-w-0 flex-1">
+        {/* Content Container with Natural Scroll Flow and PWA Bottom Bar Clearance */}
+        <div className="min-w-0 flex-1 pb-16 lg:pb-0">
           {children}
         </div>
+
+        {/* PWA Mobile Bottom Tab Bar */}
+        <nav
+          className="fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/80 px-4 py-1.5 lg:hidden flex items-center justify-around shadow-[0_-4px_20px_rgba(0,0,0,0.05)]"
+          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 6px)' }}
+          aria-label="Navegación principal móvil"
+        >
+          <Link
+            to={roleInfo.homeLink}
+            className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all ${
+              location.pathname === roleInfo.homeLink || (roleInfo.homeLink === '/funcionario' && location.pathname.startsWith('/funcionario'))
+                ? 'text-azul-sena font-bold scale-105'
+                : 'text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            <span className="material-symbols-outlined !text-[22px]">
+              {roleInfo.tone === 'dispatch' ? 'inbox' : roleInfo.tone === 'focus' ? 'pending_actions' : 'assignment'}
+            </span>
+            <span className="text-[10px] mt-0.5 tracking-tight">Solicitudes</span>
+          </Link>
+
+          <Link
+            to="/notificaciones"
+            className={`relative flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all ${
+              location.pathname === '/notificaciones'
+                ? 'text-azul-sena font-bold scale-105'
+                : 'text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            <span className="material-symbols-outlined !text-[22px]">notifications</span>
+            {noLeidas > 0 && (
+              <span className="absolute top-1 right-2.5 h-2 w-2 rounded-full bg-verde-sena ring-2 ring-white" />
+            )}
+            <span className="text-[10px] mt-0.5 tracking-tight">Avisos</span>
+          </Link>
+
+          <Link
+            to="/perfil"
+            className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all ${
+              location.pathname === '/perfil'
+                ? 'text-azul-sena font-bold scale-105'
+                : 'text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            <span className="material-symbols-outlined !text-[22px]">account_circle</span>
+            <span className="text-[10px] mt-0.5 tracking-tight">Perfil</span>
+          </Link>
+        </nav>
       </div>
     </div>
   )

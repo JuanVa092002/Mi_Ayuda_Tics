@@ -6,7 +6,7 @@ import {
   updateAmbiente,
   inactivarAmbiente,
 } from '@/features/ambientes'
-import { toast } from 'react-toastify'
+import { Button, StatusBadge, PaginationFooter, toast } from '@/shared/ui'
 import type { AmbienteFormacion } from '@/shared/types'
 
 export default function AdminAmbientes() {
@@ -82,14 +82,6 @@ export default function AdminAmbientes() {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage
   const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem)
 
-  const nextPage = () => {
-    if (currentPage < totalPages) setCurrentPage(currentPage + 1)
-  }
-
-  const prevPage = () => {
-    if (currentPage > 1) setCurrentPage(currentPage - 1)
-  }
-
   return (
     <LeaderLayout>
         <main className="p-4 sm:p-8 flex flex-col lg:flex-row gap-8 animate-in fade-in duration-700">
@@ -130,23 +122,28 @@ export default function AdminAmbientes() {
                   </div>
                   
                   <div className="flex flex-col gap-3 pt-2">
-                    <button
+                    <Button
                       type="submit"
-                      className="w-full py-4 bg-primary-container text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-lg shadow-primary-container/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                      variant="primary"
+                      size="lg"
+                      icon={editMode ? 'save' : 'add'}
+                      className="w-full font-bold"
                     >
                       {editMode ? 'Guardar Cambios' : 'Registrar Ambiente'}
-                    </button>
+                    </Button>
                     {editMode && (
-                      <button
+                      <Button
                         type="button"
+                        variant="secondary"
+                        size="md"
                         onClick={() => {
                           setEditMode(false)
                           setNombre('')
                         }}
-                        className="w-full py-4 bg-slate-100 text-slate-500 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-slate-200 transition-all"
+                        className="w-full"
                       >
                         Cancelar
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </form>
@@ -215,24 +212,30 @@ export default function AdminAmbientes() {
                             </div>
                           </td>
                           <td className="py-6 px-8 align-top">
-                            <span className="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold border hairline-border bg-emerald-50 text-emerald-700 border-emerald-100">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2"></span>Operativo
-                            </span>
+                            <StatusBadge status="activo" label="Operativo" />
                           </td>
                           <td className="py-6 px-8 align-top text-right">
                             <div className="flex items-center justify-end gap-2">
-                              <button 
+                              <Button 
+                                variant="secondary"
+                                size="sm"
                                 onClick={() => handleEdit(ambiente)}
-                                className="w-9 h-9 rounded-xl bg-slate-50 text-slate-400 hover:bg-primary-container hover:text-white transition-all flex items-center justify-center border hairline-border border-slate-100"
+                                icon="edit"
+                                className="!h-8 !w-8 !p-0"
+                                aria-label="Editar ambiente"
                               >
-                                <span className="material-symbols-outlined !text-[18px]">edit</span>
-                              </button>
-                              <button 
+                                {''}
+                              </Button>
+                              <Button 
+                                variant="destructive"
+                                size="sm"
                                 onClick={() => handleInactivar(ambiente._id)}
-                                className="w-9 h-9 rounded-xl bg-slate-50 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all flex items-center justify-center border hairline-border border-slate-100"
+                                icon="delete"
+                                className="!h-8 !w-8 !p-0 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white border border-red-100 shadow-none"
+                                aria-label="Inactivar ambiente"
                               >
-                                <span className="material-symbols-outlined !text-[18px]">delete</span>
-                              </button>
+                                {''}
+                              </Button>
                             </div>
                           </td>
                         </tr>
@@ -252,20 +255,14 @@ export default function AdminAmbientes() {
               </div>
 
               {/* Table Footer */}
-              <div className="p-6 border-t hairline-border border-slate-100 flex items-center justify-between mt-auto bg-slate-50/50">
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Página {currentPage} de {totalPages || 1}</span>
-                  <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{totalItems} registros totales</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={prevPage} disabled={currentPage === 1} className="w-9 h-9 rounded-xl flex items-center justify-center border hairline-border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-30 transition-all shadow-sm group">
-                    <span className="material-symbols-outlined !text-[20px] group-active:scale-90 transition-transform">chevron_left</span>
-                  </button>
-                  <button onClick={nextPage} disabled={currentPage === totalPages || totalPages === 0} className="w-9 h-9 rounded-xl flex items-center justify-center border hairline-border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-30 transition-all shadow-sm group">
-                    <span className="material-symbols-outlined !text-[20px] group-active:scale-90 transition-transform">chevron_right</span>
-                  </button>
-                </div>
-              </div>
+              <PaginationFooter
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                itemLabel="ambientes totales"
+              />
             </section>
           </div>
         </main>

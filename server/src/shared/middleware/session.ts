@@ -17,6 +17,7 @@ export const authMiddleware = async (
       authorizationHeader: req.headers.authorization,
       cookies: req.cookies as { token?: string },
       cookieHeader: req.headers.cookie,
+      queryParamToken: req.query?.token,
     })
 
     if (!token) {

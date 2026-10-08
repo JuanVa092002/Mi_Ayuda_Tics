@@ -1,17 +1,16 @@
-import { useState, useEffect, type ReactNode } from 'react'
-import { toast } from 'react-toastify'
+import { useState, useEffect, useMemo, type ReactNode } from 'react'
 import { getApiErrorMessage } from '@/shared/api/apiError'
 import {
   AppShell,
   SearchField,
   PaginationFooter,
   StatusBadge,
-  Button,
-  WorkCanvas,
-  SplitWorkspace,
-  Pane,
-  SlideOverDrawer,
   AdaptiveSkeletonList,
+  AdaptiveSkeletonDetail,
+  SemanticIcon,
+  FeedbackBanner,
+  InlineAlert,
+  toast,
 } from '@/shared/ui'
 import {
   ResolutionModal,
@@ -21,853 +20,1456 @@ import {
   iniciarAtencion,
   agregarActualizacion,
   solicitarInformacion,
-  registrarSolucionParcial,
   registrarSolucionTotal,
+  registrarSolucionParcial,
+  obtenerHistorialCaso,
   WorkflowManualRetryNotice,
 } from '@/features/tickets'
 import { classifyWorkflowMutationFailure } from '@/features/tickets/api/workflow-retry-policy'
 import { clearWorkflowAttemptKey } from '@/features/tickets/api/workflow-idempotency'
 import type { CaseForResolution, Solicitud, TipoCaso, TipoSolucion } from '@/shared/types'
+import { FuncionarioTimeline } from '@/pages/funcionario/components/FuncionarioTimeline'
+import { InterventionActionModal, type InterventionTab } from './components/InterventionActionModal'
+import { IncidentHeaderABVariants } from './components/IncidentHeaderABVariants'
+import { parseEnrichedDescription, detectVisualSymptom, getTecnicoPriorityScore } from '@/shared/utils/ticketContext'
+
+type TecnicoQueueFilter = 'todos' | 'en_atencion' | 'por_iniciar' | 'esperando_usuario'
+type SortMode = 'urgency' | 'location'
 
 export default function CasosPorResolverTabla(): ReactNode {
   const [cases, setCases] = useState<Solicitud[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 8
+  const itemsPerPage = 10
+
   const [modalIsOpen, setModalIsOpen] = useState(false)
   const [selectedCase, setSelectedCase] = useState<CaseForResolution | null>(null)
   const [activeCaseId, setActiveCaseId] = useState<string | null>(null)
   const [caseTypes, setCaseTypes] = useState<TipoCaso[]>([])
   const [loading, setLoading] = useState(true)
-  const [workflowTarget, setWorkflowTarget] = useState<Solicitud | null>(null)
-  const [workflowKind, setWorkflowKind] = useState<'update' | 'info' | 'partial' | 'total' | null>(null)
-  const [workflowText, setWorkflowText] = useState({ mensaje: '', queSeHizo: '', queFalta: '', siguienteAccion: '' })
-  const [workflowError, setWorkflowError] = useState<unknown>(null)
-  const [workflowLastPayload, setWorkflowLastPayload] = useState<unknown>(undefined)
-  const [startRetry, setStartRetry] = useState<{ id: string; error: unknown } | null>(null)
+  const [fetchError, setFetchError] = useState<string | null>(null)
+
+  // Modal unificado de Intervención Operativa (Bitácora & Consulta al Funcionario)
+  const [isInterventionModalOpen, setIsInterventionModalOpen] = useState(false)
+  const [interventionInitialTab, setInterventionInitialTab] = useState<InterventionTab>('bitacora')
+
+  // Visor de imagen de evidencia técnica en alta resolución
   const [previewImage, setPreviewImage] = useState<string | null>(null)
-  const [queueFilter, setQueueFilter] = useState<
-    'trabajo' | 'por_iniciar' | 'en_atencion' | 'esperando_funcionario' | 'esperando_confirmacion'
-  >('trabajo')
+  const [isTimelineDrawerOpen, setIsTimelineDrawerOpen] = useState(false)
 
-  useEffect(() => {
-    const fetchCases = async (): Promise<void> => {
-      try {
-        const solicitudesAsignadas = await getCasosAsignados()
-        const activeTickets = solicitudesAsignadas.filter(
-          (c) => c.estado !== 'finalizado' && c.estado !== 'cerrado' && c.estado !== 'cancelado'
-        )
-        setCases(activeTickets)
-        if (activeTickets.length > 0) {
-          // Select in-progress case if exists, else first
-          const inProgress = activeTickets.find(
-            (c) => c.estado === 'en_progreso' || c.estado === 'en_atencion'
-          )
-          setActiveCaseId(inProgress ? inProgress._id : activeTickets[0]._id)
-        }
-      } catch (error) {
-        toast.error(getApiErrorMessage(error))
-      }
-    }
+  const [startRetry, setStartRetry] = useState<{ id: string; error: unknown } | null>(null)
+  const [copiedCode, setCopiedCode] = useState(false)
 
-    const fetchCaseTypes = async (): Promise<void> => {
-      try {
-        const response = await getCasos()
-        if (Array.isArray(response.data)) {
-          setCaseTypes(response.data)
-        }
-      } catch (error) {
-        toast.error(getApiErrorMessage(error))
-      }
-    }
+  const [lastActionNotice, setLastActionNotice] = useState<{
+    variant: 'info' | 'success' | 'warning' | 'danger'
+    title: string
+    description: string
+    affectedCaseId?: string
+    nextStep?: string
+  } | null>(null)
 
-    void (async () => {
+  const [queueFilter, setQueueFilter] = useState<TecnicoQueueFilter>('todos')
+  const [selectedAmbienteFilter, setSelectedAmbienteFilter] = useState<string>('todos')
+  const [sortMode, setSortMode] = useState<SortMode>('urgency')
+
+  const fetchCases = async (silent = false) => {
+    if (!silent) {
       setLoading(true)
-      await Promise.all([fetchCases(), fetchCaseTypes()])
-      setLoading(false)
-    })()
-  }, [])
-
-  const queueOf = (row: Solicitud): string => {
-    if (row.queue) return row.queue
-    if (row.workflowVersion === 2) {
-      if (row.estado === 'asignado') return 'por_iniciar'
-      if (row.estado === 'en_progreso') return 'en_atencion'
-      if (row.estado === 'esperando_usuario') return 'esperando_funcionario'
-      if (row.estado === 'resuelto') return 'esperando_confirmacion'
+      setFetchError(null)
     }
-    if (row.estado === 'asignado' || row.estado === 'pendiente') return 'en_atencion'
-    return 'en_atencion'
+    try {
+      const assigned = await getCasosAsignados()
+      const list = Array.isArray(assigned) ? assigned : []
+      setCases(list)
+      if (list.length > 0 && !activeCaseId) {
+        // Auto-seleccionar el caso más prioritario operativamente para el técnico
+        const sorted = [...list].sort((a, b) => {
+          const diff =
+            getTecnicoPriorityScore(a.estado, a.descripcion) -
+            getTecnicoPriorityScore(b.estado, b.descripcion)
+          if (diff !== 0) return diff
+          const dateA = a.fecha ? new Date(a.fecha).getTime() : 0
+          const dateB = b.fecha ? new Date(b.fecha).getTime() : 0
+          return dateB - dateA
+        })
+        setActiveCaseId(sorted[0]._id)
+      }
+      } catch (error) {
+      console.error('Error fetching assigned cases:', error)
+      if (!silent) {
+        setFetchError(getApiErrorMessage(error))
+      }
+    } finally {
+      if (!silent) {
+        setLoading(false)
+      }
+    }
   }
 
-  const queuedCases = cases.filter((row) => {
-    const queue = queueOf(row)
-    if (queueFilter === 'trabajo') {
-      return queue === 'por_iniciar' || queue === 'en_atencion' || queue === 'esperando_funcionario'
+  useEffect(() => {
+    void fetchCases()
+    void getCasos()
+      .then((res) => {
+        if (res?.data && Array.isArray(res.data)) {
+          setCaseTypes(res.data)
+        }
+      })
+      .catch(() => {})
+
+    // Escuchar actualizaciones en vivo del canal SSE (ej: cuando le asignan un nuevo caso o el funcionario responde)
+    const handleTicketLiveUpdate = (ev: Event) => {
+      const customEv = ev as CustomEvent
+      if (customEv?.detail?.solicitudId && customEv?.detail?.estado) {
+        setCases((prev) =>
+          prev.map((c) =>
+            c._id === customEv.detail.solicitudId
+              ? { ...c, estado: customEv.detail.estado }
+              : c
+          )
+        )
+      }
+      void fetchCases(true)
     }
-    return queue === queueFilter
-  })
+    window.addEventListener('ticket:updated', handleTicketLiveUpdate)
+    return () => {
+      window.removeEventListener('ticket:updated', handleTicketLiveUpdate)
+    }
+  }, [])
 
-  const filteredData = queuedCases.filter(
-    (row) =>
-      (row.codigoCaso || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (row.descripcion || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (typeof row.usuario === 'object' && row.usuario?.nombre
-        ? row.usuario.nombre
-        : ''
-      )
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      (row.ambiente?.nombre || '').toLowerCase().includes(searchTerm.toLowerCase())
-  )
-
-  const totalItems = filteredData.length
-  const totalPages = Math.ceil(totalItems / itemsPerPage)
-  const indexOfLastItem = currentPage * itemsPerPage
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage
-  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem)
-
-  // Determine the Focus Case: either the one currently in progress or the oldest pending
-  const inProgressCase = cases.find(
-    (c) => c.estado === 'en_progreso' || c.estado === 'en_atencion'
-  )
-  const focusCase = inProgressCase || cases[0] || null
-
-  // Inspected case for side pane
-  const inspectedCase = cases.find((c) => c._id === activeCaseId) || focusCase || null
-
-  const openModal = (caseData: Solicitud): void => {
-    setSelectedCase({
-      ...caseData,
-      solucion: '',
-      tipoCaso: '',
-      tipoSolucion: undefined,
+  // Lista de ambientes únicos para filtro de ruta de campo
+  const ambientesDisponibles = useMemo(() => {
+    const map = new Map<string, { id: string; nombre: string; count: number }>()
+    cases.forEach((c) => {
+      const ambId = c.ambiente?._id || 'general'
+      const ambNombre = c.ambiente?.nombre || 'General / Despacho'
+      const current = map.get(ambId)
+      if (current) {
+        current.count += 1
+      } else {
+        map.set(ambId, { id: ambId, nombre: ambNombre, count: 1 })
+      }
     })
+    return Array.from(map.values())
+  }, [cases])
+
+  // Filtrado y ordenamiento inteligente para el técnico
+  const filteredCases = useMemo(() => {
+    return cases
+      .filter((c) => {
+        const s = searchTerm.toLowerCase().trim()
+        const matchesSearch =
+          !s ||
+          (c.codigoCaso || '').toLowerCase().includes(s) ||
+          (c.descripcion || '').toLowerCase().includes(s) ||
+          (typeof c.usuario === 'object' && c.usuario?.nombre ? c.usuario.nombre.toLowerCase().includes(s) : false) ||
+          (c.ambiente?.nombre || '').toLowerCase().includes(s)
+
+        if (!matchesSearch) return false
+
+        const est = (c.estado || '').toLowerCase()
+        if (queueFilter === 'por_iniciar' && !(est === 'asignado' || est === 'nuevo' || est === 'solicitado')) return false
+        if (queueFilter === 'en_atencion' && !(est === 'en_progreso' || est === 'en_atencion')) return false
+        if (queueFilter === 'esperando_usuario' && !(est === 'esperando_usuario' || est === 'requiere_informacion')) return false
+
+        if (selectedAmbienteFilter !== 'todos') {
+          const ambId = c.ambiente?._id || 'general'
+          if (ambId !== selectedAmbienteFilter) return false
+        }
+
+        return true
+      })
+      .sort((a, b) => {
+        if (sortMode === 'location') {
+          const ambA = a.ambiente?.nombre || ''
+          const ambB = b.ambiente?.nombre || ''
+          const locCmp = ambA.localeCompare(ambB)
+          if (locCmp !== 0) return locCmp
+          // Dentro del mismo ambiente, ordenar por fecha más reciente
+          const dateA = a.fecha ? new Date(a.fecha).getTime() : 0
+          const dateB = b.fecha ? new Date(b.fecha).getTime() : 0
+          return dateB - dateA
+        }
+
+        // Prioridad Operativa por Urgencia (Plan de Vuelo del Técnico):
+        // 1. P0 (Score 5): En intervención técnica activa en sitio (en atención)
+        // 2. P1 (Score 12-15): Emergencias operativas disponibles (Clase en Vivo / Atención al Público)
+        // 3. P2 (Score 22-26): Asignados y nuevos listos para iniciar
+        // 4. P3 (Score 45): En espera de usuario (pausados)
+        // 5. P4 (Score 60): Casos finalizados / resueltos
+        const scoreDiff =
+          getTecnicoPriorityScore(a.estado, a.descripcion) -
+          getTecnicoPriorityScore(b.estado, b.descripcion)
+
+        if (scoreDiff !== 0) return scoreDiff
+
+        // Desempate por fecha (los más recientes primero)
+        const dateA = a.fecha ? new Date(a.fecha).getTime() : 0
+        const dateB = b.fecha ? new Date(b.fecha).getTime() : 0
+        return dateB - dateA
+      })
+  }, [cases, searchTerm, queueFilter, selectedAmbienteFilter, sortMode])
+
+  const totalPages = Math.max(1, Math.ceil(filteredCases.length / itemsPerPage))
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const currentItems = filteredCases.slice(startIndex, startIndex + itemsPerPage)
+
+  const activeJob = cases.find((c) => c._id === activeCaseId) || (currentItems.length > 0 ? currentItems[0] : null)
+
+  const [liveHistorial, setLiveHistorial] = useState<import('@/shared/types').SolicitudHistorialEvent[] | null>(null)
+  const [loadingHistorial, setLoadingHistorial] = useState(false)
+
+  // Carga y sincronización en tiempo real del historial inmutable para el técnico
+  const fetchLiveHistorial = async (id: string) => {
+    setLoadingHistorial(true)
+    try {
+      const items = await obtenerHistorialCaso(id)
+      setLiveHistorial(items)
+    } catch (err) {
+      console.error('Error fetching technician case history:', err)
+    } finally {
+      setLoadingHistorial(false)
+    }
+  }
+
+  useEffect(() => {
+    if (isTimelineDrawerOpen && activeJob?._id) {
+      void fetchLiveHistorial(activeJob._id)
+    }
+  }, [isTimelineDrawerOpen, activeJob?._id])
+
+  useEffect(() => {
+    const handleTicketLiveUpdate = (ev: Event) => {
+      const customEv = ev as CustomEvent
+      if (
+        isTimelineDrawerOpen &&
+        activeJob?._id &&
+        (!customEv.detail?.solicitudId || customEv.detail?.solicitudId === activeJob._id)
+      ) {
+        void fetchLiveHistorial(activeJob._id)
+      }
+    }
+    window.addEventListener('ticket:updated', handleTicketLiveUpdate)
+    return () => {
+      window.removeEventListener('ticket:updated', handleTicketLiveUpdate)
+    }
+  }, [isTimelineDrawerOpen, activeJob?._id])
+
+  const enrichedActiveJob: Solicitud | null = activeJob
+    ? {
+        ...activeJob,
+        historial: liveHistorial || activeJob.historial,
+      }
+    : null
+
+  // Métricas del turno operativo
+  const totalAsignados = cases.length
+  const enAtencionCount = cases.filter((c) => c.estado === 'en_progreso' || c.estado === 'en_atencion').length
+  const porIniciarCount = cases.filter((c) => c.estado === 'asignado' || c.estado === 'nuevo' || c.estado === 'solicitado').length
+  const esperandoCount = cases.filter((c) => c.estado === 'esperando_usuario' || c.estado === 'requiere_informacion').length
+
+  // Iniciar atención en sitio
+  const runStart = async (id: string) => {
+    setStartRetry(null)
+    try {
+      await iniciarAtencion(id)
+      toast.success('Atención técnica iniciada en sitio.')
+      setLastActionNotice({
+        variant: 'info',
+        title: 'Intervención en Curso',
+        description: `Has registrado formalmente el inicio de labores para el caso #${id.slice(-6)}. El funcionario fue notificado.`,
+        affectedCaseId: id,
+        nextStep: 'Realiza el diagnóstico presencial, registra avances si es necesario y formaliza la solución al concluir.',
+      })
+      setCases((prev) =>
+        prev.map((c) =>
+          c._id === id
+            ? {
+                ...c,
+                estado: 'en_progreso',
+                capabilities: { ...c.capabilities, canStart: false, canUpdate: true, canResolve: true },
+              }
+            : c
+        )
+      )
+    } catch (err) {
+      const classified = classifyWorkflowMutationFailure(err)
+      if (classified.offersManualRetry) {
+        setStartRetry({ id, error: err })
+      } else {
+        clearWorkflowAttemptKey('start', id)
+        toast.error(classified.message || 'Error al iniciar atención')
+      }
+    }
+  }
+
+  // Registrar avance / nota técnica
+  const handleSaveUpdate = async (mensaje: string) => {
+    if (!activeJob || !mensaje.trim()) return
+    try {
+      await agregarActualizacion(activeJob._id, mensaje.trim())
+      toast.success('Nota técnica registrada en bitácora.')
+      setLastActionNotice({
+        variant: 'info',
+        title: 'Bitácora Actualizada',
+        description: `Se registró el avance técnico en el expediente del caso #${activeJob.codigoCaso || activeJob._id.slice(-6)}.`,
+        affectedCaseId: activeJob._id,
+        nextStep: 'El funcionario ya puede ver este avance en su registro.',
+      })
+      void fetchCases()
+      if (activeJob._id) {
+        void fetchLiveHistorial(activeJob._id)
+      }
+    } catch (err) {
+      toast.error(getApiErrorMessage(err))
+      throw err
+    }
+  }
+
+  // Solicitar información o pruebas al funcionario
+  const handleRequestInfo = async (mensaje: string) => {
+    if (!activeJob || !mensaje.trim()) return
+    try {
+      await solicitarInformacion(activeJob._id, mensaje.trim())
+      toast.success('Solicitud enviada al funcionario.')
+      setLastActionNotice({
+        variant: 'warning',
+        title: 'Esperando Respuesta del Funcionario',
+        description: `Se notificó al funcionario para ampliar detalles o validar acceso al caso #${activeJob.codigoCaso || activeJob._id.slice(-6)}.`,
+        affectedCaseId: activeJob._id,
+        nextStep: 'El caso quedó en pausa. Puedes avanzar con otro caso de tu turno.',
+      })
+      setCases((prev) =>
+        prev.map((c) => (c._id === activeJob._id ? { ...c, estado: 'esperando_usuario' } : c))
+      )
+      if (activeJob._id) {
+        void fetchLiveHistorial(activeJob._id)
+      }
+    } catch (err) {
+      toast.error(getApiErrorMessage(err))
+      throw err
+    }
+  }
+
+  // Abrir modal de solución formal
+  const handleOpenResolutionModal = (caso: Solicitud) => {
+    const caseType = caseTypes.find((t) => t.nombre === caso.tipoCaso) || caseTypes[0]
+    setSelectedCase({
+      ...caso,
+      tipoCaso: caseType?._id || (typeof caso.tipoCaso === 'string' ? caso.tipoCaso : caso.tipoCaso?._id) || '',
+    } as unknown as CaseForResolution)
     setModalIsOpen(true)
   }
 
-  const closeModal = (): void => {
+  const handleCloseResolutionModal = () => {
     setModalIsOpen(false)
+    setSelectedCase(null)
   }
 
-  const handleSubmit = async (): Promise<void> => {
-    try {
+  // Formalizar solución final
+  const handleFormSubmit = async (data: {
+    solucion: string
+    tipoSolucion: TipoSolucion
+    observaciones: string
+    file?: File
+  }) => {
       if (!selectedCase) return
-
-      const payload = {
-        descripcionSolucion: selectedCase.solucion ?? '',
-        tipoCaso: selectedCase.tipoCaso ?? '',
-        tipoSolucion: selectedCase.tipoSolucion as TipoSolucion,
+    const id = selectedCase._id
+    try {
+      if (data.tipoSolucion === 'pendiente') {
+        await registrarSolucionParcial(id, {
+          queSeHizo: data.solucion,
+          queFalta: data.observaciones || 'Pendiente seguimiento o repuesto',
+          siguienteAccion: 'Continuar atención en ambiente',
+        })
+        toast.success('Solución parcial registrada con éxito.')
+        setLastActionNotice({
+          variant: 'info',
+          title: 'Atención Parcial Registrada',
+          description: `Se registró el avance técnico del caso #${selectedCase.codigoCaso || id.slice(-6)}.`,
+          affectedCaseId: id,
+          nextStep: 'El ticket permanece en atención mientras se gestiona la solución total.',
+        })
+      } else {
+        // Por defecto o finalizado, intentamos registrarSolucionTotal (flujo v2)
+        try {
+          await registrarSolucionTotal(id, {
+            queSeHizo: data.solucion,
+            causaIdentificada: data.observaciones,
+          })
+        } catch (err: any) {
+          // Si el caso antiguo fuera v1, fallback a la ruta legacy
+          if (err?.response?.status === 409 && err?.response?.data?.message?.includes('flujo anterior')) {
+            await submitSolucionCaso(id, {
+              descripcionSolucion: data.solucion,
+              tipoCaso: selectedCase.tipoCaso || caseTypes[0]?._id || '',
+              tipoSolucion: data.tipoSolucion,
+            })
+          } else {
+            throw err
+          }
+        }
+        toast.success('Solución formalizada con éxito.')
+        setLastActionNotice({
+          variant: 'success',
+          title: 'Caso Finalizado Satisfactoriamente',
+          description: `Has completado la intervención del caso #${selectedCase.codigoCaso || id.slice(-6)}.`,
+          affectedCaseId: id,
+          nextStep: 'El funcionario ha recibido la notificación de cierre y visto bueno final.',
+        })
       }
-
-      if (!payload.descripcionSolucion || !payload.tipoCaso || !payload.tipoSolucion) {
-        toast.error('Por favor completa todos los campos antes de enviar.')
-        return
-      }
-
-      await submitSolucionCaso(selectedCase._id, payload)
-
-      if (payload.tipoSolucion === 'finalizado') {
-        setCases((prev) => prev.filter((c) => c._id !== selectedCase._id))
-      }
-      closeModal()
-      toast.success('Solución enviada exitosamente')
+      setModalIsOpen(false)
+      setSelectedCase(null)
+      void fetchCases()
     } catch (error) {
       toast.error(getApiErrorMessage(error))
     }
   }
 
-  const refreshCases = async (): Promise<void> => {
-    const solicitudesAsignadas = await getCasosAsignados()
-    const active = solicitudesAsignadas.filter(
-      (c) => c.estado !== 'finalizado' && c.estado !== 'cerrado' && c.estado !== 'cancelado'
-    )
-    setCases(active)
-  }
+  const isAsignado = activeJob?.estado === 'asignado' || activeJob?.estado === 'nuevo' || activeJob?.estado === 'solicitado'
+  const isEnAtencion = activeJob?.estado === 'en_progreso' || activeJob?.estado === 'en_atencion'
+  const isEsperandoUsuario = activeJob?.estado === 'esperando_usuario' || activeJob?.estado === 'requiere_informacion'
+  const isCerrado = activeJob?.estado === 'cerrado'
+  const isResuelto = activeJob?.estado === 'resuelto' || activeJob?.estado === 'finalizado'
 
-  const closeWorkflowModal = (): void => {
-    if (workflowTarget && workflowKind) {
-      const action =
-        workflowKind === 'update'
-          ? 'update'
-          : workflowKind === 'info'
-            ? 'wait_for_requester'
-            : workflowKind === 'partial'
-              ? 'partial_solution'
-              : 'resolve'
-      clearWorkflowAttemptKey(action, workflowTarget._id)
+  const getStepStatus = (stepNum: number): 'completed' | 'current' | 'waiting' => {
+    if (isCerrado) {
+      return 'completed'
     }
-    setWorkflowKind(null)
-    setWorkflowTarget(null)
-    setWorkflowError(null)
-    setWorkflowLastPayload(undefined)
-  }
-
-  const currentWorkflowPayload = (): unknown => {
-    if (workflowKind === 'update' || workflowKind === 'info') return { mensaje: workflowText.mensaje }
-    if (workflowKind === 'partial') {
-      return {
-        queSeHizo: workflowText.queSeHizo,
-        queFalta: workflowText.queFalta,
-        siguienteAccion: workflowText.siguienteAccion,
-      }
+    if (isResuelto) {
+      if (stepNum < 4) return 'completed'
+      if (stepNum === 4) return 'current'
+      return 'waiting'
     }
-    if (workflowKind === 'total') return { queSeHizo: workflowText.queSeHizo }
-    return undefined
-  }
-
-  const runStart = (solicitudId: string): void => {
-    void iniciarAtencion(solicitudId)
-      .then(() => {
-        setStartRetry(null)
-        toast.success('Atención técnica iniciada')
-        return refreshCases()
-      })
-      .catch((error) => {
-        setStartRetry({ id: solicitudId, error })
-        toast.error(getApiErrorMessage(error))
-      })
-  }
-
-  const submitWorkflow = async (payloadOverride?: unknown): Promise<void> => {
-    if (!workflowTarget || !workflowKind) return
-    const payload = payloadOverride ?? currentWorkflowPayload()
-    try {
-      if (workflowKind === 'update') {
-        await agregarActualizacion(workflowTarget._id, (payload as { mensaje: string }).mensaje)
-      }
-      if (workflowKind === 'info') {
-        await solicitarInformacion(workflowTarget._id, (payload as { mensaje: string }).mensaje)
-      }
-      if (workflowKind === 'partial') {
-        await registrarSolucionParcial(
-          workflowTarget._id,
-          payload as { queSeHizo: string; queFalta: string; siguienteAccion: string }
-        )
-      }
-      if (workflowKind === 'total') {
-        await registrarSolucionTotal(workflowTarget._id, payload as { queSeHizo: string })
-      }
-      toast.success('Acción registrada con éxito')
-      closeWorkflowModal()
-      await refreshCases()
-    } catch (error) {
-      setWorkflowError(error)
-      setWorkflowLastPayload(payload)
-      const failure = classifyWorkflowMutationFailure(error)
-      if (!failure.offersManualRetry) {
-        toast.error(getApiErrorMessage(error))
-      }
+    if (isEnAtencion || isEsperandoUsuario) {
+      if (stepNum < 3) return 'completed'
+      if (stepNum === 3) return 'current'
+      return 'waiting'
     }
+    if (isAsignado) {
+      if (stepNum === 1) return 'completed'
+      if (stepNum === 2) return 'current'
+      return 'waiting'
+    }
+    if (stepNum === 1) return 'current'
+    return 'waiting'
   }
 
-  const queueTabs = [
+  const stepsConfig = [
     {
-      id: 'trabajo',
-      label: 'Cola de Trabajo',
-      count: cases.filter((c) =>
-        ['por_iniciar', 'en_atencion', 'esperando_funcionario'].includes(queueOf(c))
-      ).length,
+      num: 1,
+      title: 'Radicado por Usuario',
+      subtitle: activeJob?.fecha ? `Ingreso: ${activeJob.fecha}` : 'Solicitud recibida',
+      icon: 'inbox',
+      activeColor: {
+        border: 'border-[#04324d]/30 ring-1 ring-[#04324d]/20',
+        bg: 'bg-sky-50/60',
+        badge: 'bg-[#04324d] text-white',
+        text: 'text-[#04324d]',
+        dot: 'bg-[#04324d]',
+      },
+      completedColor: {
+        border: 'border-slate-200/90',
+        bg: 'bg-slate-50/70',
+        badge: 'bg-slate-700 text-white',
+        text: 'text-slate-800',
+        dot: 'bg-slate-400',
+      },
     },
     {
-      id: 'por_iniciar',
-      label: 'Por Iniciar',
-      count: cases.filter((c) => queueOf(c) === 'por_iniciar').length,
+      num: 2,
+      title: 'Asignado a tu Guardia',
+      subtitle: 'Caso en tu turno CTPI',
+      icon: 'engineering',
+      activeColor: {
+        border: 'border-purple-300 ring-1 ring-purple-300/40',
+        bg: 'bg-purple-50/70',
+        badge: 'bg-purple-700 text-white',
+        text: 'text-purple-950',
+        dot: 'bg-purple-600',
+      },
+      completedColor: {
+        border: 'border-purple-200/80',
+        bg: 'bg-purple-50/30',
+        badge: 'bg-purple-600 text-white',
+        text: 'text-purple-900',
+        dot: 'bg-purple-500',
+      },
     },
     {
-      id: 'en_atencion',
-      label: 'En Atención Activa',
-      count: cases.filter((c) => queueOf(c) === 'en_atencion').length,
+      num: 3,
+      title: 'Tu Intervención en Sitio',
+      subtitle: isEsperandoUsuario
+        ? 'Esperando respuesta del funcionario'
+        : isEnAtencion
+        ? 'Pruebas y diagnóstico activo'
+        : 'Pendiente desplazamiento a aula',
+      icon: isEsperandoUsuario ? 'contact_support' : 'handyman',
+      activeColor: {
+        border: isEsperandoUsuario
+          ? 'border-amber-400 ring-1 ring-amber-400/50'
+          : 'border-amber-300 ring-1 ring-amber-300/40',
+        bg: 'bg-amber-50/80',
+        badge: 'bg-amber-600 text-white',
+        text: 'text-amber-950',
+        dot: 'bg-amber-500',
+      },
+      completedColor: {
+        border: 'border-amber-200/70',
+        bg: 'bg-amber-50/30',
+        badge: 'bg-amber-600 text-white',
+        text: 'text-amber-900',
+        dot: 'bg-amber-500',
+      },
     },
     {
-      id: 'esperando_funcionario',
-      label: 'Esperando Funcionario',
-      count: cases.filter((c) => queueOf(c) === 'esperando_funcionario').length,
+      num: 4,
+      title: isCerrado ? 'Caso Archivado' : 'Cierre Técnico',
+      subtitle: isCerrado
+        ? 'Visto bueno recibido y archivado'
+        : isResuelto
+        ? 'Esperando visto bueno del funcionario'
+        : 'Pendiente formalizar solución',
+      icon: 'verified',
+      activeColor: {
+        border: 'border-emerald-400 ring-1 ring-emerald-400/50',
+        bg: 'bg-emerald-50/80',
+        badge: 'bg-emerald-600 text-white',
+        text: 'text-emerald-950',
+        dot: 'bg-emerald-500',
+      },
+      completedColor: {
+        border: 'border-emerald-200/80',
+        bg: 'bg-emerald-50/40',
+        badge: 'bg-emerald-600 text-white',
+        text: 'text-emerald-900',
+        dot: 'bg-emerald-500',
+      },
     },
-    {
-      id: 'esperando_confirmacion',
-      label: 'Esperando Confirmación',
-      count: cases.filter((c) => queueOf(c) === 'esperando_confirmacion').length,
-    },
-  ] as const
+  ]
+
+  const funcionarioNombre =
+    typeof activeJob?.usuario === 'object' && activeJob?.usuario?.nombre
+      ? activeJob.usuario.nombre
+      : 'Funcionario SENA'
+
+  const funcionarioTelefono =
+    activeJob?.telefono ||
+    (typeof activeJob?.usuario === 'object' && activeJob?.usuario?.telefono ? activeJob.usuario.telefono : null)
+
+  const funcionarioEmail =
+    typeof activeJob?.usuario === 'object' && activeJob?.usuario?.correo
+      ? activeJob.usuario.correo
+      : null
 
   return (
-    <AppShell subtitleContext="Consola de Resolución Operativa Técnica">
-      <WorkCanvas>
-        {/* Top Hero: "Focus Case" Console (Unmistakable Operational Hero) */}
-        {focusCase ? (
-          <section
-            className="rounded-2xl border p-5 lg:p-6 relative overflow-hidden"
-            style={{
-              borderColor: 'var(--border-strong-c)',
-              background: 'linear-gradient(135deg, #04324d 0%, #084364 100%)',
-              color: '#ffffff',
-              boxShadow: 'var(--sh-md)',
-            }}
-          >
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-              <div className="space-y-2 max-w-2xl">
-                <div className="flex items-center gap-3">
-                  <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-verde-sena text-white">
-                    <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                    Caso en Foco Prioritario
-                  </span>
-                  <span className="font-mono text-xs font-bold text-slate-200">
-                    #{focusCase.codigoCaso || focusCase._id.slice(-6)}
-                  </span>
-                  <StatusBadge status={focusCase.estado} />
-                </div>
-                <h2 className="text-xl lg:text-2xl font-extrabold text-white leading-snug">
-                  {focusCase.descripcion}
-                </h2>
-                <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-slate-200 pt-1">
-                  <span className="inline-flex items-center gap-1.5">
-                    <span className="material-symbols-outlined !text-[16px] text-emerald-400">location_on</span>
-                    {focusCase.ambiente?.nombre || 'Ambiente no especificado'}
-                  </span>
-                  <span>·</span>
-                  <span className="inline-flex items-center gap-1.5">
-                    <span className="material-symbols-outlined !text-[16px] text-slate-300">person</span>
-                    {typeof focusCase.usuario === 'object' ? focusCase.usuario?.nombre : 'Funcionario'}
-                  </span>
-                  {focusCase.telefono ? (
-                    <>
-                      <span>·</span>
-                      <span className="inline-flex items-center gap-1 text-emerald-300">
-                        <span className="material-symbols-outlined !text-[15px]">call</span>
-                        {focusCase.telefono}
-                      </span>
-                    </>
-                  ) : null}
-                  <span>·</span>
-                  <span className="inline-flex items-center gap-1.5">
-                    <span className="material-symbols-outlined !text-[16px] text-slate-300">schedule</span>
-                    {focusCase.fecha}
-                  </span>
-                </div>
-              </div>
-
-              {/* Instant Action Cluster */}
-              <div className="shrink-0 flex flex-wrap items-center gap-2.5 bg-black/20 backdrop-blur-xs p-3.5 rounded-xl border border-white/10">
-                {focusCase.workflowVersion === 2 ? (
-                  <>
-                    {focusCase.capabilities?.canStart ? (
-                      <Button
-                        variant="success"
-                        size="md"
-                        onClick={() => runStart(focusCase._id)}
-                        icon="play_arrow"
-                        className="shadow-md"
-                      >
-                        Iniciar atención
-                      </Button>
-                    ) : null}
-
-                    {focusCase.capabilities?.canUpdate ? (
-                      <Button
-                        variant="secondary"
-                        size="md"
-                        onClick={() => {
-                          setWorkflowError(null)
-                          setWorkflowLastPayload(undefined)
-                          setWorkflowTarget(focusCase)
-                          setWorkflowKind('update')
-                        }}
-                        icon="edit_note"
-                        className="bg-white/10 text-white border-white/20 hover:bg-white/20"
-                      >
-                        Bitácora
-                      </Button>
-                    ) : null}
-
-                    {focusCase.capabilities?.canResolve ? (
-                      <Button
-                        variant="success"
-                        size="md"
-                        onClick={() => {
-                          setWorkflowError(null)
-                          setWorkflowLastPayload(undefined)
-                          setWorkflowTarget(focusCase)
-                          setWorkflowKind('total')
-                        }}
-                        icon="task_alt"
-                        className="shadow-md"
-                      >
-                        Finalizar caso
-                      </Button>
-                    ) : null}
-                  </>
-                ) : (
-                  <Button
-                    variant="success"
-                    size="md"
-                    onClick={() => openModal(focusCase)}
-                    icon="check_circle"
-                  >
-                    Resolver caso
-                  </Button>
-                )}
-
-                <Button
-                  variant="secondary"
-                  size="md"
-                  onClick={() => setActiveCaseId(focusCase._id)}
-                  icon="visibility"
-                  className="bg-white/10 text-white border-white/20 hover:bg-white/20"
-                >
-                  Ver en inspector
-                </Button>
-              </div>
+    <AppShell subtitleContext="Consola de Campo">
+      <div className="mx-auto w-full max-w-[1540px] px-3.5 py-4 sm:px-6 lg:px-8 space-y-4 sm:space-y-5">
+        
+        {/* SHIFT HEADER: Resumen táctico de guardia y control de turno */}
+        <header className="rounded-2xl border bg-white p-4 sm:p-5 shadow-xs border-slate-200">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="flex h-3 w-3 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                <h1 className="text-lg sm:text-2xl font-black tracking-tight text-slate-900">
+                  Consola Operativa Técnica · Soporte en Sitio
+                </h1>
+                <span className="text-[10px] font-black uppercase tracking-wider text-azul-sena bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full hidden sm:inline-block">
+                  Atención en Campo · CTPI
+                </span>
             </div>
-          </section>
+              <p className="text-xs sm:text-sm text-slate-500">
+                Gestión operativa, desplazamiento físico a ambientes, bitácora técnica y cierre de incidencias.
+              </p>
+            </div>
+
+            {/* Turno Metrics Strip */}
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-3">
+              <div className="flex items-center gap-2.5 sm:gap-3 rounded-2xl bg-slate-50/80 px-3 py-2 sm:px-4 sm:py-2.5 border border-slate-200/80 shadow-2xs">
+                <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-slate-200/60 flex items-center justify-center text-slate-700 shrink-0">
+                  <span className="material-symbols-outlined !text-[18px] sm:!text-[20px]">inventory_2</span>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">En tu turno</p>
+                  <p className="text-sm sm:text-base font-black text-slate-900 leading-none mt-0.5">{totalAsignados}</p>
+            </div>
+          </div>
+
+              <div className="flex items-center gap-2.5 sm:gap-3 rounded-2xl bg-blue-50/60 px-3 py-2 sm:px-4 sm:py-2.5 border border-blue-200/80 shadow-2xs">
+                <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-blue-100/80 flex items-center justify-center text-azul-sena shrink-0">
+                  <span className="material-symbols-outlined !text-[18px] sm:!text-[20px]">engineering</span>
+                      </div>
+                <div className="min-w-0">
+                  <p className="text-[9px] sm:text-[10px] font-bold text-azul-sena uppercase tracking-wider truncate">En Atención</p>
+                  <p className="text-sm sm:text-base font-black text-slate-900 leading-none mt-0.5">{enAtencionCount}</p>
+                          </div>
+                        </div>
+
+              <div className="flex items-center gap-2.5 sm:gap-3 rounded-2xl bg-emerald-50/60 px-3 py-2 sm:px-4 sm:py-2.5 border border-emerald-200/80 shadow-2xs">
+                <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-emerald-100/80 flex items-center justify-center text-emerald-800 shrink-0">
+                  <span className="material-symbols-outlined !text-[18px] sm:!text-[20px]">pending_actions</span>
+                          </div>
+                <div className="min-w-0">
+                  <p className="text-[9px] sm:text-[10px] font-bold text-emerald-800 uppercase tracking-wider truncate">Por Iniciar</p>
+                  <p className="text-sm sm:text-base font-black text-slate-900 leading-none mt-0.5">{porIniciarCount}</p>
+                        </div>
+                          </div>
+
+              {esperandoCount > 0 ? (
+                <div className="col-span-2 sm:col-span-1 flex items-center gap-2.5 sm:gap-3 rounded-2xl bg-amber-50 px-3 py-2 sm:px-4 sm:py-2.5 border border-amber-300 shadow-2xs animate-pulse">
+                  <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-amber-200/80 flex items-center justify-center text-amber-900 shrink-0">
+                    <span className="material-symbols-outlined !text-[18px] sm:!text-[20px]">hourglass_top</span>
+                        </div>
+                  <div className="min-w-0">
+                    <p className="text-[9px] sm:text-[10px] font-bold text-amber-800 uppercase tracking-wider truncate">En Espera de Usuario</p>
+                    <p className="text-sm sm:text-base font-black text-amber-950 leading-none mt-0.5">{esperandoCount}</p>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </header>
+
+        {/* FEEDBACK BANNER OPERACIONAL */}
+        {lastActionNotice ? (
+          <FeedbackBanner
+            tone={lastActionNotice.variant === 'danger' ? 'danger' : lastActionNotice.variant === 'warning' ? 'warning' : 'success'}
+            title={lastActionNotice.title}
+            description={lastActionNotice.description}
+            nextStep={lastActionNotice.nextStep}
+            affectedCaseId={lastActionNotice.affectedCaseId}
+            onDismiss={() => setLastActionNotice(null)}
+          />
         ) : null}
 
-        {/* Operational Filter Bar & Search */}
-        <section
-          className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 rounded-xl border bg-surface p-4"
-          style={{ borderColor: 'var(--border-c)', boxShadow: 'var(--sh-xs)' }}
-        >
-          <div className="flex flex-wrap gap-2" role="tablist" aria-label="Filtros de bandeja técnica">
-            {queueTabs.map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                role="tab"
-                aria-selected={queueFilter === tab.id}
-                onClick={() => {
-                  setQueueFilter(tab.id)
-                  setCurrentPage(1)
-                }}
-                className={`inline-flex min-h-10 items-center gap-2 rounded-xl px-4 text-xs font-bold transition-all cursor-pointer ${
-                  queueFilter === tab.id
-                    ? 'bg-azul-sena text-white shadow-xs'
-                    : 'bg-surface-subtle text-slate-700 hover:bg-slate-100 border border-border-subtle'
-                }`}
-              >
-                <span>{tab.label}</span>
-                <span
-                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${
-                    queueFilter === tab.id ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-800'
-                  }`}
-                >
-                  {tab.count}
-                </span>
-              </button>
-            ))}
-          </div>
+        {/* ========================================================= */}
+        {/* MASTER-DETAIL COCKPIT: Cola Izquierda + Expediente Técnico */}
+        {/* ========================================================= */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5 items-start">
+          
+          {/* COLUMNA IZQUIERDA (5 cols en laptop 1280, 4 cols en XL): Cola de Casos */}
+          <div className={`lg:col-span-5 xl:col-span-4 ${activeCaseId ? 'hidden lg:block' : 'block'}`}>
+            <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-xs flex flex-col">
+              
+              {/* Barra de Búsqueda, Filtros y Rutas por Ubicación */}
+              <div className="p-3.5 sm:p-4 border-b border-slate-200 bg-slate-50/70 space-y-2.5">
+                <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                    <SemanticIcon name="cola" className="text-slate-600 !text-[18px]" />
+                    <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700">Cola Asignada</h2>
+                            </div>
+                  <div className="flex items-center gap-1.5">
+                    {/* Toggle de ordenamiento: Por Urgencia o Por Ubicación */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSortMode(sortMode === 'urgency' ? 'location' : 'urgency')
+                        setCurrentPage(1)
+                      }}
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border transition-all flex items-center gap-1 cursor-pointer ${
+                        sortMode === 'location'
+                          ? 'bg-emerald-50 text-emerald-800 border-emerald-200 shadow-2xs'
+                          : 'bg-white text-slate-600 border-slate-200'
+                      }`}
+                      title={sortMode === 'location' ? 'Ordenado por ambiente/bloque físico' : 'Ordenado por urgencia de estado'}
+                    >
+                      <span className="material-symbols-outlined !text-[13px]">
+                        {sortMode === 'location' ? 'pin_drop' : 'sort'}
+                      </span>
+                      <span>{sortMode === 'location' ? 'Ruta física' : 'Urgencia'}</span>
+                    </button>
+                    <span className="text-xs font-bold text-slate-500 bg-slate-200/70 px-2 py-0.5 rounded-full">
+                      {filteredCases.length}
+                    </span>
+                          </div>
+                          </div>
 
-          <div className="w-full lg:w-80 shrink-0">
-            <SearchField
-              value={searchTerm}
-              onChange={setSearchTerm}
-              placeholder="Buscar por caso, ambiente o usuario..."
-              label="Buscar en incidencias técnicas"
-            />
-          </div>
-        </section>
-
-        {/* Operational Split Workspace: Queue Cards on Left, Persistent Inspector on Right */}
-        <SplitWorkspace
-          queue={
-            <Pane
-              title="Cola Operativa Clasificada"
-              meta={`Página ${currentPage} de ${Math.max(1, totalPages)} · ${totalItems} requerimientos`}
-              footer={
-                <PaginationFooter
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  totalItems={totalItems}
-                  itemsPerPage={itemsPerPage}
-                  onPageChange={setCurrentPage}
-                  itemLabel="casos"
+                <SearchField
+                  placeholder="Buscar caso, solicitante o aula..."
+                  value={searchTerm}
+                  onChange={(val) => {
+                    setSearchTerm(val)
+                    setCurrentPage(1)
+                  }}
                 />
-              }
-            >
-              {loading ? (
-                <AdaptiveSkeletonList count={4} />
-              ) : currentItems.length === 0 ? (
-                <div className="py-20 text-center px-4">
-                  <span className="material-symbols-outlined !text-[44px] text-slate-300">task_alt</span>
-                  <p className="mt-2 text-sm font-bold text-slate-700">Sin casos pendientes en esta cola</p>
-                  <p className="text-xs text-slate-400 mt-0.5">El filtro seleccionado se encuentra totalmente atendido.</p>
-                </div>
-              ) : (
-                <div className="divide-y" style={{ borderColor: 'var(--border-c)' }} role="list">
-                  {currentItems.map((item) => {
-                    const isSelected = inspectedCase?._id === item._id
-                    const isFocus = item.estado === 'en_progreso' || item.estado === 'en_atencion'
+
+                {/* Filtros rápidos por estado */}
+                <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-200/60 rounded-xl text-xs">
+                  {[
+                    { id: 'todos', label: 'Todos' },
+                    { id: 'en_atencion', label: 'En curso' },
+                    { id: 'por_iniciar', label: 'Por iniciar' },
+                    { id: 'esperando_usuario', label: 'En espera' },
+                  ].map((tab) => {
+                    const isTabActive = queueFilter === tab.id
                     return (
                       <button
-                        key={item._id}
+                        key={tab.id}
                         type="button"
-                        onClick={() => setActiveCaseId(item._id)}
-                        className={`w-full text-left p-4 transition-all cursor-pointer relative ${
-                          isSelected
-                            ? 'bg-surface-selected border-l-4 border-l-verde-sena'
-                            : 'hover:bg-surface-subtle'
+                        onClick={() => {
+                          setQueueFilter(tab.id as TecnicoQueueFilter)
+                          setCurrentPage(1)
+                        }}
+                        className={`flex-1 py-1 px-1.5 rounded-lg font-bold transition-all text-center cursor-pointer text-[11px] whitespace-nowrap ${
+                          isTabActive
+                            ? 'bg-white text-azul-sena shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
                         }`}
                       >
-                        {isFocus ? (
-                          <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300">
-                            En intervención
-                          </span>
-                        ) : null}
-
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <span className="font-mono text-xs font-bold text-azul-sena">
-                            #{item.codigoCaso || item._id.slice(-6)}
-                          </span>
-                          <span className="text-[11px] text-slate-400">· {item.fecha}</span>
-                        </div>
-
-                        <h3 className="text-[13px] font-bold text-slate-800 leading-snug line-clamp-2 mb-2">
-                          {item.descripcion}
-                        </h3>
-
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="font-medium text-slate-600 truncate max-w-[170px]">
-                            {typeof item.usuario === 'object' ? item.usuario?.nombre : 'Funcionario'}
-                          </span>
-                          <span className="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-verde-sena border border-emerald-200">
-                            {item.ambiente?.nombre || 'General'}
-                          </span>
-                        </div>
-
-                        <div className="mt-2.5 flex items-center justify-between">
-                          <StatusBadge status={item.estado} />
-                          {item.foto ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-azul-sena">
-                              <span className="material-symbols-outlined !text-[15px]">photo_camera</span>
-                              Foto adjunta
-                            </span>
-                          ) : null}
-                        </div>
+                        {tab.label}
                       </button>
+                    )
+                  })}
+                        </div>
+
+                {/* Filtro de Ruta por Ambiente / Bloque si hay múltiples */}
+                {ambientesDisponibles.length > 1 && (
+                  <div className="pt-0.5">
+                    <div className="flex items-center gap-1.5 overflow-x-auto py-1 px-0.5 no-scrollbar text-xs">
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider shrink-0 flex items-center gap-0.5">
+                        <span className="material-symbols-outlined !text-[13px]">domain</span>
+                        <span>Ambiente:</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedAmbienteFilter('todos')
+                          setCurrentPage(1)
+                        }}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer shrink-0 ${
+                          selectedAmbienteFilter === 'todos'
+                            ? 'bg-azul-sena text-white shadow-2xs'
+                            : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
+                        }`}
+                      >
+                        Todos ({cases.length})
+                      </button>
+                      {ambientesDisponibles.map((amb) => (
+                        <button
+                          key={amb.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedAmbienteFilter(amb.id)
+                            setCurrentPage(1)
+                          }}
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                            selectedAmbienteFilter === amb.id
+                              ? 'bg-azul-sena text-white shadow-2xs'
+                              : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
+                          }`}
+                        >
+                          <span className="truncate max-w-[120px]">{amb.nombre}</span>
+                          <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
+                            selectedAmbienteFilter === amb.id
+                              ? 'bg-white/25 text-white'
+                              : 'bg-slate-100 text-slate-500'
+                          }`}>
+                            {amb.count}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Lista de Casos */}
+              {loading ? (
+                <div className="p-4">
+                  <AdaptiveSkeletonList count={5} />
+                </div>
+              ) : fetchError ? (
+                <div className="p-5">
+                  <InlineAlert
+                    tone="danger"
+                    title="Fallo al obtener casos"
+                    action={{ label: 'Reintentar', onClick: () => void fetchCases() }}
+                  >
+                    {fetchError}
+                  </InlineAlert>
+                </div>
+              ) : filteredCases.length === 0 ? (
+                <div className="p-8 text-center text-slate-400">
+                  <SemanticIcon name="solucionado" className="!text-[36px] mx-auto text-slate-300 mb-2" />
+                  <p className="text-sm font-semibold text-slate-600">Sin incidencias en este filtro</p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    {searchTerm ? 'Prueba con otro término de búsqueda.' : 'No tienes casos pendientes bajo este criterio.'}
+                  </p>
+                            </div>
+              ) : (
+                <div className="divide-y divide-slate-100 max-h-[620px] overflow-y-auto" role="list">
+                  {currentItems.map((item, idx) => {
+                    const isSelected = activeJob?._id === item._id
+                    const isEsperando = item.estado === 'esperando_usuario' || item.estado === 'requiere_informacion'
+                    const isEnCurso = item.estado === 'en_progreso' || item.estado === 'en_atencion'
+                    const parsed = parseEnrichedDescription(item.descripcion)
+
+                    // OPP-1: Agrupador visual por proximidad física (Ambiente/Bloque)
+                    const prevItem = idx > 0 ? currentItems[idx - 1] : null
+                    const currentAmbienteName = item.ambiente?.nombre || 'General / Despacho'
+                    const prevAmbienteName = prevItem?.ambiente?.nombre || 'General / Despacho'
+                    const showClusterHeader = sortMode === 'location' && (idx === 0 || currentAmbienteName !== prevAmbienteName)
+
+                    return (
+                      <div key={item._id} className="flex flex-col">
+                        {showClusterHeader && (
+                          <div className="sticky top-0 z-10 bg-slate-100/95 backdrop-blur-xs px-3.5 py-1.5 border-y border-slate-200/80 flex items-center justify-between text-[11px] font-black text-slate-700 shadow-2xs">
+                            <div className="flex items-center gap-1.5">
+                              <span className="material-symbols-outlined !text-[15px] text-emerald-600">location_on</span>
+                              <span>{currentAmbienteName}</span>
+                            </div>
+                            <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                              Sector de Intervención
+                            </span>
+                          </div>
+                        )}
+                          <button 
+                          type="button"
+                          onClick={() => {
+                            setActiveCaseId(item._id)
+                            if (window.innerWidth < 1024) {
+                              window.scrollTo({ top: 120, behavior: 'smooth' })
+                            }
+                          }}
+                          className={`w-full text-left p-3 transition-all duration-200 ease-out flex flex-col gap-2 relative cursor-pointer group border-b border-slate-100 ${
+                            isSelected
+                              ? 'bg-blue-50/90 border-l-[4px] border-l-azul-sena shadow-xs ring-1 ring-blue-200/80 z-10'
+                              : isEnCurso
+                              ? 'bg-emerald-50/30 hover:bg-emerald-50/60 border-l-[4px] border-l-emerald-500'
+                              : isEsperando
+                              ? 'bg-amber-50/20 hover:bg-amber-50/40 border-l-[4px] border-l-amber-400 opacity-90'
+                              : 'bg-white hover:bg-slate-50/90 border-l-[4px] border-l-transparent hover:translate-x-0.5'
+                          }`}
+                        >
+                          {/* Fila 1: Código, Estado de Ejecución y StatusBadge */}
+                          <div className="flex items-center justify-between gap-1.5">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className={`font-mono text-xs font-black tracking-tight ${
+                                isSelected ? 'text-azul-sena' : 'text-slate-800'
+                              }`}>
+                                #{item.codigoCaso || item._id.slice(-6)}
+                              </span>
+                              {isEnCurso && (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-800 bg-emerald-100/90 px-1.5 py-0.5 rounded-full">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 animate-ping" />
+                                  <span>En atención</span>
+                                </span>
+                              )}
+                            </div>
+                            <div className="shrink-0">
+                              <StatusBadge status={item.estado} role="tecnico" />
+                            </div>
+                          </div>
+
+                          {/* Fila 2: Síntoma Visual Institucional + Badges de Alto Impacto */}
+                          {(() => {
+                            const symptom = detectVisualSymptom(parsed, item.descripcion)
+                            return (
+                              <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
+                                {/* Badge de Síntoma Visual 1:1 con el Funcionario */}
+                                <span className="font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/90 flex items-center gap-1">
+                                  <span className="material-symbols-outlined !text-[13px] text-azul-sena">{symptom.icono}</span>
+                                  <span>{symptom.titulo}</span>
+                                </span>
+
+                                {parsed.impactoServicio === 'atencion_publico' && (
+                                  <span className="font-black text-amber-950 bg-amber-100/90 px-2 py-0.5 rounded-md border border-amber-300 flex items-center gap-1 animate-pulse">
+                                    <span className="material-symbols-outlined !text-[12px] text-amber-700">emergency</span>
+                                    <span>Atención al Público</span>
+                                  </span>
+                                )}
+                                {parsed.modoExpress && (
+                                  <span className="font-black text-rose-950 bg-rose-100 px-2 py-0.5 rounded-md border border-rose-300 flex items-center gap-1">
+                                    <span className="material-symbols-outlined !text-[12px] text-rose-700 animate-bounce">bolt</span>
+                                    <span>Clase en Vivo</span>
+                                  </span>
+                                )}
+                              </div>
+                            )
+                          })()}
+
+                          {/* Fila 3: Título / Descripción limpia sin headers crudos */}
+                          <h3 className={`text-xs sm:text-[13px] font-bold line-clamp-2 leading-snug transition-colors ${
+                            isSelected ? 'text-slate-900 font-black' : 'text-slate-700 group-hover:text-slate-900'
+                          }`}>
+                            {parsed.rawDescription || item.descripcion}
+                          </h3>
+
+                          {/* Fila 4: Ubicación Unificada (Cero Duplicidad, Cero Ficha) + Solicitante */}
+                          {(() => {
+                            // Algoritmo de desduplicación territorial
+                            const baseAmbiente = item.ambiente?.nombre?.trim() || ''
+                            const oficina = parsed.oficina?.trim() || ''
+                            const puesto = parsed.puesto?.trim() || ''
+
+                            // Si oficina es idéntica o está contenida en baseAmbiente, no duplicar
+                            const isOficinaSame = oficina && baseAmbiente.toLowerCase().includes(oficina.toLowerCase())
+                            const isAmbienteSame = baseAmbiente && oficina.toLowerCase().includes(baseAmbiente.toLowerCase())
+                            
+                            const mainLocation = isOficinaSame || isAmbienteSame
+                              ? (baseAmbiente || oficina)
+                              : [baseAmbiente, oficina].filter(Boolean).join(' · ')
+
+                            const subLocation = puesto ? `Puesto ${puesto.replace(/^puesto\s*/i, '')}` : ''
+
+                            return (
+                              <div className="flex items-center justify-between gap-1 text-[11px] pt-1.5 border-t border-slate-100/80">
+                                <div className="flex items-center gap-1 min-w-0 font-bold text-slate-800 truncate" title={`${mainLocation} ${subLocation ? `(${subLocation})` : ''}`}>
+                                  <span className="material-symbols-outlined !text-[14px] text-emerald-600 shrink-0">location_on</span>
+                                  <span className="truncate">{mainLocation || 'General'}</span>
+                                  {subLocation && (
+                                    <span className="text-slate-500 font-semibold truncate shrink-0">
+                                      · {subLocation}
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div className="flex items-center gap-1 text-[11px] text-slate-500 shrink-0 max-w-[130px] truncate" title={typeof item.usuario === 'object' ? item.usuario?.nombre : 'Funcionario'}>
+                                  <span className="material-symbols-outlined !text-[13px] text-slate-400 shrink-0">person</span>
+                                  <span className="truncate">
+                                    {typeof item.usuario === 'object' ? item.usuario?.nombre : 'Funcionario'}
+                                  </span>
+                                </div>
+                              </div>
+                            )
+                          })()}
+                          </button>
+                        </div>
                     )
                   })}
                 </div>
               )}
-            </Pane>
-          }
-          detail={
-            <div>
-              {inspectedCase ? (
-                <div
-                  className="rounded-2xl border overflow-hidden sticky top-[72px]"
-                  style={{
-                    borderColor: 'var(--border-c)',
-                    boxShadow: 'var(--sh-sm)',
-                    background: 'var(--surface-0)',
+
+              {/* Paginación */}
+              {filteredCases.length > itemsPerPage ? (
+                <div className="border-t border-slate-200 bg-slate-50">
+                  <PaginationFooter
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalItems={filteredCases.length}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={setCurrentPage}
+                    itemLabel="solicitudes"
+                    className="!p-2.5"
+                  />
+                </div>
+              ) : null}
+
+            </div>
+          </div>
+
+          {/* COLUMNA DERECHA (7 cols en laptop 1280, 8 cols en XL): Consola de Intervención Técnica */}
+          <div className={`lg:col-span-7 xl:col-span-8 ${!activeCaseId ? 'hidden lg:block' : 'block'}`}>
+            
+            {/* Barra de Retorno Rápido en Mobile */}
+            <div className="mb-3 flex items-center justify-between lg:hidden">
+              <button
+                type="button"
+                onClick={() => setActiveCaseId(null)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-azul-sena hover:bg-slate-50 text-xs font-bold shadow-2xs transition-all active:scale-95 cursor-pointer"
+              >
+                <span className="material-symbols-outlined !text-[18px]">arrow_back</span>
+                <span>Volver a la cola de casos</span>
+              </button>
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                Consola de Campo
+              </span>
+            </div>
+
+            {loading ? (
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <AdaptiveSkeletonDetail />
+              </div>
+            ) : activeJob ? (
+              <div className="rounded-2xl border border-slate-200/80 bg-white shadow-xs overflow-hidden transition-all duration-300">
+                
+                {/* 1. PORTADA TÉCNICA DEL INCIDENTE (BENTO GRID OPERATIVO DEFINITIVO) */}
+                <IncidentHeaderABVariants
+                  solicitud={activeJob}
+                  copiedCode={copiedCode}
+                  onCopyCode={() => {
+                    const code = activeJob.codigoCaso || activeJob._id.slice(-6)
+                    void navigator.clipboard.writeText(code)
+                    setCopiedCode(true)
+                    setTimeout(() => setCopiedCode(false), 2000)
                   }}
-                >
-                  {/* Header of Detail Pane */}
-                  <div
-                    className="p-5 border-b"
-                    style={{ borderColor: 'var(--border-c)', background: 'var(--surface-1)' }}
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-lg bg-surface border border-border-subtle text-azul-sena">
-                          #{inspectedCase.codigoCaso || inspectedCase._id.slice(-6)}
+                />
+
+                <div className="p-4 sm:p-6 space-y-4 sm:space-y-5">
+                  
+                  {/* 2. COMMAND ACTION DECK: Acciones Operativas Claras */}
+                  <div className="rounded-2xl border border-slate-200 bg-gradient-to-r from-slate-50/90 via-white to-blue-50/40 p-4 sm:p-5 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1.5 text-azul-sena">
+                        <span className="material-symbols-outlined !text-[15px]">tune</span>
+                        <span className="text-[11px] font-black uppercase tracking-wider font-mono">
+                          Consola de Acción en Sitio
                         </span>
-                        <StatusBadge status={inspectedCase.estado} />
                       </div>
-                      <span className="text-xs text-slate-400 font-medium">
-                        Fecha: {inspectedCase.fecha}
-                      </span>
-                    </div>
-                    <h2 className="text-base font-bold text-azul-sena leading-snug">
-                      {inspectedCase.descripcion}
-                    </h2>
-                  </div>
-
-                  {/* Body Details */}
-                  <div className="p-5 space-y-5">
-                    {/* Metadata Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="p-3.5 rounded-xl border border-border-subtle bg-surface-subtle">
-                        <span className="text-[10px] font-black uppercase text-slate-400">Funcionario</span>
-                        <p className="text-xs font-bold text-azul-sena mt-0.5 truncate">
-                          {typeof inspectedCase.usuario === 'object'
-                            ? inspectedCase.usuario?.nombre
-                            : 'Desconocido'}
-                        </p>
-                        <p className="text-[11px] text-slate-500 mt-0.5">
-                          {inspectedCase.telefono ? `Tel: ${inspectedCase.telefono}` : 'Sin teléfono'}
-                        </p>
-                      </div>
-                      <div className="p-3.5 rounded-xl border border-border-subtle bg-surface-subtle">
-                        <span className="text-[10px] font-black uppercase text-slate-400">Ubicación Física</span>
-                        <p className="text-xs font-bold text-azul-sena mt-0.5 truncate">
-                          {inspectedCase.ambiente?.nombre || 'General'}
-                        </p>
-                        <p className="text-[11px] text-slate-500 mt-0.5">Sede CTPI</p>
-                      </div>
+                      <p className="text-sm font-bold text-slate-900 tracking-tight leading-snug">
+                        {isAsignado
+                          ? 'Confirma tu desplazamiento o inicio de atención en el ambiente.'
+                          : isEsperandoUsuario
+                          ? 'Intervención en pausa. Esperando que el funcionario responda o brinde acceso.'
+                          : isEnAtencion
+                          ? 'Intervención técnica en curso. Registra bitácora o concluye la solución.'
+                          : 'Requerimiento resuelto.'}
+                      </p>
                     </div>
 
-                    {/* Evidence Viewer if present */}
-                    {inspectedCase.foto ? (
-                      <div className="p-4 rounded-xl border border-border-subtle bg-surface-subtle">
-                        <p className="text-xs font-bold text-azul-sena mb-2.5 flex items-center gap-1.5">
-                          <span className="material-symbols-outlined !text-[18px]">photo_camera</span>
-                          Evidencia Fotográfica del Fallo
-                        </p>
-                        <div className="flex items-center gap-4">
+                    <div className="flex flex-wrap items-center gap-2 shrink-0">
+                      {isAsignado ? (
+                        <>
+                          {/* P2: Acción 1-Clic "En camino al aula" (Aviso en tiempo real + Inicio formal) */}
                           <button
                             type="button"
-                            onClick={() => setPreviewImage(inspectedCase.foto?.url || null)}
-                            className="h-20 w-28 rounded-xl overflow-hidden border border-border-subtle group relative cursor-pointer"
+                            onClick={async () => {
+                              await runStart(activeJob._id)
+                              await handleSaveUpdate('🏃 Especialista técnico en camino al ambiente con herramientas y repuestos (ETA ~5 min).')
+                            }}
+                            className="group relative inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-azul-sena to-blue-800 hover:from-blue-900 hover:to-slate-900 text-white font-bold text-xs sm:text-sm shadow-sm hover:shadow-md active:scale-95 transition-all cursor-pointer"
                           >
-                            <img
-                              src={inspectedCase.foto.url}
-                              alt="Evidencia fotográfica"
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                            />
-                            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
-                              <span className="material-symbols-outlined !text-[18px]">zoom_in</span>
-                            </div>
+                            <span className="material-symbols-outlined !text-[18px]">directions_run</span>
+                            <span>En camino al aula (~5 min)</span>
                           </button>
-                          <div className="text-xs text-slate-500 space-y-0.5">
-                            <p className="font-bold text-slate-700">Captura adjunta por el usuario</p>
-                            <p>Haz clic sobre la imagen para abrirla en alta resolución.</p>
-                          </div>
-                        </div>
-                      </div>
-                    ) : null}
 
-                    {/* Operational Action Bar */}
-                    <div className="pt-2 border-t border-border-subtle space-y-3">
-                      <p className="text-xs font-black uppercase tracking-wider text-slate-400">
-                        Acciones Operativas Disponibles
-                      </p>
+                          <button
+                            type="button"
+                            onClick={() => void runStart(activeJob._id)}
+                            className="group relative inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-bold text-xs sm:text-sm shadow-sm hover:shadow-md active:scale-95 transition-all cursor-pointer"
+                          >
+                            <span className="material-symbols-outlined !text-[18px]">play_arrow</span>
+                            <span>Iniciar en sitio</span>
+                          </button>
+                        </>
+                      ) : null}
 
-                      {inspectedCase.workflowVersion === 2 ? (
-                        <div className="flex flex-wrap items-center gap-2.5">
-                          {inspectedCase.capabilities?.canStart ? (
-                            <Button
-                              variant="primary"
-                              size="md"
-                              onClick={() => runStart(inspectedCase._id)}
-                              icon="play_arrow"
-                            >
-                              Iniciar atención en sitio
-                            </Button>
-                          ) : null}
+                      {isEnAtencion ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setInterventionInitialTab('bitacora')
+                              setIsInterventionModalOpen(true)
+                            }}
+                            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs sm:text-sm shadow-2xs transition-all cursor-pointer active:scale-95"
+                            title="Abrir centro de intervención: registrar avances en bitácora o consultar al funcionario"
+                          >
+                            <span className="material-symbols-outlined !text-[18px] text-azul-sena">rate_review</span>
+                            <span>Intervención de Campo</span>
+                          </button>
 
-                          {inspectedCase.capabilities?.canUpdate ? (
-                            <Button
-                              variant="secondary"
-                              size="md"
-                              onClick={() => {
-                                setWorkflowError(null)
-                                setWorkflowLastPayload(undefined)
-                                setWorkflowTarget(inspectedCase)
-                                setWorkflowKind('update')
-                              }}
-                              icon="edit_note"
-                            >
-                              Bitácora
-                            </Button>
-                          ) : null}
-
-                          {inspectedCase.capabilities?.canRequestInfo ? (
-                            <Button
-                              variant="secondary"
-                              size="md"
-                              onClick={() => {
-                                setWorkflowError(null)
-                                setWorkflowLastPayload(undefined)
-                                setWorkflowTarget(inspectedCase)
-                                setWorkflowKind('info')
-                              }}
-                              icon="help_outline"
-                            >
-                              Solicitar información
-                            </Button>
-                          ) : null}
-
-                          {inspectedCase.capabilities?.canResolve ? (
-                            <Button
-                              variant="success"
-                              size="md"
-                              onClick={() => {
-                                setWorkflowError(null)
-                                setWorkflowLastPayload(undefined)
-                                setWorkflowTarget(inspectedCase)
-                                setWorkflowKind('total')
-                              }}
-                              icon="task_alt"
-                            >
-                              Finalizar caso técnico
-                            </Button>
-                          ) : null}
-                        </div>
-                      ) : (
-                        <Button
-                          variant="success"
-                          size="md"
-                          onClick={() => openModal(inspectedCase)}
-                          icon="check_circle"
-                        >
-                          Formalizar resolución del caso
-                        </Button>
-                      )}
+                          <button
+                            type="button"
+                            onClick={() => handleOpenResolutionModal(activeJob)}
+                            className="group relative inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2 rounded-xl bg-gradient-to-r from-verde-sena to-[#2e8800] hover:from-[#329600] hover:to-[#277400] text-white font-black text-xs sm:text-sm shadow-sm hover:shadow-md active:scale-95 transition-all cursor-pointer"
+                          >
+                            <span className="material-symbols-outlined !text-[18px]">task_alt</span>
+                            <span>Formalizar Solución</span>
+                          </button>
+                        </>
+                      ) : null}
                     </div>
                   </div>
-                </div>
-              ) : (
-                <div className="rounded-2xl border border-dashed border-border-strong bg-surface p-12 text-center">
-                  <p className="text-base font-bold text-azul-sena">Selecciona un caso de la cola</p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    La evidencia, la bitácora y los botones de resolución se muestran en este panel contextual.
-                  </p>
-                </div>
-              )}
+
+                  {/* Retry notice ante errores de red o concurrencia */}
+                  {startRetry && startRetry.id === activeJob._id ? (
+                    <WorkflowManualRetryNotice
+                      error={startRetry.error}
+                      lastPayload={{ id: startRetry.id }}
+                      currentPayload={{ id: startRetry.id }}
+                      onRetry={() => void runStart(startRetry.id)}
+                    />
+                  ) : null}
+
+                  {/* 3. FIELD CONTEXT CARDS: Ubicación física exacta + Contacto directo */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                    
+                    {/* Ficha Ambiente / Ubicación Física Enriquecida */}
+                    {(() => {
+                      const parsedLocation = parseEnrichedDescription(activeJob.descripcion)
+                      const oficinaName = parsedLocation.oficina?.trim()
+                      const puestoName = parsedLocation.puesto?.trim()
+                      const baseAmb = activeJob.ambiente?.nombre || 'General'
+                      const isOficinaSame = oficinaName && baseAmb.toLowerCase().includes(oficinaName.toLowerCase())
+                      const displayTitle = isOficinaSame || !oficinaName ? baseAmb : `${baseAmb} · ${oficinaName}`
+
+                      return (
+                        <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-2xs space-y-2.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5 font-mono">
+                              <span className="material-symbols-outlined !text-[16px] text-emerald-600">apartment</span>
+                              Ubicación Presencial / Aula
+                            </span>
+                            <span className="text-[11px] font-bold text-emerald-700 tracking-tight">
+                              Soporte en Sitio
+                            </span>
+                          </div>
+
+                          <div className="flex items-start gap-3 pt-0.5">
+                            <div className="h-10 w-10 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 font-black flex items-center justify-center text-xs shadow-2xs shrink-0 mt-0.5">
+                              CTPI
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm sm:text-base font-black text-slate-900 tracking-tight truncate">
+                                {displayTitle}
+                              </p>
+                              {puestoName ? (
+                                <p className="text-xs font-bold text-slate-700 flex items-center gap-1 mt-0.5">
+                                  <span className="material-symbols-outlined !text-[14px] text-azul-sena">desktop_windows</span>
+                                  <span>{puestoName.startsWith('Puesto') || puestoName.startsWith('Ventanilla') ? puestoName : `Puesto: ${puestoName}`}</span>
+                                </p>
+                              ) : (
+                                <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                                  Sede Central CTPI · Verifica el aula o puesto asignado
+                                </p>
+                              )}
+
+                              {(parsedLocation.ficha || parsedLocation.jornada) && (
+                                <div className="flex flex-wrap items-center gap-2 mt-1.5 text-[11px] text-slate-500 font-medium">
+                                  {parsedLocation.ficha && (
+                                    <span className="inline-flex items-center gap-1">
+                                      <span className="material-symbols-outlined !text-[13px] text-slate-400">school</span>
+                                      Ficha: {parsedLocation.ficha}
+                                    </span>
+                                  )}
+                                  {parsedLocation.jornada && (
+                                    <span className="inline-flex items-center gap-1">
+                                      <span className="material-symbols-outlined !text-[13px] text-amber-500">wb_sunny</span>
+                                      Jornada: {parsedLocation.jornada}
+                                    </span>
+                                  )}
+                      </div>
+                )}
+          </div>
+                          </div>
+                        </div>
+                      )
+                    })()}
+
+                    {/* Ficha Funcionario Solicitante con llamada directa de un toque */}
+                    <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-2xs space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5 font-mono">
+                          <span className="material-symbols-outlined !text-[16px] text-azul-sena">person</span>
+                          Funcionario Solicitante
+                        </span>
+                        <span className="text-[11px] font-bold text-azul-sena tracking-tight">
+                          Usuario SENA
+                        </span>
             </div>
-          }
-        />
-      </WorkCanvas>
 
-      {/* Legacy/Modal Resolution */}
-      {selectedCase && (
-        <ResolutionModal
-          isOpen={modalIsOpen}
-          onRequestClose={closeModal}
-          onSubmit={handleSubmit}
-          solutionDescription={selectedCase.solucion ?? ''}
-          setSolutionDescription={(value) => setSelectedCase({ ...selectedCase, solucion: value })}
-          caseType={selectedCase.tipoCaso ?? ''}
-          setCaseType={(value) => setSelectedCase({ ...selectedCase, tipoCaso: value })}
-          solutionType={selectedCase.tipoSolucion ?? ''}
-          setSolutionType={(value) => setSelectedCase({ ...selectedCase, tipoSolucion: value })}
-          caseTypes={caseTypes}
-        />
-      )}
+                      <div className="flex items-center justify-between gap-2 pt-0.5">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="h-10 w-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-azul-sena text-white font-black flex items-center justify-center text-xs shadow-2xs shrink-0">
+                            {funcionarioNombre[0]?.toUpperCase() || 'U'}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs sm:text-sm font-bold text-slate-900 leading-tight truncate">
+                              {funcionarioNombre}
+                            </p>
+                            <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                              {funcionarioTelefono ? `Cel: ${funcionarioTelefono}` : funcionarioEmail || 'Sin teléfono'}
+                            </p>
+                          </div>
+                        </div>
 
-      {/* Image Preview Modal */}
-      {previewImage && (
-        <div
-          className="fixed inset-0 z-[150] bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 cursor-zoom-out"
-          onClick={() => setPreviewImage(null)}
-        >
-          <div
-            className="relative max-w-4xl max-h-[90vh] bg-white rounded-2xl p-2 overflow-hidden shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <img
-              src={previewImage}
-              alt="Evidencia ampliada"
-              className="max-h-[85vh] w-auto object-contain rounded-xl"
-            />
-            <button
-              type="button"
-              onClick={() => setPreviewImage(null)}
-              className="absolute top-4 right-4 bg-black/70 hover:bg-black text-white p-2 rounded-full cursor-pointer"
-              aria-label="Cerrar vista previa"
-            >
-              <span className="material-symbols-outlined !text-[20px]">close</span>
-            </button>
+                        {funcionarioTelefono && (
+                          <a
+                            href={`tel:${funcionarioTelefono}`}
+                            className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all shadow-2xs cursor-pointer flex items-center justify-center active:scale-95 shrink-0"
+                            title="Llamar directamente al funcionario"
+                          >
+                            <span className="material-symbols-outlined !text-[18px]">call</span>
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 4. INSPECCIÓN TÉCNICA DE EVIDENCIA: Foto del fallo con visor zoom */}
+                  {activeJob.foto && (
+                    <div className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xs hover:border-slate-300 transition-all">
+                      <div className="grid grid-cols-1 md:grid-cols-12 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+                        <div className="md:col-span-7 xl:col-span-8 p-4 sm:p-5 flex flex-col justify-between gap-3">
+                          <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
+                              <div className="h-8 w-8 rounded-xl bg-blue-50 border border-blue-200 text-azul-sena flex items-center justify-center shrink-0">
+                                <span className="material-symbols-outlined !text-[18px]">image_search</span>
+                              </div>
+                              <div>
+                                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block font-mono">
+                                  Inspección Visual Previa
+                                </span>
+                                <h4 className="text-xs sm:text-sm font-black text-slate-900">
+                                  Evidencia del Fallo Adjuntada por el Funcionario
+                                </h4>
+                              </div>
+                            </div>
+                            <p className="text-xs text-slate-500 leading-relaxed pt-1">
+                              Examina la fotografía antes de dirigirte al ambiente para preparar las herramientas, cables de repuesto o controladores adecuados.
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-3 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => setPreviewImage(activeJob.foto?.url || '')}
+                              className="inline-flex items-center gap-1.5 text-xs font-black text-azul-sena hover:underline cursor-pointer"
+                            >
+                              <span className="material-symbols-outlined !text-[16px]">zoom_in</span>
+                              <span>Ampliar fotografía de falla</span>
+              </button>
+                          </div>
+                        </div>
+
+                        <div className="md:col-span-5 xl:col-span-4 p-3 bg-slate-50/70 flex items-center justify-center">
+                          <button
+                            type="button"
+                            onClick={() => setPreviewImage(activeJob.foto?.url || '')}
+                            className="group relative w-full h-32 sm:h-36 md:h-28 rounded-xl overflow-hidden border border-slate-200 shadow-2xs hover:shadow-md transition-all cursor-pointer"
+                            title="Clic para ampliar en alta definición"
+                          >
+                            <img
+                              src={activeJob.foto?.url}
+                              alt="Evidencia del fallo"
+                              className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
+                            <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1 text-white text-xs font-bold backdrop-blur-2xs">
+                              <span className="material-symbols-outlined !text-[16px]">fullscreen</span>
+                              <span>Inspeccionar</span>
+                            </div>
+              </button>
+            </div>
+          </div>
+                    </div>
+                  )}
+
+                  {/* 5. TRAZABILIDAD & HISTORIAL SINCRONIZADO 1:1 CON FUNCIONARIO */}
+                  <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 space-y-5 shadow-2xs">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-black uppercase tracking-wider text-azul-sena font-mono">
+                            Línea de Vida Operativa ·
+                          </span>
+                          <h3 className="text-sm font-black text-slate-900">Estado de Atención en Campo</h3>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-0.5">Control de avance de tu intervención y trazabilidad con el funcionario</p>
+                      </div>
+
+                      {/* BOTÓN DISPARADOR: HISTORIAL EN STEPPER SINCRONIZADO */}
+                      <button
+                        type="button"
+                        onClick={() => setIsTimelineDrawerOpen(true)}
+                        className="group inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-900 font-black text-xs transition-all cursor-pointer active:scale-95"
+                      >
+                        <span className="material-symbols-outlined !text-[17px] text-emerald-700">history_edu</span>
+                        <span>Ver Historial del Caso</span>
+                      </button>
+                    </div>
+
+                    {/* Stepper inteligente de 4 fases */}
+                    <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-4 gap-2.5 sm:gap-3">
+                      {stepsConfig.map((st) => {
+                        const status = getStepStatus(st.num)
+                        const isCompleted = status === 'completed'
+                        const isCurrent = status === 'current'
+
+                        const currentStyle = isCurrent
+                          ? st.activeColor
+                          : isCompleted
+                          ? st.completedColor
+                          : {
+                              border: 'border-slate-100',
+                              bg: 'bg-slate-50/50 opacity-60',
+                              badge: 'bg-slate-200 text-slate-500',
+                              text: 'text-slate-500',
+                              icon: 'text-slate-400',
+                            }
+
+                        return (
+                          <div
+                            key={st.num}
+                            onClick={() => setIsTimelineDrawerOpen(true)}
+                            className={`relative p-3.5 rounded-xl border transition-all cursor-pointer hover:ring-2 hover:ring-azul-sena/40 hover:scale-[1.02] ${currentStyle.border} ${currentStyle.bg}`}
+                            title="Clic para abrir el historial sincronizado"
+                          >
+                            <div className="flex items-center justify-between gap-1.5 mb-2">
+                              <div className="flex items-center gap-2">
+                                <div
+                                  className={`h-6 w-6 rounded-lg flex items-center justify-center text-xs font-black shadow-2xs shrink-0 ${currentStyle.badge}`}
+                                >
+                                  {isCompleted ? '✓' : st.num}
+                                </div>
+                                <span className={`text-xs font-black tracking-tight ${currentStyle.text}`}>
+                                  {st.title}
+                                </span>
+                              </div>
+
+                              <span
+                                className={`material-symbols-outlined !text-[16px] shrink-0 ${
+                                  isCurrent
+                                    ? currentStyle.text
+                                    : isCompleted
+                                    ? 'text-slate-500'
+                                    : 'text-slate-300'
+                                }`}
+                              >
+                                {st.icon}
+                              </span>
+                            </div>
+
+                            <p className="text-[11px] text-slate-500 leading-tight">
+                              {st.subtitle}
+                            </p>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-xs">
+                <span className="material-symbols-outlined !text-[48px] text-slate-300 mx-auto mb-3">
+                  pending_actions
+                </span>
+                <h3 className="text-base font-bold text-slate-700">Sin Caso Seleccionado</h3>
+                <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                  Selecciona una de las solicitudes de tu cola asignada para iniciar atención o consultar el expediente técnico.
+                </p>
+              </div>
+            )}
           </div>
         </div>
-      )}
 
-      {/* Workflow Action Slide-over Drawer */}
-      <SlideOverDrawer
-        isOpen={Boolean(workflowTarget && workflowKind)}
-        onClose={closeWorkflowModal}
-        title={
-          workflowKind === 'update'
-            ? 'Registrar Avance en Bitácora'
-            : workflowKind === 'info'
-              ? 'Solicitar Información al Funcionario'
-              : workflowKind === 'partial'
-                ? 'Registrar Solución Parcial'
-                : 'Registrar Solución Total y Conclusión'
-        }
-        subtitle={
-          workflowTarget
-            ? `Caso #${workflowTarget.codigoCaso || workflowTarget._id.slice(-6)} · Registro con trazabilidad inmediata`
-            : undefined
-        }
-        width="lg"
-        footer={
-          <>
-            <Button variant="secondary" size="md" onClick={closeWorkflowModal}>
-              Cancelar
-            </Button>
-            <Button variant="primary" size="md" onClick={() => void submitWorkflow()} icon="save">
-              Guardar Registro
-            </Button>
-          </>
-        }
-      >
-        {workflowKind === 'update' || workflowKind === 'info' ? (
-          <div className="space-y-2">
-            <label className="text-xs font-semibold text-slate-700">
-              {workflowKind === 'update'
-                ? 'Detalle de la actividad técnica'
-                : 'Información requerida del usuario'}
-            </label>
-            <textarea
-              className="w-full min-h-36 rounded-xl border border-border-subtle p-3.5 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-shadow"
-              placeholder={
-                workflowKind === 'update'
-                  ? 'Escribe qué pruebas, diagnósticos o ajustes realizaste en sitio...'
-                  : 'Indica con claridad qué datos o validaciones requieres del funcionario...'
-              }
-              value={workflowText.mensaje}
-              onChange={(event) => setWorkflowText((prev) => ({ ...prev, mensaje: event.target.value }))}
-            />
-          </div>
-        ) : (
-          <div className="flex flex-col gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-700">
-                Acciones de resolución implementadas
-              </label>
-              <textarea
-                className="w-full min-h-28 rounded-xl border border-border-subtle p-3.5 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-shadow"
-                placeholder="Describe concretamente la solución aplicada a los equipos o software..."
-                value={workflowText.queSeHizo}
-                onChange={(event) => setWorkflowText((prev) => ({ ...prev, queSeHizo: event.target.value }))}
+        {/* MODAL UNIFICADO CON TABS: INTERVENCIÓN OPERATIVA (BITÁCORA & CONSULTA) */}
+        <InterventionActionModal
+          isOpen={isInterventionModalOpen}
+          initialTab={interventionInitialTab}
+          solicitud={activeJob}
+          onClose={() => setIsInterventionModalOpen(false)}
+          onSaveBitacora={handleSaveUpdate}
+          onRequestInfo={handleRequestInfo}
+        />
+
+        {/* MODAL DE SOLUCIÓN FORMAL */}
+          <ResolutionModal
+            isOpen={modalIsOpen}
+          onRequestClose={handleCloseResolutionModal}
+          onSubmit={handleFormSubmit}
+          caso={selectedCase}
+            caseTypes={caseTypes}
+          />
+
+        {/* MODAL DE IMAGEN EN PANTALLA COMPLETA */}
+        {previewImage && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md cursor-pointer animate-in fade-in duration-200"
+            onClick={() => setPreviewImage(null)}
+          >
+            <div className="relative max-w-4xl max-h-[90vh] overflow-hidden rounded-2xl shadow-2xl border border-white/20">
+              <img
+                src={previewImage}
+                alt="Evidencia en tamaño completo"
+                className="max-h-[85vh] w-auto object-contain rounded-xl"
               />
+              <button
+                type="button"
+                onClick={() => setPreviewImage(null)}
+                className="absolute top-3 right-3 h-9 w-9 rounded-full bg-slate-900/80 text-white flex items-center justify-center hover:bg-slate-900 transition-all cursor-pointer"
+              >
+                <span className="material-symbols-outlined !text-[20px]">close</span>
+              </button>
             </div>
-            {workflowKind === 'partial' ? (
-              <>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-700">
-                    Pendientes identificados
-                  </label>
-                  <textarea
-                    className="w-full min-h-20 rounded-xl border border-border-subtle p-3 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-shadow"
-                    placeholder="Qué parte queda pendiente por repuestos, garantías o autorizaciones..."
-                    value={workflowText.queFalta}
-                    onChange={(event) => setWorkflowText((prev) => ({ ...prev, queFalta: event.target.value }))}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-700">
-                    Siguiente acción coordinada
-                  </label>
-                  <textarea
-                    className="w-full min-h-20 rounded-xl border border-border-subtle p-3 text-sm bg-surface text-ink focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-shadow"
-                    placeholder="Paso a seguir y fecha estimada de continuación..."
-                    value={workflowText.siguienteAccion}
-                    onChange={(event) => setWorkflowText((prev) => ({ ...prev, siguienteAccion: event.target.value }))}
-                  />
-                </div>
-              </>
-            ) : null}
           </div>
         )}
 
-        <WorkflowManualRetryNotice
-          error={workflowError}
-          lastPayload={workflowLastPayload}
-          currentPayload={currentWorkflowPayload()}
-          onRetry={() => void submitWorkflow(workflowLastPayload)}
-        />
-      </SlideOverDrawer>
+        {/* ========================================================================= */}
+        {/* DRAWER CANÓNICO: STEPPER SINCRONIZADO (1:1 CON FUNCIONARIO)               */}
+        {/* ========================================================================= */}
+        {isTimelineDrawerOpen && activeJob && (
+          <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/50 backdrop-blur-xs animate-in fade-in duration-200">
+            <div className="w-full sm:max-w-lg bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+              <div className="p-4 sm:p-5 border-b border-emerald-100 bg-gradient-to-r from-emerald-50/80 via-white to-sky-50/60">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2 sm:gap-2.5">
+                    <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-xs shrink-0">
+                      <span className="material-symbols-outlined !text-[18px] sm:!text-[20px]">sync</span>
+                    </div>
+                    <div>
+                      <h3 className="text-xs sm:text-sm font-black text-slate-900">Historial Sincronizado</h3>
+                      <p className="text-[11px] sm:text-xs text-slate-500">Mapeado con el stepper de 4 etapas</p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsTimelineDrawerOpen(false)}
+                    className="p-1.5 sm:p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-all cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined !text-[20px]">close</span>
+                  </button>
+                </div>
+
+                {/* Micro-Stepper dentro del Header del Drawer */}
+                <div className="grid grid-cols-4 gap-1 sm:gap-1.5 pt-1">
+                  {stepsConfig.map((s) => {
+                    const isDone = getStepStatus(s.num) === 'completed'
+                    const isCurr = getStepStatus(s.num) === 'current'
+                    return (
+                      <div
+                        key={s.num}
+                        className={`p-1 sm:p-1.5 rounded-lg text-center text-[9px] sm:text-[10px] font-bold border transition-all ${
+                          isCurr
+                            ? 'bg-white border-emerald-400 text-emerald-800 shadow-2xs font-black'
+                            : isDone
+                            ? 'bg-emerald-100/70 border-emerald-200 text-emerald-800'
+                            : 'bg-slate-100/60 border-slate-200/60 text-slate-400'
+                        }`}
+                      >
+                        <span className="block truncate">
+                          {s.num}. {s.title}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6 hairline-scrollbar">
+                {loadingHistorial && !liveHistorial ? (
+                  <div className="flex items-center justify-center p-8 space-x-2 text-slate-500">
+                    <span className="material-symbols-outlined animate-spin">progress_activity</span>
+                    <span className="text-xs font-bold">Sincronizando historial en tiempo real...</span>
+                  </div>
+                ) : (
+                  <FuncionarioTimeline
+                    solicitud={enrichedActiveJob || activeJob}
+                    onOpenPreview={(url) => setPreviewImage(url)}
+                  />
+                )}
+              </div>
+
+              <div className="p-3.5 sm:p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
+                <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">
+                  Trazabilidad Institucional SENA
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsTimelineDrawerOpen(false)}
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 active:scale-95 transition-all cursor-pointer text-center"
+                >
+                  Cerrar Historial
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+      </div>
     </AppShell>
   )
 }

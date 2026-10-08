@@ -8,25 +8,6 @@ interface HistorialFuncionarioProps {
   refreshKey: number
 }
 
-function getWorkflowStep(estado: string): { step: number; label: string } {
-  switch (estado) {
-    case 'solicitado':
-    case 'nuevo':
-      return { step: 1, label: 'Radicado' }
-    case 'asignado':
-      return { step: 2, label: 'Asignado a Técnico' }
-    case 'en_progreso':
-    case 'en_atencion':
-    case 'esperando_usuario':
-      return { step: 3, label: 'En Atención Activa' }
-    case 'resuelto':
-    case 'finalizado':
-    case 'cerrado':
-      return { step: 4, label: 'Resuelto' }
-    default:
-      return { step: 1, label: estado }
-  }
-}
 
 export default function HistorialFuncionario({ refreshKey }: HistorialFuncionarioProps): ReactNode {
   const [historial, setHistorial] = useState<Solicitud[]>([])
@@ -76,7 +57,6 @@ export default function HistorialFuncionario({ refreshKey }: HistorialFuncionari
   const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem)
 
   const selectedCase = historial.find(s => s._id === selectedTicketId) || currentItems[0] || null
-  const currentStepInfo = selectedCase ? getWorkflowStep(selectedCase.estado) : { step: 1, label: 'Radicado' }
 
   return (
     <section className="space-y-6">
@@ -194,33 +174,25 @@ export default function HistorialFuncionario({ refreshKey }: HistorialFuncionari
                 </span>
               </div>
 
-              {/* Progress Stepper Timeline */}
-              <div className="rounded-xl p-5" style={{ background: 'var(--surface-1)', border: '1px solid var(--border-c)' }}>
-                <p className="text-overline mb-4">Etapa del requerimiento</p>
-                <div className="stepper grid-cols-4 text-center">
-                  {[
-                    { step: 1, name: 'Radicado' },
-                    { step: 2, name: 'Asignado' },
-                    { step: 3, name: 'En atención' },
-                    { step: 4, name: 'Resuelto' }
-                  ].map((s) => {
-                    const isCompleted = currentStepInfo.step > s.step
-                    const isCurrent = currentStepInfo.step === s.step
-                    return (
-                      <div key={s.step} className="stepper-step">
-                        <div className={`stepper-dot ${isCurrent ? 'current' : isCompleted ? 'done' : 'pending'}`}>
-                          {isCompleted ? (
-                            <span className="material-symbols-outlined !text-[15px]">check</span>
-                          ) : (
-                            s.step
-                          )}
-                        </div>
-                        <span className={`stepper-label ${isCurrent ? 'current' : isCompleted ? 'done' : ''}`}>
-                          {s.name}
-                        </span>
-                      </div>
-                    )
-                  })}
+              {/* Contextual Status Banner (Clean & Non-redundant) */}
+              <div
+                className="rounded-xl p-4 flex items-center justify-between border"
+                style={{ background: 'var(--surface-1)', borderColor: 'var(--border-c)' }}
+              >
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Estado de Atención</p>
+                  <p className="text-xs font-bold text-azul-sena mt-0.5">
+                    {selectedCase.estado === 'resuelto' || selectedCase.estado === 'finalizado'
+                      ? 'Incidencia atendida y resuelta formalmente'
+                      : selectedCase.estado === 'en_progreso' || selectedCase.estado === 'en_atencion'
+                      ? 'En intervención presencial activa en sitio'
+                      : selectedCase.estado === 'asignado'
+                      ? 'Asignada y en agenda de especialista técnico'
+                      : 'Radicado y pendiente de asignación'}
+                  </p>
+                </div>
+                <div className="shrink-0">
+                  <StatusBadge status={selectedCase.estado} />
                 </div>
               </div>
 

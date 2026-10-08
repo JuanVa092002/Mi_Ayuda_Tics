@@ -1,7 +1,7 @@
 import { useState, useEffect, type FormEvent } from 'react'
 import LeaderLayout from '@/app/layouts/LeaderLayout'
 import { getCasos, createCaso, updateCaso } from '@/features/tickets'
-import { toast } from 'react-toastify'
+import { Button, PaginationFooter, toast } from '@/shared/ui'
 import type { TipoCaso } from '@/shared/types'
 
 export default function AdminCasos() {
@@ -123,23 +123,25 @@ export default function AdminCasos() {
 
                     <div className="flex gap-3 pt-2">
                       {editMode && (
-                        <button
+                        <Button
                           type="button"
+                          variant="secondary"
+                          size="md"
                           onClick={resetForm}
-                          className="flex-1 py-3 rounded-2xl border hairline-border border-slate-200 text-on-surface-variant font-bold text-xs hover:bg-slate-50 transition-all"
+                          className="flex-1"
                         >
                           Cancelar
-                        </button>
+                        </Button>
                       )}
-                      <button
+                      <Button
                         type="submit"
-                        className="flex-1 py-3 rounded-2xl bg-primary-container text-white font-bold text-xs hover:translate-y-[-1px] active:translate-y-[0px] transition-all shadow-lg shadow-primary-container/20 flex items-center justify-center gap-2"
+                        variant="primary"
+                        size="md"
+                        icon={editMode ? 'save' : 'add_circle'}
+                        className="flex-1 font-bold"
                       >
-                        <span className="material-symbols-outlined !text-[18px]">
-                          {editMode ? 'save' : 'add_circle'}
-                        </span>
                         {editMode ? 'Actualizar' : 'Crear'}
-                      </button>
+                      </Button>
                     </div>
                   </form>
                 </div>
@@ -193,13 +195,16 @@ export default function AdminCasos() {
                                 </p>
                               </td>
                               <td className="premium-td text-center">
-                                <button 
+                                <Button 
+                                  variant="secondary"
+                                  size="sm"
                                   onClick={() => handleEdit(row)}
-                                  className="w-9 h-9 rounded-xl bg-slate-50 border hairline-border border-slate-200 flex items-center justify-center text-slate-400 hover:text-primary-container hover:bg-primary-container/5 hover:border-primary-container/20 transition-all active:scale-95 group/btn"
-                                  title="Editar categoría"
+                                  icon="edit_note"
+                                  className="!h-8 !w-8 !p-0"
+                                  aria-label="Editar categoría"
                                 >
-                                  <span className="material-symbols-outlined !text-[18px] group-hover/btn:rotate-12 transition-transform">edit_note</span>
-                                </button>
+                                  {''}
+                                </Button>
                               </td>
                             </tr>
                           ))
@@ -218,28 +223,14 @@ export default function AdminCasos() {
                   </div>
 
                   {/* Pagination Footer */}
-                  <div className="p-6 border-t hairline-border border-slate-100 flex justify-between items-center bg-slate-50/30">
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Catálogo — Página {currentPage}</span>
-                      <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{totalItems} Tipos de Soporte</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button 
-                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} 
-                        disabled={currentPage === 1} 
-                        className="w-10 h-10 rounded-xl border hairline-border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-white hover:text-on-surface disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm"
-                      >
-                        <span className="material-symbols-outlined">chevron_left</span>
-                      </button>
-                      <button 
-                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} 
-                        disabled={currentPage === totalPages || totalPages === 0} 
-                        className="w-10 h-10 rounded-xl border hairline-border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-white hover:text-on-surface disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm"
-                      >
-                        <span className="material-symbols-outlined">chevron_right</span>
-                      </button>
-                    </div>
-                  </div>
+                  <PaginationFooter
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    totalItems={totalItems}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={setCurrentPage}
+                    itemLabel="tipos de soporte"
+                  />
                 </div>
               </section>
 

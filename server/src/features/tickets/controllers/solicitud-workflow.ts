@@ -4,9 +4,11 @@ import { handleHttpError } from '../../../shared/utils/handleError'
 import { logError, logWarn } from '../../../shared/utils/logger'
 import { sendMail } from '../../../shared/utils/handleEmail'
 import { buildCasoAsignadoEmail, getEmailFrom } from '../../../shared/emails'
+import { buildWorkflowEmail } from '../domain/workflow-email'
 import {
   emitNotificacion,
   emitSolicitudUpdate,
+  emitSolicitudToRole,
   emitTecnicoUpdate,
 } from '../../../shared/services/realtime'
 import { enrichSolicitudFoto } from '../../../shared/utils/enrichMediaResponse'
@@ -22,6 +24,7 @@ import {
 import { toSolicitudDetail } from '../domain/solicitud-dto'
 import { WORKFLOW_V2, type SolicitudActor, type SolicitudWorkflowAction } from '../domain/solicitud-lifecycle'
 import { requireClientOperationId } from '../domain/workflow-idempotency'
+import { extractEntityId } from '../../../shared/utils/entity-id'
 
 const { solicitudModel, usuarioModel, storageModel } = models
 
@@ -64,6 +67,7 @@ async function notifyStatus(solicitud: {
   if (solicitud.tecnico) {
     emitSolicitudUpdate(String(solicitud.tecnico), solicitud)
   }
+  emitSolicitudToRole('lider', solicitud)
 }
 
 function readOperationId(req: Request): string | undefined {
@@ -80,6 +84,33 @@ function sendWorkflowError(res: Response, error: { status: number; message: stri
   handleHttpError(res, error.message, error.status)
 }
 
+async function sendWorkflowMail(
+  action: SolicitudWorkflowAction,
+  solicitud: { codigoCaso?: string; usuario?: unknown; tecnico?: unknown },
+): Promise<void> {
+  try {
+    const funcionario = solicitud.usuario
+      ? await usuarioModel.findById(solicitud.usuario).select('nombre correo')
+      : null
+    const tecnico = solicitud.tecnico
+      ? await usuarioModel.findById(solicitud.tecnico).select('nombre correo')
+      : null
+    const mail = buildWorkflowEmail({
+      action,
+      idempotent: false,
+      codigoCaso: solicitud.codigoCaso || '',
+      funcionarioNombre: funcionario?.nombre || 'usuario',
+      funcionarioCorreo: funcionario?.correo || '',
+      tecnicoNombre: tecnico?.nombre || 'técnico',
+      tecnicoCorreo: tecnico?.correo || '',
+    })
+    if (!mail) return
+    await sendMail({ from: getEmailFrom(), to: mail.to, subject: mail.subject, html: mail.html, text: mail.text })
+  } catch (error) {
+    logError('Error al enviar correo del flujo', error, { action, codigoCaso: solicitud.codigoCaso })
+  }
+}
+
 async function runAction(
   req: Request,
   res: Response,
@@ -93,6 +124,8 @@ async function runAction(
       return
     }
 
+    const previousTechnicianId = solicitud.tecnico ? String(solicitud.tecnico) : undefined
+
     const operationId = requireClientOperationId(readOperationId(req))
     const result = await applySolicitudWorkflowAction({
       solicitud,
@@ -103,9 +136,24 @@ async function runAction(
 
     if (!result.idempotent) {
       await notifyStatus(result.solicitud)
+      await sendWorkflowMail(action, result.solicitud)
+
+      // Si fue una reasignación, notificar también al técnico saliente para refrescar su cola en tiempo real
+      if (action === 'reassign' && previousTechnicianId && previousTechnicianId !== String(result.solicitud.tecnico)) {
+        try {
+          emitSolicitudUpdate(previousTechnicianId, result.solicitud)
+        } catch (_err) {
+          // Ignorar fallo de SSE secundario
+        }
+      }
     }
 
-    const historial = await loadPublicHistorial(result.solicitud._id)
+    const historial = await loadPublicHistorial(result.solicitud._id, {
+      ticketContext: {
+        usuarioId: extractEntityId(result.solicitud.usuario),
+        tecnicoId: extractEntityId(result.solicitud.tecnico),
+      },
+    })
     res.status(200).json({
       message: result.idempotent ? 'La solicitud ya estaba en este estado' : 'Acción registrada',
       solicitud: toSolicitudDetail(
@@ -124,6 +172,7 @@ async function runAction(
       sendWorkflowError(res, error)
       return
     }
+    logError('Error al actualizar la solicitud en runAction', error)
     handleHttpError(res, 'Error al actualizar la solicitud')
   }
 }
@@ -142,6 +191,8 @@ export async function reasignarTecnicoSolicitud(req: Request, res: Response): Pr
     tecnicoId: String(req.body.tecnico),
     tecnicoNombre: tecnico.nombre,
     motivo: req.body.motivo,
+    expectedRevision:
+      typeof req.body.expectedRevision === 'number' ? req.body.expectedRevision : undefined,
   })
 }
 
@@ -273,6 +324,7 @@ export async function assignWorkflowV2(req: Request, res: Response): Promise<boo
       })
       emitSolicitudUpdate(String(result.solicitud.usuario), result.solicitud)
       emitSolicitudUpdate(String(tecnico), result.solicitud)
+      emitSolicitudToRole('lider', result.solicitud)
       emitNotificacion(String(result.solicitud.usuario), notificacion)
       const solicitudesAsignadas = await solicitudModel.countDocuments({
         tecnico,
@@ -290,7 +342,7 @@ export async function assignWorkflowV2(req: Request, res: Response): Promise<boo
         await sendMail({
           from: getEmailFrom(),
           to: tecnicoAsignado.correo,
-          subject: 'Asignación de caso — AyudaTIC',
+          subject: 'Este caso es tuyo — MiAyudaTics',
           html,
           text,
         })

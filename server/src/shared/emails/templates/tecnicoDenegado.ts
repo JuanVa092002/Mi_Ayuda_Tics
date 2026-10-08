@@ -6,25 +6,24 @@ export interface TecnicoDenegadoEmailParams {
 
 export function buildTecnicoDenegadoEmail(params: TecnicoDenegadoEmailParams): EmailContent {
   return buildEmailLayout({
-    pageTitle: 'Registro Denegado — AyudaTIC',
-    icon: '⚠️',
+    pageTitle: 'Tu registro no quedó habilitado — MiAyudaTics',
+    icon: '',
     recipientName: params.nombre,
+    headline: 'Esta vez el registro no quedó habilitado.',
     introHtml: `
-      <p style="margin:0 0 16px;">
-        Cordial saludo. Lamentamos informarle que su cuenta no ha sido aprobada.
-        Es posible que su registro esté incompleto o no cuente con los permisos
-        para ingresar a la Mesa de Servicio del CTPI-CAUCA.
-      </p>
       <p style="margin:0;">
-        Si considera que esto es un error o necesita más información, puede
-        contactar al equipo de Mesa de Servicio.
+        El líder revisó tu solicitud para entrar como técnico en <strong>MiAyudaTics</strong> y no fue aprobada. No es un cierre definitivo: puedes aclararlo con él.
       </p>`,
+    steps: [
+      { state: 'done', label: 'Revisada', detail: 'Alguien del centro ya vio la solicitud.' },
+      { state: 'now', label: 'No habilitada', detail: 'Suele pasar por datos incompletos, correo sin verificar o porque el turno no tiene plaza.' },
+      { state: 'later', label: 'Si no cuadra', detail: 'Habla con el líder TIC del CTPI y revisen juntos el registro.' },
+    ],
     alert: {
       tone: 'warning',
-      title: 'Su solicitud de registro como técnico no fue aprobada.',
-      body: 'Comuníquese con el líder TIC si requiere aclaraciones.',
+      title: 'Tu solicitud de registro como técnico no fue aprobada.',
+      body: 'Para una aclaración, habla con el líder TIC del centro.',
     },
-    footerNoteHtml:
-      'Atentamente,<br/>Equipo de Mesa de Servicio CTPI-CAUCA',
+    footerNoteHtml: 'Coordinación de MiAyudaTics · SENA CTPI Regional Cauca',
   })
 }

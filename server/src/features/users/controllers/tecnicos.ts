@@ -59,7 +59,7 @@ export const aprobarTecnico = async (req: Request, res: Response): Promise<void>
       await sendMail({
         from: getEmailFrom(),
         to: tecnico.correo,
-        subject: 'Aprobación de Registro — AyudaTIC',
+        subject: 'Ya puedes salir a campo — MiAyudaTics',
         html,
         text,
       })
@@ -93,7 +93,7 @@ export const denegarTecnico = async (req: Request, res: Response): Promise<void>
       await sendMail({
         from: getEmailFrom(),
         to: tecnico.correo,
-        subject: 'Registro Denegado — AyudaTIC',
+        subject: 'Tu registro no quedó habilitado — MiAyudaTics',
         html,
         text,
       })

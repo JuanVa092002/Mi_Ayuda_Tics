@@ -18,7 +18,6 @@ import AdminEstadisticas from '@/pages/admin/AdminEstadisticas'
 import TecnicosActivos from '@/pages/admin/tecnicos/TecnicosActivos'
 import TecnicosInactivos from '@/pages/admin/tecnicos/TecnicosInactivos'
 import CasosPorResolverTabla from '@/pages/tecnico/CasosPorResolverTabla'
-import MisCasosTabla from '@/pages/tecnico/MisCasosTabla'
 import CasosResueltosTabla from '@/pages/tecnico/CasosResueltosTabla'
 import SeguimientoSolicitud from '@/pages/admin/solicitud/SeguimientoSolicitud'
 import Perfil from '@/pages/shared/Perfil'
@@ -56,7 +55,7 @@ export default function Allroutes(): ReactNode {
 
         <Route element={<RequireRole roles={['tecnico']} />}>
           <Route path="/casos-por-resolver" element={<CasosPorResolverTabla />} />
-          <Route path="/mis-casos" element={<MisCasosTabla />} />
+          <Route path="/mis-casos" element={<Navigate to="/casos-por-resolver" replace />} />
           <Route path="/casos-resueltos" element={<CasosResueltosTabla />} />
         </Route>
       </Route>

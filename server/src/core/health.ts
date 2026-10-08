@@ -17,6 +17,10 @@ export const healthCheck = (_req: Request, res: Response): void => {
 
   res.status(200).json({
     status: dbOk ? 'ok' : 'degraded',
+    environment: process.env.NODE_ENV || 'development',
+    version: process.env.npm_package_version || '1.0.0',
+    commit: process.env.RENDER_GIT_COMMIT || process.env.GIT_COMMIT || 'local-dev',
+    backendUrl: `http://localhost:${process.env.PORT || 8000}`,
     uptime: process.uptime(),
     database: dbOk ? 'connected' : 'disconnected',
     integrations: {

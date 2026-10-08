@@ -55,12 +55,28 @@ export interface SolicitudCapabilities {
   canReopen?: boolean
 }
 
+export type CaseRole = 'SOLICITANTE' | 'TECNICO_ASIGNADO' | 'MESA_TIC' | 'UNKNOWN'
+
 export interface SolicitudHistorialEvent {
   _id?: string
+  id?: string
   type: string
   message: string
   createdAt?: string
-  author?: { nombre?: string }
+  author?: { _id?: string; id?: string; nombre?: string; rol?: string }
+  caseRole?: CaseRole
+  recipient?: { id: string; role: CaseRole }
+  attachment?: { _id?: string; id?: string; url?: string; filename?: string }
+  metadata?: {
+    previousStatus?: string
+    nextStatus?: string
+    whatWasDone?: string
+    nextAction?: string
+    reason?: string
+    pendingWork?: string
+    assignedTechnicianId?: string
+    previousTechnicianId?: string
+  }
 }
 
 export interface SolucionCaso {
@@ -74,6 +90,7 @@ export interface Solicitud {
   descripcion?: string
   estado: SolicitudEstado | string
   fecha?: string
+  updatedAt?: string
   telefono?: string
   usuario?: User | string
   tecnico?: User | string
@@ -91,7 +108,11 @@ export interface Solicitud {
   capabilities?: SolicitudCapabilities
   historial?: SolicitudHistorialEvent[]
   queue?: string
+  workflowRevision?: number
   historyNote?: string
+  ficha?: string
+  puesto?: string
+  jornada?: string
 }
 
 export interface CaseForResolution extends Solicitud {

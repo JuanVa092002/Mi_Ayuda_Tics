@@ -44,14 +44,70 @@ export type TicketEventType =
   | 'reassigned'
   | 'started'
   | 'updated'
+  | 'note_added'
   | 'waiting_for_requester'
+  | 'requester_reply'
   | 'partial_solution'
   | 'resolved'
   | 'reopened'
   | 'closed'
   | 'cancelled'
 
+export { CASE_ROLES, type CaseRole } from '@miayuda/contracts'
+import { type CaseRole } from '@miayuda/contracts'
+
 export type ActorRole = 'funcionario' | 'lider' | 'tecnico'
+
+/**
+ * Determina el rol de un actor dentro del contexto específico de un caso de soporte.
+ * La resolución es estricta, basada en IDs y en las relaciones del caso (nunca en nombres o textos).
+ */
+export function resolveCaseRole(params: {
+  authorId?: unknown
+  authorRol?: string
+  solicitudUsuarioId?: unknown
+  solicitudTecnicoId?: unknown
+  eventType?: TicketEventType | string
+}): CaseRole {
+  const { authorId, authorRol, solicitudUsuarioId, solicitudTecnicoId, eventType } = params
+
+  const normAuthorId = authorId != null ? String(authorId).trim() : ''
+  const normUserId = solicitudUsuarioId != null ? String(solicitudUsuarioId).trim() : ''
+  const normTecnicoId = solicitudTecnicoId != null ? String(solicitudTecnicoId).trim() : ''
+
+  // 1. Si el autor coincide con el solicitante del caso
+  if (normAuthorId && normUserId && normAuthorId === normUserId) {
+    return 'SOLICITANTE'
+  }
+
+  // 2. Si el autor coincide con el técnico asignado al caso
+  if (normAuthorId && normTecnicoId && normAuthorId === normTecnicoId) {
+    return 'TECNICO_ASIGNADO'
+  }
+
+  // 3. Si el evento es de creación o respuesta del solicitante
+  if (eventType === 'created' || eventType === 'requester_reply') {
+    return 'SOLICITANTE'
+  }
+
+  // 4. Si el autor tiene rol de líder/mesa o el evento es asignación/cancelación de mesa
+  if (authorRol === 'lider' || eventType === 'assigned' || eventType === 'reassigned' || eventType === 'cancelled') {
+    return 'MESA_TIC'
+  }
+
+  // 5. Si el autor es técnico
+  if (authorRol === 'tecnico') {
+    return 'TECNICO_ASIGNADO'
+  }
+
+  // 6. Si el autor es funcionario y no es técnico
+  if (authorRol === 'funcionario') {
+    return 'SOLICITANTE'
+  }
+
+  // 7. Si no se puede determinar inequívocamente: UNKNOWN (jamás silent fallback a MESA_TIC)
+  return 'UNKNOWN'
+}
 
 export type SolicitudLifecycleInput = {
   estado: string
@@ -85,9 +141,9 @@ const ACTION_EVENT: Record<SolicitudWorkflowAction, TicketEventType> = {
   assign: 'assigned',
   reassign: 'reassigned',
   start: 'started',
-  update: 'updated',
+  update: 'note_added',
   wait_for_requester: 'waiting_for_requester',
-  requester_reply: 'updated',
+  requester_reply: 'requester_reply',
   partial_solution: 'partial_solution',
   resolve: 'resolved',
   confirm: 'closed',
@@ -333,6 +389,66 @@ export function leaderInboxMongoFilter(): Record<string, unknown> {
   return { estado: { $in: ['solicitado', 'nuevo'] } }
 }
 
+export type LeaderDispatchQueueItem = {
+  descripcion?: string | null
+  fecha?: Date | string | null
+}
+
+function parseLeaderDispatchFecha(raw?: Date | string | null): number {
+  if (!raw) return 0
+  if (raw instanceof Date) return raw.getTime()
+  const text = String(raw).trim()
+  const iso = Date.parse(text)
+  if (!Number.isNaN(iso)) return iso
+  const match = text.match(/^(\d{2})-(\d{2})-(\d{4})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?/)
+  if (!match) return 0
+  return new Date(
+    Number(match[3]),
+    Number(match[2]) - 1,
+    Number(match[1]),
+    Number(match[4] ?? '0'),
+    Number(match[5] ?? '0'),
+    Number(match[6] ?? '0'),
+  ).getTime()
+}
+
+/** Lower rank = dispatch first. Matches client leaderDispatchRank (MODO: EXPRESS, IMPACTO: ATENCION_PUBLICO). */
+export function leaderDispatchRank(descripcion?: string | null): number {
+  const full = String(descripcion ?? '')
+  const header = full.match(/^\[([^\]]+)\]/)
+  if (!header) return 2
+
+  let modoExpress = false
+  let impactoPublico = false
+  for (const segment of header[1].split('|')) {
+    const trimmed = segment.trim()
+    const colon = trimmed.indexOf(':')
+    if (colon < 0) continue
+    const key = trimmed.slice(0, colon).trim().toUpperCase()
+    const value = trimmed.slice(colon + 1).trim()
+    if (key === 'MODO' && value.toUpperCase() === 'EXPRESS') modoExpress = true
+    if (key === 'IMPACTO' && value.toLowerCase() === 'atencion_publico') impactoPublico = true
+  }
+
+  if (modoExpress) return 0
+  if (impactoPublico) return 1
+  return 2
+}
+
+export function sortLeaderDispatchQueue<T extends LeaderDispatchQueueItem>(items: T[]): T[] {
+  return [...items].sort((a, b) => {
+    const rankDiff = leaderDispatchRank(a.descripcion) - leaderDispatchRank(b.descripcion)
+    if (rankDiff !== 0) return rankDiff
+
+    const left = parseLeaderDispatchFecha(a.fecha)
+    const right = parseLeaderDispatchFecha(b.fecha)
+    if (!left && !right) return 0
+    if (!left) return 1
+    if (!right) return -1
+    return left - right
+  })
+}
+
 export function technicianActiveMongoFilter(tecnicoId: unknown): Record<string, unknown> {
   return {
     tecnico: tecnicoId,
@@ -480,7 +596,9 @@ export const EVENT_MESSAGES: Record<TicketEventType, string> = {
   reassigned: 'Se reasignó el técnico.',
   started: 'El técnico inició la atención.',
   updated: 'Se registró una actualización.',
+  note_added: 'Nota técnica registrada en bitácora.',
   waiting_for_requester: 'El técnico solicitó información adicional.',
+  requester_reply: 'El funcionario respondió a la consulta.',
   partial_solution: 'El técnico registró una solución parcial.',
   resolved: 'El técnico registró una solución.',
   reopened: 'El funcionario indicó que el problema continúa.',
@@ -502,3 +620,57 @@ export function isIdempotentAlreadyApplied(
 ): boolean {
   return IDEMPOTENT_TARGET[action] === estado
 }
+
+export type RadarTicketInput = {
+  id: string
+  codigoCaso?: string
+  estado: string
+  workflowVersion?: number | null
+  ambiente: {
+    id: string
+    nombre?: string
+    sede?: string
+  }
+}
+
+export type ProximityAnchor = {
+  sede: string
+  ambienteId?: string
+}
+
+/**
+ * Radar de Casos por Proximidad para Técnicos SENA.
+ * Ordena determinísticamente los casos de la cola activa:
+ * 1. Mismo ambiente (distancia 0)
+ * 2. Misma sede (distancia 1)
+ * 3. Otra sede / sin sede (distancia 2)
+ *
+ * Mantiene intactas las restricciones de asignación y RBAC.
+ */
+export function sortTicketsByProximityRadar<T extends RadarTicketInput>(
+  tickets: T[],
+  anchor: ProximityAnchor,
+): (T & { proximityTier: 'mismo_ambiente' | 'misma_sede' | 'otra_sede' })[] {
+  return [...tickets]
+    .map((t) => {
+      let tier: 'mismo_ambiente' | 'misma_sede' | 'otra_sede' = 'otra_sede'
+      const ticketSede = (t.ambiente.sede || '').trim().toLowerCase()
+      const anchorSede = (anchor.sede || '').trim().toLowerCase()
+
+      if (anchor.ambienteId && t.ambiente.id === anchor.ambienteId) {
+        tier = 'mismo_ambiente'
+      } else if (ticketSede && anchorSede && ticketSede === anchorSede) {
+        tier = 'misma_sede'
+      }
+
+      return {
+        ...t,
+        proximityTier: tier,
+      }
+    })
+    .sort((a, b) => {
+      const weight = { mismo_ambiente: 0, misma_sede: 1, otra_sede: 2 }
+      return weight[a.proximityTier] - weight[b.proximityTier]
+    })
+}
+

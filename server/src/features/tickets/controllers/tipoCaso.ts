@@ -2,7 +2,7 @@ import { Request, Response } from 'express'
 import { handleHttpError } from '../../../shared/utils/handleError'
 import models from '../../../core/models'
 
-const { tipoCasoModel } = models
+const { tipoCasoModel, solicitudModel } = models
 
 export const getTipoCaso = async (_req: Request, res: Response): Promise<void> => {
   try {
@@ -52,6 +52,12 @@ export const updateTipoCaso = async (req: Request, res: Response): Promise<void>
 export const deleteTipoCaso = async (req: Request, res: Response): Promise<void> => {
   const id = req.params.id
   try {
+    const inUse = await solicitudModel.exists({ tipoCaso: id })
+    if (inUse) {
+      handleHttpError(res, 'No se puede eliminar: existen solicitudes vinculadas a esta categoría', 409)
+      return
+    }
+
     const data = await tipoCasoModel.findByIdAndDelete({ _id: id })
     if (!data) {
       handleHttpError(res, 'tipo de caso no encontrado', 404)

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AgentOSPublicBlindTaskSchemaV2_1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "task_id",
+    "surface",
+    "user_intent"
+  ],
+  "properties": {
+    "task_id": {
+      "type": "string"
+    },
+    "surface": {
+      "type": "string",
+      "enum": [
+        "client",
+        "server",
+        "mobile",
+        "packages",
+        "cross"
+      ]
+    },
+    "user_intent": {
+      "type": "string"
+    }
+  }
+}

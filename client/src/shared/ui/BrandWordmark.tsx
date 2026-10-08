@@ -20,9 +20,9 @@ export default function BrandWordmark({
   stacked = false,
 }: BrandWordmarkProps): ReactNode {
   return (
-    <div className={stacked ? 'flex flex-col items-center gap-1' : 'flex flex-col'}>
+    <div className={stacked ? 'flex flex-col items-center gap-1 px-1 text-center' : 'flex flex-col'}>
       <p
-        className={`font-black uppercase ${sizeClass[size]} ${stacked ? 'flex flex-col items-center gap-0.5' : ''}`}
+        className={`font-black uppercase ${sizeClass[size]} ${stacked ? 'flex flex-col items-center gap-0.5 tracking-[0.06em]' : ''}`}
         aria-label="MIAYUDATICS"
       >
         <span className="text-azul-sena">MI</span>

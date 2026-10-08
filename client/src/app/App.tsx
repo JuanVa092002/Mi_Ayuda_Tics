@@ -4,6 +4,8 @@ import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 
 import { AuthProvider } from '@/features/auth'
+import { ExperienceProvider } from '@/shared/experiments/ExperienceContext'
+import { AlertProvider } from '@/shared/ui'
 import Allroutes from '@/app/router/Allroutes'
 
 interface ErrorBoundaryState {
@@ -44,11 +46,19 @@ export default function App(): ReactNode {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <ErrorBoundary>
-          <Allroutes />
-        </ErrorBoundary>
-        <ToastContainer />
+        <ExperienceProvider>
+          <AlertProvider>
+            <ErrorBoundary>
+              <Allroutes />
+            </ErrorBoundary>
+            {/* Ocultamos ToastContainer clásico para que prevalezca el modal SweetAlert2 */}
+            <div className="hidden" aria-hidden="true">
+              <ToastContainer />
+            </div>
+          </AlertProvider>
+        </ExperienceProvider>
       </AuthProvider>
     </BrowserRouter>
   )
 }
+

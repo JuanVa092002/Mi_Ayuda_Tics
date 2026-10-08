@@ -8,6 +8,7 @@ import {
   updateAmbiente,
   inactivarAmbiente,
 } from '../controllers/ambienteFormacion'
+import { validarCrearAmbiente, validarActualizarAmbiente } from '../validators/ambiente'
 
 const router = Router()
 
@@ -16,8 +17,8 @@ const router = Router()
 
 router.get('/', authMiddleware, checkRol(['lider', 'funcionario']), getAmbiente)
 router.get('/:id', authMiddleware, checkRol(['lider', 'funcionario']), getAmbienteId)
-router.post('/', authMiddleware, checkRol(['lider']), postAmbiente)
-router.put('/:id', authMiddleware, checkRol(['lider']), updateAmbiente)
+router.post('/', authMiddleware, checkRol(['lider']), validarCrearAmbiente, postAmbiente)
+router.put('/:id', authMiddleware, checkRol(['lider']), validarActualizarAmbiente, updateAmbiente)
 router.put('/:id/inactivar', authMiddleware, checkRol(['lider']), inactivarAmbiente)
 
 export default router

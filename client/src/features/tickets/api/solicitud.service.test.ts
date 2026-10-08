@@ -34,6 +34,16 @@ describe('leader web ticket mutations', () => {
     expect(axiosMocks.get).toHaveBeenCalledWith('/solicitud/pendientes')
   })
 
+  it('GET pendientes conserva el orden del servidor', async () => {
+    const rows = [
+      { _id: 'express', estado: 'nuevo', descripcion: '[MODO: EXPRESS] clase' },
+      { _id: 'ordinario', estado: 'nuevo', descripcion: 'red' },
+    ]
+    axiosMocks.get.mockResolvedValue({ data: { data: rows } })
+    const list = await getSolicitudesPendientes()
+    expect(list.map((item) => item._id)).toEqual(['express', 'ordinario'])
+  })
+
   it('asignación manda PUT e Idempotency-Key', async () => {
     const solicitud = { _id: 's1', estado: 'asignado' } as Solicitud
     axiosMocks.put.mockResolvedValue({ data: { message: 'ok', solicitud } })

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { SemanticIcon, type SemanticIconName } from './SemanticIcon'
 
 export type StatusTone = 'inbox' | 'assigned' | 'progress' | 'done' | 'cancelled' | 'neutral'
 
@@ -11,6 +12,15 @@ const TONE_CSS_CLASS: Record<StatusTone, string> = {
   neutral:   'badge-neutral',
 }
 
+const TONE_ICON_MAP: Record<StatusTone, SemanticIconName> = {
+  inbox: 'radicado',
+  assigned: 'asignado',
+  progress: 'atencion',
+  done: 'solucionado',
+  cancelled: 'cancelar',
+  neutral: 'status',
+}
+
 export function resolveStatusTone(estado: string | undefined): StatusTone {
   const s = (estado || '').toLowerCase().trim()
   if (['solicitado', 'en_espera', 'nuevo', 'abierto', 'activa', 'activo'].includes(s)) return 'inbox'
@@ -21,8 +31,12 @@ export function resolveStatusTone(estado: string | undefined): StatusTone {
   return 'neutral'
 }
 
-export function formatStatusLabel(estado: string | undefined): string {
+export function formatStatusLabel(estado: string | undefined, role?: string): string {
   if (!estado) return 'Desconocido'
+  const clean = estado.toLowerCase().trim()
+  if (clean === 'esperando_usuario') {
+    return role === 'tecnico' || role === 'lider' ? 'Espera de usuario' : 'En espera de ti'
+  }
   const map: Record<string, string> = {
     solicitado:        'Solicitado',
     en_espera:         'En espera',
@@ -30,7 +44,6 @@ export function formatStatusLabel(estado: string | undefined): string {
     en_proceso:        'En proceso',
     en_atencion:       'En atención',
     en_progreso:       'En progreso',
-    esperando_usuario: 'En espera de ti',
     por_iniciar:       'Por iniciar',
     pendiente:         'Pendiente',
     finalizado:        'Resuelto',
@@ -40,33 +53,41 @@ export function formatStatusLabel(estado: string | undefined): string {
     activo:            'Activo',
     inactivo:          'Inactivo',
   }
-  const clean = estado.toLowerCase().trim()
   return map[clean] || estado.replace(/_/g, ' ')
 }
 
 export interface StatusBadgeProps {
-  status: string | undefined
+  status?: string | undefined
+  estado?: string | undefined
+  role?: string | undefined
   label?: string
   tone?: StatusTone
   size?: 'sm' | 'md'
+  showIcon?: boolean
   className?: string
 }
 
 export default function StatusBadge({
   status,
+  estado,
+  role,
   label,
   tone,
   size = 'sm',
+  showIcon = true,
   className = '',
 }: StatusBadgeProps): ReactNode {
-  const resolvedTone = tone || resolveStatusTone(status)
-  const displayLabel = label || formatStatusLabel(status)
+  const rawStatus = status ?? estado
+  const resolvedTone = tone || resolveStatusTone(rawStatus)
+  const displayLabel = label || formatStatusLabel(rawStatus, role)
   const css = TONE_CSS_CLASS[resolvedTone]
   const sizeClass = size === 'md' ? 'text-xs px-3 py-1' : ''
+  const iconName = TONE_ICON_MAP[resolvedTone]
 
   return (
-    <span className={`badge ${css} ${sizeClass} ${className}`}>
-      {displayLabel}
+    <span className={`badge ${css} ${sizeClass} inline-flex items-center gap-1.5 ${className}`}>
+      {showIcon ? <SemanticIcon name={iconName} size="xs" /> : null}
+      <span>{displayLabel}</span>
     </span>
   )
 }

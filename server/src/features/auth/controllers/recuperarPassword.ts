@@ -48,7 +48,7 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
     await sendMail({
       from: getEmailFrom(),
       to: user.correo,
-      subject: 'Recuperación de Contraseña — AyudaTIC',
+      subject: 'Te dejamos una hora para entrar — MiAyudaTics',
       text,
       html,
     })

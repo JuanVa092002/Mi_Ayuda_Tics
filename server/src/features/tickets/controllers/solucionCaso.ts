@@ -1,14 +1,11 @@
 import { Request, Response } from 'express'
 import { handleHttpError } from '../../../shared/utils/handleError'
-import { sendMail } from '../../../shared/utils/handleEmail'
-import { logError } from '../../../shared/utils/logger'
-import { buildCasoCerradoEmail, getEmailFrom } from '../../../shared/emails'
 import { emitSolicitudUpdate, emitNotificacion } from '../../../shared/services/realtime'
 import models from '../../../core/models'
 import { Types } from 'mongoose'
 import Notificacion from '../../shared/models/notificaciones'
 
-const { solicitudModel, storageModel, usuarioModel, solucionCasoModel } = models
+const { solicitudModel, storageModel, solucionCasoModel } = models
 import { saveUploadedFile } from '../../../shared/services/mediaStorage'
 
 export const solucionCaso = async (req: Request, res: Response): Promise<void> => {
@@ -65,28 +62,6 @@ export const solucionCaso = async (req: Request, res: Response): Promise<void> =
       solicitud.estado = 'pendiente'
     } else if (tipoSolucion === 'finalizado') {
       solicitud.estado = 'finalizado'
-
-      const usuario = await usuarioModel.findById(solicitud.usuario)
-      if (usuario) {
-        const { html, text } = buildCasoCerradoEmail({
-          nombre: usuario.nombre,
-          codigoCaso: solicitud.codigoCaso,
-        })
-        try {
-          await sendMail({
-            from: getEmailFrom(),
-            to: usuario.correo,
-            subject: 'Caso Cerrado — AyudaTIC',
-            html,
-            text,
-          })
-        } catch (error) {
-          logError('Error al enviar correo de caso cerrado', error, {
-            solicitudId: id,
-            usuarioId: String(solicitud.usuario),
-          })
-        }
-      }
     }
 
     const dataSolucion = {

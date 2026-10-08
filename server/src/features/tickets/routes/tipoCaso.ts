@@ -8,6 +8,7 @@ import {
   updateTipoCaso,
   deleteTipoCaso,
 } from '../controllers/tipoCaso'
+import { validarCrearTipoCaso, validarActualizarTipoCaso } from '../validators/tipoCaso'
 
 const router = Router()
 
@@ -15,8 +16,8 @@ const router = Router()
 
 router.get('/', authMiddleware, checkRol(['lider', 'tecnico', 'funcionario']), getTipoCaso)
 router.get('/:id', authMiddleware, checkRol(['lider', 'tecnico', 'funcionario']), getTipoCasoId)
-router.post('/', authMiddleware, checkRol(['lider']), postTipoCaso)
-router.put('/:id', authMiddleware, checkRol(['lider']), updateTipoCaso)
+router.post('/', authMiddleware, checkRol(['lider']), validarCrearTipoCaso, postTipoCaso)
+router.put('/:id', authMiddleware, checkRol(['lider']), validarActualizarTipoCaso, updateTipoCaso)
 router.delete('/:id', authMiddleware, checkRol(['lider']), deleteTipoCaso)
 
 export default router

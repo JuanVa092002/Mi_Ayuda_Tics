@@ -9,6 +9,9 @@ import {
   getWorkflowVersion,
   isLegacyWorkflow,
   nextPersistedEstado,
+  leaderDispatchRank,
+  sortLeaderDispatchQueue,
+  sortTicketsByProximityRadar,
   type SolicitudLifecycleInput,
 } from '../features/tickets/domain/solicitud-lifecycle'
 
@@ -196,5 +199,106 @@ describe('technician queues', () => {
     expect(getTechnicianQueue({ estado: 'pendiente' })).toBe('en_atencion')
     expect(getTechnicianQueue({ estado: 'finalizado' })).toBe('terminados')
     expect(getTechnicianQueue({ estado: 'asignado', workflowVersion: 2 })).toBe('por_iniciar')
+  })
+})
+
+describe('cola de despacho del líder', () => {
+  it('asigna rank express < público < ordinario', () => {
+    expect(leaderDispatchRank('[MODO: EXPRESS] Clase')).toBe(0)
+    expect(leaderDispatchRank('[IMPACTO: ATENCION_PUBLICO] Ventanilla')).toBe(1)
+    expect(leaderDispatchRank('Falla de red')).toBe(2)
+  })
+
+  it('ordena express, luego atención al público, luego estándar; dentro del grupo el más antiguo; sin fecha al final', () => {
+    const expressNew = {
+      id: 'express-new',
+      fecha: '2026-09-07T21:36:00.000Z',
+      descripcion: '[MODO: EXPRESS] Clase en vivo',
+    }
+    const expressOld = {
+      id: 'express-old',
+      fecha: '13-06-2026 05:28',
+      descripcion: '[MODO: EXPRESS] Clase en vivo',
+    }
+    const publico = {
+      id: 'publico',
+      fecha: '01-01-2026 10:00',
+      descripcion: '[IMPACTO: ATENCION_PUBLICO] Ventanilla',
+    }
+    const ordinario = {
+      id: 'ordinario',
+      fecha: '01-01-2025 10:00',
+      descripcion: 'Falla de red en oficina',
+    }
+    const sinFecha = { id: 'sin-fecha', descripcion: 'Sin marca' }
+
+    const ordered = sortLeaderDispatchQueue([ordinario, publico, expressNew, sinFecha, expressOld])
+    expect(ordered.map((item) => item.id)).toEqual([
+      'express-old',
+      'express-new',
+      'publico',
+      'ordinario',
+      'sin-fecha',
+    ])
+  })
+})
+
+describe('radar de casos por proximidad (técnicos SENA)', () => {
+  const tickets = [
+    {
+      id: 't1',
+      codigoCaso: 'TIC-2026-0001',
+      estado: 'asignado',
+      workflowVersion: 2,
+      ambiente: { id: 'amb-101', nombre: 'Sistemas 1', sede: 'Centro' },
+    },
+    {
+      id: 't2',
+      codigoCaso: 'TIC-2026-0002',
+      estado: 'en_progreso',
+      workflowVersion: 2,
+      ambiente: { id: 'amb-202', nombre: 'Redes', sede: 'Norte' },
+    },
+    {
+      id: 't3',
+      codigoCaso: 'TIC-2026-0003',
+      estado: 'asignado',
+      workflowVersion: 2,
+      ambiente: { id: 'amb-102', nombre: 'Sistemas 2', sede: 'Centro' },
+    },
+  ]
+
+  it('prioriza casos en el mismo ambiente y misma sede sin reasignar ni romper RBAC', () => {
+    const sorted = sortTicketsByProximityRadar(tickets, { sede: 'Centro', ambienteId: 'amb-101' })
+
+    expect(sorted[0].id).toBe('t1')
+    expect(sorted[0].proximityTier).toBe('mismo_ambiente')
+
+    expect(sorted[1].id).toBe('t3')
+    expect(sorted[1].proximityTier).toBe('misma_sede')
+
+    expect(sorted[2].id).toBe('t2')
+    expect(sorted[2].proximityTier).toBe('otra_sede')
+  })
+
+  it('agrupa por misma sede cuando el técnico no está en un ambiente específico', () => {
+    const sorted = sortTicketsByProximityRadar(tickets, { sede: 'Norte' })
+
+    expect(sorted[0].id).toBe('t2')
+    expect(sorted[0].proximityTier).toBe('misma_sede')
+
+    expect(sorted[1].proximityTier).toBe('otra_sede')
+    expect(sorted[2].proximityTier).toBe('otra_sede')
+  })
+
+  it('devuelve lista vacía y trata la sede sin distinguir mayúsculas', () => {
+    expect(sortTicketsByProximityRadar([], { sede: 'Centro', ambienteId: 'amb-101' })).toEqual([])
+
+    const sorted = sortTicketsByProximityRadar(tickets, { sede: '  centro  ' })
+    expect(sorted.filter((ticket) => ticket.proximityTier === 'misma_sede').map((ticket) => ticket.id)).toEqual([
+      't1',
+      't3',
+    ])
+    expect(sorted.find((ticket) => ticket.id === 't2')?.proximityTier).toBe('otra_sede')
   })
 })

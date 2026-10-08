@@ -9,6 +9,7 @@ import {
 } from '../../../shared/emails'
 import {
   emitSolicitudUpdate,
+  emitSolicitudToRole,
   emitTecnicoUpdate,
   emitNotificacion,
 } from '../../../shared/services/realtime'
@@ -18,11 +19,12 @@ import { postConsecutivoCaso } from './consecutivoCaso'
 import models from '../../../core/models'
 import { Types } from 'mongoose'
 import Notificacion from '../../shared/models/notificaciones'
-import { entityIdsEqual, isFuncionarioOwner } from '../../../shared/utils/entity-id'
+import { entityIdsEqual, isFuncionarioOwner, extractEntityId } from '../../../shared/utils/entity-id'
 import { isDuplicateKeyError } from '../../../shared/utils/mongo-duplicate'
 import {
   leaderHistoryMongoFilter,
   leaderInboxMongoFilter,
+  sortLeaderDispatchQueue,
   technicianActiveMongoFilter,
   technicianClosedMongoFilter,
   WORKFLOW_V2,
@@ -36,11 +38,11 @@ import {
 import { toSolicitudDetail, toSolicitudListItem } from '../domain/solicitud-dto'
 import { assignWorkflowV2, logDeprecatedDelete } from './solicitud-workflow'
 
-const { solicitudModel, storageModel, usuarioModel, ambienteModel } = models
+const { solicitudModel, storageModel, usuarioModel, ambienteModel, historialSolicitudModel } = models
 import { saveUploadedFile } from '../../../shared/services/mediaStorage'
 
 const LIST_SELECT =
-  'descripcion fecha estado codigoCaso workflowVersion proximaAccion proximaAccionAt resolvedAt closedAt createdAt updatedAt usuario tecnico'
+  'descripcion fecha estado codigoCaso workflowVersion workflowRevision proximaAccion proximaAccionAt resolvedAt closedAt createdAt updatedAt usuario tecnico ambiente foto tipoCaso solucion'
 
 function actorFromRequest(req: Request): SolicitudActor {
   return {
@@ -56,6 +58,39 @@ function asPlain(doc: unknown): Record<string, unknown> {
 
 function enrichList(data: unknown[], actor?: SolicitudActor) {
   return enrichSolicitudList(data).map((item) => toSolicitudListItem(asPlain(item), actor))
+}
+
+async function attachResolvedSolutions(
+  items: Record<string, unknown>[],
+): Promise<Record<string, unknown>[]> {
+  const ids = items.map((item) => item._id).filter(Boolean)
+  if (ids.length === 0) return items
+  const events = await historialSolicitudModel
+    .find({ solicitud: { $in: ids }, type: 'resolved' })
+    .select('solicitud metadata.whatWasDone createdAt')
+    .sort({ createdAt: -1 })
+    .lean()
+  const solutionByTicket = new Map<string, string>()
+  for (const event of events) {
+    const ticketId = String(event.solicitud)
+    if (solutionByTicket.has(ticketId)) continue
+    const text = event.metadata?.whatWasDone?.trim()
+    if (text) solutionByTicket.set(ticketId, text)
+  }
+  return items.map((item) => {
+    const current = item.solucion
+    if (
+      current &&
+      typeof current === 'object' &&
+      typeof (current as { descripcionSolucion?: string }).descripcionSolucion === 'string' &&
+      (current as { descripcionSolucion: string }).descripcionSolucion.trim()
+    ) {
+      return item
+    }
+    const text = solutionByTicket.get(String(item._id))
+    if (!text) return item
+    return { ...item, solucion: { descripcionSolucion: text } }
+  })
 }
 
 export const getSolicitud = async (req: Request, res: Response): Promise<void> => {
@@ -93,9 +128,10 @@ export const getHistorialSolicitud = async (req: Request, res: Response): Promis
       .populate('foto', 'url filename')
       .populate({ path: 'solucion', select: 'descripcionSolucion' })
 
+    const items = enrichList(data, actorFromRequest(req))
     res.status(200).json({
       message: 'Solicitudes consultadas exitosamente',
-      data: enrichList(data, actorFromRequest(req)),
+      data: await attachResolvedSolutions(items),
     })
   } catch (_error) {
     handleHttpError(res, 'Error al obtener datos')
@@ -152,6 +188,10 @@ export const getSolicitudId = async (req: Request, res: Response): Promise<void>
     const historialPage = await loadPublicHistorial(data._id, {
       limit: Number.isFinite(historialLimit) ? historialLimit : 50,
       before: typeof req.query.historialBefore === 'string' ? req.query.historialBefore : undefined,
+      ticketContext: {
+        usuarioId: extractEntityId(data.usuario),
+        tecnicoId: extractEntityId(data.tecnico),
+      },
     })
     const actor = actorFromRequest(req)
     res.status(200).json({
@@ -162,7 +202,8 @@ export const getSolicitudId = async (req: Request, res: Response): Promise<void>
         historyNote: historyNoteFor(data),
       }),
     })
-  } catch (_error) {
+  } catch (error) {
+    logError('Error al consultar la solicitud', error)
     handleHttpError(res, 'Error al consultar la solicitud')
   }
 }
@@ -190,6 +231,10 @@ export const getSolicitudHistorial = async (req: Request, res: Response): Promis
     const page = await loadPublicHistorial(solicitud._id, {
       limit: Number.isFinite(historialLimit) ? historialLimit : 50,
       before: typeof req.query.historialBefore === 'string' ? req.query.historialBefore : undefined,
+      ticketContext: {
+        usuarioId: extractEntityId(solicitud.usuario),
+        tecnicoId: extractEntityId(solicitud.tecnico),
+      },
     })
     res.status(200).json({
       message: 'historial consultado exitosamente',
@@ -228,7 +273,7 @@ export const getSolicitudesPendientes = async (_req: Request, res: Response): Pr
 
     res.status(200).json({
       message: 'Solicitudes pendientes consultadas',
-      data: enrichList(data, actorFromRequest(_req)),
+      data: sortLeaderDispatchQueue(enrichList(data, actorFromRequest(_req))),
     })
   } catch (_error) {
     handleHttpError(res, 'Error al obtener solicitudes pendientes')
@@ -296,19 +341,36 @@ export const crearSolicitud = async (req: Request, res: Response): Promise<void>
       }),
     })
 
+    // Emisión en tiempo real: Notificar al creador y a los líderes TIC para evitar recargas manuales (F5)
+    try {
+      emitSolicitudUpdate(String(usuarioId), solicitudCreada)
+      emitSolicitudToRole('lider', solicitudCreada)
+    } catch (rtErr) {
+      logError('No se pudo emitir evento de tiempo real para solicitud creada', rtErr, {
+        solicitudId: String(solicitudCreada._id),
+      })
+    }
+
     const usuario = await usuarioModel.findById(dataSolicitud.usuario)
     if (usuario) {
       const { html, text } = buildSolicitudRegistradaEmail({
         nombre: usuario.nombre,
         codigoCaso,
       })
-      await sendMail({
-        from: getEmailFrom(),
-        to: usuario.correo,
-        subject: 'Registro Solicitud — AyudaTIC',
-        html,
-        text,
-      })
+      try {
+        await sendMail({
+          from: getEmailFrom(),
+          to: usuario.correo,
+          subject: 'Tu caso ya está en la mesa — MiAyudaTics',
+          html,
+          text,
+        })
+      } catch (mailError) {
+        logError('Error al enviar correo de solicitud registrada al funcionario', mailError, {
+          solicitudId: String(solicitudCreada._id),
+          usuarioCorreo: usuario.correo,
+        })
+      }
     }
   } catch (error) {
     if (error instanceof Error && error.message === 'UNSUPPORTED_MEDIA') {
@@ -332,9 +394,10 @@ export const historialSolicitudesCreadas = async (req: Request, res: Response): 
       .find({ usuario: usuarioId })
       .select(LIST_SELECT)
       .sort({ fecha: -1, _id: -1 })
+      .populate('usuario', 'nombre correo rol')
       .populate('ambiente', 'nombre')
       .populate('tipoCaso', 'nombre')
-      .populate('tecnico', 'nombre')
+      .populate('tecnico', 'nombre rol')
       .populate('foto', 'url filename')
       .populate({ path: 'solucion', select: 'descripcionSolucion' })
 
@@ -345,8 +408,9 @@ export const historialSolicitudesCreadas = async (req: Request, res: Response): 
         rol: 'funcionario',
       }),
     })
-  } catch (_error) {
-    handleHttpError(res, 'error al obtener datos')
+  } catch (error) {
+    console.error('[historialSolicitudesCreadas] error:', error)
+    handleHttpError(res, 'error al obtener datos', 500, error)
   }
 }
 
@@ -421,7 +485,7 @@ export const asignarTecnicoSolicitud = async (req: Request, res: Response): Prom
       await sendMail({
         from: getEmailFrom(),
         to: tecnicoAsignado.correo,
-        subject: 'Asignación de caso — AyudaTIC',
+        subject: 'Este caso es tuyo — MiAyudaTics',
         html,
         text,
       })
@@ -447,7 +511,7 @@ export const getSolicitudesAsignadas = async (req: Request, res: Response): Prom
     const solicitudesAsignadas = await solicitudModel
       .find(technicianActiveMongoFilter(tecnicoId))
       .select(`${LIST_SELECT} telefono`)
-      .populate('usuario', 'nombre')
+      .populate('usuario', 'nombre correo rol')
       .populate('ambiente', 'nombre')
       .populate('foto', 'url filename')
 
@@ -463,8 +527,9 @@ export const getSolicitudesAsignadas = async (req: Request, res: Response): Prom
         rol: 'tecnico',
       }),
     })
-  } catch (_error) {
-    handleHttpError(res, 'Error al obtener datos')
+  } catch (error) {
+    console.error('[getSolicitudesAsignadas] error:', error)
+    handleHttpError(res, 'Error al obtener datos', 500, error)
   }
 }
 
@@ -475,8 +540,9 @@ export const getSolicitudesFinalizadas = async (req: Request, res: Response): Pr
 
     const solicitudesFinalizadas = await solicitudModel
       .find(technicianClosedMongoFilter(tecnicoId))
+      .sort({ updatedAt: -1, fecha: -1 })
       .select(LIST_SELECT)
-      .populate('usuario', 'nombre')
+      .populate('usuario', 'nombre correo rol')
       .populate('ambiente', 'nombre')
       .populate('foto', 'url filename')
       .populate({

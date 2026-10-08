@@ -3,7 +3,6 @@ import { Link, useLocation } from 'react-router-dom'
 
 const links = [
   { to: '/casos-por-resolver', label: 'Casos por resolver' },
-  { to: '/mis-casos', label: 'Mis casos' },
   { to: '/casos-resueltos', label: 'Casos resueltos' },
 ]
 

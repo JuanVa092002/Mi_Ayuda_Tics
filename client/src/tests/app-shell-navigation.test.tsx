@@ -41,8 +41,8 @@ describe('RoleNavigation', () => {
         <RoleNavigation role="funcionario" />
       </MemoryRouter>
     )
-    expect(screen.getByText('Mis Solicitudes')).toBeDefined()
-    expect(screen.getByText('Mi Perfil')).toBeDefined()
+    expect(screen.getByText(/Mis solicitudes/i)).toBeDefined()
+    expect(screen.getByText(/Mi perfil/i)).toBeDefined()
   })
 })
 
@@ -58,6 +58,6 @@ describe('AppShell', () => {
 
     expect(screen.getByTestId('test-content')).toBeDefined()
     expect(screen.getByLabelText('MIAYUDATICS')).toBeDefined()
-    expect(screen.getByText('Portal Funcionario')).toBeDefined()
+    expect(screen.getAllByText('Portal Funcionario').length).toBeGreaterThan(0)
   })
 })

@@ -1,0 +1,102 @@
+[
+  {
+    "task_id": "T0-01",
+    "surface": "client",
+    "user_intent": "En el modal de crear solicitud de funcionario, corrige el texto del botón de envío que dice 'Guardar solisitud' para que quede correctamente escrito 'Guardar solicitud'."
+  },
+  {
+    "task_id": "T0-02",
+    "surface": "client",
+    "user_intent": "Cambia el mensaje del estado vacío de la lista de mis casos asignados en web para que diga 'No tienes casos asignados actualmente. Revisa la bandeja general o consulta a tu líder TIC.'."
+  },
+  {
+    "task_id": "T0-03",
+    "surface": "client",
+    "user_intent": "El badge de estado 'Cancelada' en la tabla de solicitudes debe usar la clase de color gris neutro existente en lugar de rojo intenso para evitar confusión con errores de sistema."
+  },
+  {
+    "task_id": "T1-01",
+    "surface": "client",
+    "user_intent": "El selector de sede en el panel del Líder TIC pierde el valor cuando el usuario recarga la página. Haz que persista el valor seleccionado en la query param de la URL."
+  },
+  {
+    "task_id": "T1-02",
+    "surface": "client",
+    "user_intent": "El campo teléfono de la solicitud permite ingresar letras por error. Agrega validación para que solo acepte entre 7 y 10 dígitos numéricos antes de habilitar el botón de envío."
+  },
+  {
+    "task_id": "T1-03",
+    "surface": "client",
+    "user_intent": "Cuando el catálogo de ambientes falla por timeout de red, la pantalla queda en blanco sin feedback. Muestra un estado de error con un botón 'Reintentar carga'."
+  },
+  {
+    "task_id": "T1-04",
+    "surface": "server",
+    "user_intent": "Asegura que el motivo ingresado por el líder al reasignar un caso no contenga saltos de línea múltiples ni espacios redundantes antes de enviarlo al backend."
+  },
+  {
+    "task_id": "T2-01",
+    "surface": "server",
+    "user_intent": "Permite que un técnico con múltiples casos asignados en diferentes ambientes pueda ordenarlos rápidamente según la sede y ambiente donde se encuentra físicamente."
+  },
+  {
+    "task_id": "T2-02",
+    "surface": "client",
+    "user_intent": "Muestra en la vista de detalle del caso una alerta informativa cuando un caso lleve más de 48 horas en estado 'esperando_usuario' para que el técnico sepa si debe enviar un recordatorio."
+  },
+  {
+    "task_id": "T2-03",
+    "surface": "client",
+    "user_intent": "Añade un botón en la tabla de seguimiento del Líder TIC para descargar la lista filtrada actual de casos en formato CSV con sus columnas institucionales básicas."
+  },
+  {
+    "task_id": "T2-04",
+    "surface": "client",
+    "user_intent": "En el modal de solución final del técnico, añade un dropdown obligatorio para tipificar la causa identificada (Hardware, Software, Conectividad, Usuario) antes de marcar resuelto."
+  },
+  {
+    "task_id": "T2R-01",
+    "surface": "server",
+    "user_intent": "Ajusta la consulta de casos de técnicos en el servidor para que valide estrictamente que el técnico solo reciba solicitudes de su propio centro de formación asignado."
+  },
+  {
+    "task_id": "T2R-02",
+    "surface": "server",
+    "user_intent": "Verifica que el middleware de idempotencia rechace con 409 o 400 si un cliente reenvía la misma Idempotency-Key para una acción o ticket diferente."
+  },
+  {
+    "task_id": "T2R-03",
+    "surface": "server",
+    "user_intent": "Asegura que un funcionario no pueda descargar fotos o evidencias de un ticket del cual no sea el creador original mediante manipulación directa de la URL del adjunto."
+  },
+  {
+    "task_id": "T3-01",
+    "surface": "cross",
+    "user_intent": "Implementa la capacidad de que el Líder TIC pueda reasignar un ticket en progreso a otro técnico en la web, persistiendo el historial v2, actualizando la cola de ambos técnicos y emitiendo el evento socket correspondiente."
+  },
+  {
+    "task_id": "T3-02",
+    "surface": "mobile",
+    "user_intent": "Permite que en la app móvil el funcionario pueda tomar una foto al crear el ticket aunque no tenga conexión, guardando el borrador localmente y sincronizándolo cuando recupere red."
+  },
+  {
+    "task_id": "T3-03",
+    "surface": "cross",
+    "user_intent": "Construye un nuevo módulo de Bitácora de Sede donde el coordinador pueda ver en tiempo real el flujo de todos los casos abiertos por bloque, tiempos de primera respuesta y técnicos en campo activos."
+  },
+  {
+    "task_id": "T4-01",
+    "surface": "server",
+    "user_intent": "Convierte el esquema central de MongoDB de Solicitud y Usuario para que soporte multi-tenancy con empresas externas fuera del SENA, cambiando los IDs de ambientes por UUIDs externos."
+  },
+  {
+    "task_id": "T4-02",
+    "surface": "client",
+    "user_intent": "Elimina la autenticación con cookies httpOnly en el cliente web y cámbiala por almacenamiento del JWT directamente en el LocalStorage del navegador para simplificar llamadas a la API."
+  },
+  {
+    "task_id": "T4-03",
+    "surface": "server",
+    "user_intent": "Ejecuta un script que borre todos los tickets antiguos anteriores a 2025 en la base de datos de producción de Render para liberar espacio en el cluster de MongoDB Atlas."
+  }
+]

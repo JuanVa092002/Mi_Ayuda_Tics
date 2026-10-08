@@ -28,7 +28,7 @@ describe('email templates', () => {
           nombre: 'Juan Pérez',
           resetLink: `${CLIENT_URL}/restablecerPassword/abc123`,
         }),
-      expectInHtml: ['Restablecer contraseña', 'Juan Pérez', 'abc123'],
+      expectInHtml: ['Restablecer mi contraseña', 'Juan Pérez', 'abc123'],
     },
     {
       name: 'solicitudRegistrada',
@@ -63,9 +63,10 @@ describe('email templates', () => {
   it.each(templates)('$name incluye branding y datos dinámicos', ({ build, expectInHtml }) => {
     const { html, text } = build()
 
-    expect(html).toContain('AyudaTIC')
-    expect(html).toContain('MiAyudaTIC')
-    expect(html).toContain('SENA · Centro de Teleinformática')
+    expect(html).toContain('MiAyudaTics')
+    expect(html).not.toContain('AyudaTIC')
+    expect(html).not.toContain('MiAyudaTIC')
+    expect(html).toContain('Mesa de servicios · SENA CTPI')
     expect(html).toContain('#04324d')
 
     for (const fragment of expectInHtml) {

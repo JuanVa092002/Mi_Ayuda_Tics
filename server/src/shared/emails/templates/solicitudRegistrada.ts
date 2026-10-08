@@ -10,25 +10,22 @@ export function buildSolicitudRegistradaEmail(
 ): EmailContent {
   const clientUrl = getClientUrl()
   return buildEmailLayout({
-    pageTitle: 'Registro Solicitud — AyudaTIC',
-    icon: '📋',
+    pageTitle: 'Tu caso ya está radicado — MiAyudaTics',
+    icon: '',
     recipientName: params.nombre,
+    headline: 'Tu caso ya está en la mesa.',
     introHtml: `
-      <p style="margin:0 0 16px;">
-        Cordial saludo. Nos permitimos informarle que su solicitud fue registrada
-        en nuestro sistema con el número de caso
-        <strong style="color:#04324d;">${params.codigoCaso}</strong>.
-      </p>
       <p style="margin:0;">
-        Su caso será gestionado en el menor tiempo posible, según los acuerdos de
-        solución establecidos para la Mesa de Servicios del CTPI-CAUCA.
+        Quedó radicado en <strong>MiAyudaTics</strong>. Guarda este número: es el que vas a decir si preguntas en el ambiente.
       </p>`,
-    cta: { label: 'Ingresar al sistema', href: clientUrl },
-    alert: {
-      tone: 'info',
-      title: 'Su solicitud está en proceso de atención.',
-      body: 'Recibirá notificaciones cuando cambie el estado de su caso.',
-    },
+    caseLabel: 'Tu radicado',
+    caseCode: params.codigoCaso,
+    steps: [
+      { state: 'done', label: 'Radicado', detail: 'El centro ya tiene tu solicitud.' },
+      { state: 'now', label: 'El líder despacha', detail: 'Elige al técnico que va a tu ambiente.' },
+      { state: 'later', label: 'Alguien llega', detail: 'Te avisamos cuando el técnico inicie la atención.' },
+    ],
+    cta: { label: 'Consultar estado de mi solicitud', href: clientUrl },
     fallbackLink: clientUrl,
   })
 }

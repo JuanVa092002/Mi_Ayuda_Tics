@@ -167,6 +167,54 @@ describe('applySolicitudWorkflowAction', () => {
     ).rejects.toMatchObject({ status: 409 })
   })
 
+  it('requester_reply persiste evento con type requester_reply y autor fidedigno', async () => {
+    mockNoExistingOperation()
+    const createSpy = vi.spyOn(HistorialSolicitud, 'create').mockImplementation((async (doc: unknown) => doc) as never)
+    vi.spyOn(Solicitud, 'findOneAndUpdate').mockResolvedValue(
+      v2Ticket({ estado: 'en_progreso' }) as never,
+    )
+    const result = await applySolicitudWorkflowAction({
+      solicitud: v2Ticket({ estado: 'esperando_usuario' }) as never,
+      action: 'requester_reply',
+      actor: funcionario,
+      payload: { operationId: 'op-reply-ok', mensaje: 'Sí me encuentro en el aula esperándolos' },
+    })
+    expect(result.event.type).toBe('requester_reply')
+    expect(result.event.author).toBe(funcionario.id)
+    expect(result.event.message).toBe('Sí me encuentro en el aula esperándolos')
+    expect(createSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'requester_reply',
+        actionType: 'requester_reply',
+        author: funcionario.id,
+      })
+    )
+  })
+
+  it('update persiste evento con type note_added en la bitácora técnica', async () => {
+    mockNoExistingOperation()
+    const createSpy = vi.spyOn(HistorialSolicitud, 'create').mockImplementation((async (doc: unknown) => doc) as never)
+    vi.spyOn(Solicitud, 'findOneAndUpdate').mockResolvedValue(
+      v2Ticket({ estado: 'en_progreso' }) as never,
+    )
+    const result = await applySolicitudWorkflowAction({
+      solicitud: v2Ticket({ estado: 'en_progreso' }) as never,
+      action: 'update',
+      actor: tecnico,
+      payload: { operationId: 'op-note-ok', mensaje: 'Limpieza de cabezales y prueba de impresión exitosa.' },
+    })
+    expect(result.event.type).toBe('note_added')
+    expect(result.event.author).toBe(tecnico.id)
+    expect(result.event.message).toBe('Limpieza de cabezales y prueba de impresión exitosa.')
+    expect(createSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'note_added',
+        actionType: 'update',
+        author: tecnico.id,
+      })
+    )
+  })
+
   it('doble submit del mismo operationId no crea un segundo evento', async () => {
     const payload = { operationId: 'op-start-1' }
     const existing = storedReplay('start', tecnico, payload)

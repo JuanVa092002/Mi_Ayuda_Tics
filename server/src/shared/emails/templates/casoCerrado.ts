@@ -8,26 +8,28 @@ export interface CasoCerradoEmailParams {
 export function buildCasoCerradoEmail(params: CasoCerradoEmailParams): EmailContent {
   const clientUrl = getClientUrl()
   return buildEmailLayout({
-    pageTitle: 'Caso Cerrado — AyudaTIC',
-    icon: '✅',
+    pageTitle: 'Tu caso quedó cerrado — MiAyudaTics',
+    icon: '',
     recipientName: params.nombre,
+    headline: 'Este caso ya quedó cerrado.',
     introHtml: `
-      <p style="margin:0 0 16px;">
-        Cordial saludo. Nos permitimos informarle que su caso con código
-        <strong style="color:#04324d;">${params.codigoCaso}</strong>
-        ha sido cerrado con éxito.
-      </p>
       <p style="margin:0;">
-        Gracias por utilizar nuestro servicio de Mesa de Ayuda. Si tiene alguna
-        otra solicitud, no dude en contactarnos.
+        La intervención terminó y el caso quedó archivado con tu visto bueno. Gracias: eso mantiene el servicio del CTPI al día.
       </p>`,
-    cta: { label: 'Ingresar al sistema', href: clientUrl },
+    caseLabel: 'Caso finalizado',
+    caseCode: params.codigoCaso,
+    steps: [
+      { state: 'done', label: 'Atendido', detail: 'El técnico registró la solución.' },
+      { state: 'done', label: 'Confirmado', detail: 'El cierre quedó con tu visto bueno.' },
+      { state: 'now', label: 'En tu historial', detail: 'Puedes volver a leer qué se hizo, cuando lo necesites.' },
+    ],
+    cta: { label: 'Consultar historial en el sistema', href: clientUrl },
     alert: {
       tone: 'success',
-      title: '✓ Caso finalizado correctamente.',
+      title: 'Caso finalizado y archivado.',
+      body: 'La bitácora de la solución sigue disponible en tu historial.',
     },
     fallbackLink: clientUrl,
-    footerNoteHtml:
-      'Atentamente,<br/>Equipo de Mesa de Servicio — CTPI-CAUCA',
+    footerNoteHtml: 'Equipo de MiAyudaTics · CTPI Regional Cauca',
   })
 }

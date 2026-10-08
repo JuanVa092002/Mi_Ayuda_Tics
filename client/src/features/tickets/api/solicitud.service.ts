@@ -28,8 +28,23 @@ export const crearSolicitud = async (formData: FormData): Promise<Solicitud> => 
   return response.data
 }
 
-export const obtenerAmbientes = async (): Promise<ApiListResponse<AmbienteFormacion[]>> => {
+// Cache en memoria para catálogos institucionales casi inmutables durante la sesión
+const CATALOG_TTL_MS = 10 * 60 * 1000 // 10 minutos
+let ambientesCache: { data: ApiListResponse<AmbienteFormacion[]>; ts: number } | null = null
+let tiposCasoCache: { data: ApiListResponse<TipoCaso[]>; ts: number } | null = null
+
+export const invalidateCatalogCache = (): void => {
+  ambientesCache = null
+  tiposCasoCache = null
+}
+
+export const obtenerAmbientes = async (forceRefresh = false): Promise<ApiListResponse<AmbienteFormacion[]>> => {
+  const now = Date.now()
+  if (!forceRefresh && ambientesCache && now - ambientesCache.ts < CATALOG_TTL_MS) {
+    return ambientesCache.data
+  }
   const response = await apiClient.get<ApiListResponse<AmbienteFormacion[]>>('/ambienteFormacion')
+  ambientesCache = { data: response.data, ts: now }
   return response.data
 }
 
@@ -57,14 +72,19 @@ export const historialSolicitudesLider = async (): Promise<Solicitud[]> => {
   return sortSolicitudesNewest(response.data.data ?? [])
 }
 
-export const obtenerTiposCaso = async (): Promise<ApiListResponse<TipoCaso[]>> => {
+export const obtenerTiposCaso = async (forceRefresh = false): Promise<ApiListResponse<TipoCaso[]>> => {
+  const now = Date.now()
+  if (!forceRefresh && tiposCasoCache && now - tiposCasoCache.ts < CATALOG_TTL_MS) {
+    return tiposCasoCache.data
+  }
   const response = await apiClient.get<ApiListResponse<TipoCaso[]>>('/tipoCaso')
+  tiposCasoCache = { data: response.data, ts: now }
   return response.data
 }
 
 export const getSolicitudesPendientes = async (): Promise<Solicitud[]> => {
   const response = await apiClient.get<ApiListResponse<Solicitud[]>>('/solicitud/pendientes')
-  return sortSolicitudesNewest(response.data.data ?? [])
+  return response.data.data ?? []
 }
 
 export const getCasosAsignados = async (): Promise<Solicitud[]> => {
@@ -93,4 +113,20 @@ export const updateCaso = async (
 ): Promise<TipoCaso> => {
   const response = await apiClient.put<TipoCaso>(`/tipoCaso/${id}`, caso)
   return response.data
+}
+
+export interface HistorialCasoResponse {
+  message: string
+  data: import('@/shared/types').SolicitudHistorialEvent[]
+  nextCursor?: string
+}
+
+export const obtenerHistorialCaso = async (
+  solicitudId: string,
+  limit = 50
+): Promise<import('@/shared/types').SolicitudHistorialEvent[]> => {
+  const response = await apiClient.get<HistorialCasoResponse>(
+    `/solicitud/${solicitudId}/historial?historialLimit=${limit}`
+  )
+  return response.data.data ?? []
 }

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import LeaderLayout from '@/app/layouts/LeaderLayout'
 import { getTecnicosActivos, inactivarTecnico } from '@/features/users'
-import { toast } from 'react-toastify'
 import AdminTecnicosLayout from '@/app/layouts/AdminTecnicosLayout'
+import { Button, StatusBadge, PaginationFooter, toast } from '@/shared/ui'
 import type { User } from '@/shared/types'
 
 export default function TecnicosActivos() {
@@ -53,14 +53,6 @@ export default function TecnicosActivos() {
   const indexOfLastItem = currentPage * itemsPerPage
   const indexOfFirstItem = indexOfLastItem - itemsPerPage
   const currentItems = filteredTecnicos.slice(indexOfFirstItem, indexOfLastItem)
-
-  const nextPage = () => {
-    if (currentPage < totalPages) setCurrentPage(currentPage + 1)
-  }
-
-  const prevPage = () => {
-    if (currentPage > 1) setCurrentPage(currentPage - 1)
-  }
 
   return (
     <LeaderLayout>
@@ -125,18 +117,18 @@ export default function TecnicosActivos() {
                             <span className="text-[13px] font-semibold text-on-surface">{tecnico.telefono}</span>
                           </td>
                           <td className="py-6 px-6 align-top">
-                            <span className="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold border hairline-border bg-green-50 text-green-700 border-green-100">
-                              <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-2"></span>Activo
-                            </span>
+                            <StatusBadge status="activo" label="Activo" />
                           </td>
                           <td className="py-6 px-6 align-top text-right">
-                            <button 
+                            <Button
+                              variant="destructive"
+                              size="sm"
                               onClick={() => handleInactivar(tecnico._id)}
-                              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all text-[11px] font-bold border hairline-border border-red-100"
+                              icon="person_off"
+                              className="!h-8 !px-3 !text-[11px] !min-h-0 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white border border-red-100 shadow-none font-bold"
                             >
-                              <span className="material-symbols-outlined !text-[16px]">person_off</span>
                               Inactivar
-                            </button>
+                            </Button>
                           </td>
                         </tr>
                       ))
@@ -155,20 +147,14 @@ export default function TecnicosActivos() {
               </div>
 
               {/* Footer */}
-              <div className="p-6 border-t hairline-border border-slate-100 flex items-center justify-between mt-auto bg-slate-50/50">
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Página {currentPage} de {totalPages || 1}</span>
-                  <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{totalItems} técnicos registrados</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={prevPage} disabled={currentPage === 1} className="w-9 h-9 rounded-xl flex items-center justify-center border hairline-border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-30 transition-all shadow-sm group">
-                    <span className="material-symbols-outlined !text-[20px] group-active:scale-90 transition-transform">chevron_left</span>
-                  </button>
-                  <button onClick={nextPage} disabled={currentPage === totalPages || totalPages === 0} className="w-9 h-9 rounded-xl flex items-center justify-center border hairline-border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-30 transition-all shadow-sm group">
-                    <span className="material-symbols-outlined !text-[20px] group-active:scale-90 transition-transform">chevron_right</span>
-                  </button>
-                </div>
-              </div>
+              <PaginationFooter
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                itemLabel="técnicos registrados"
+              />
             </section>
           </main>
         </AdminTecnicosLayout>

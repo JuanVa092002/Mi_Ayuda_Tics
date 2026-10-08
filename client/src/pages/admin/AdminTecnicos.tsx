@@ -5,8 +5,8 @@ import {
   aprobarTecnico,
   denegarTecnico,
 } from '@/features/users'
-import { toast } from 'react-toastify'
 import AdminTecnicosLayout from '@/app/layouts/AdminTecnicosLayout'
+import { Button, StatusBadge, PaginationFooter, toast } from '@/shared/ui'
 import type { User } from '@/shared/types'
 
 export default function AdminTecnicos() {
@@ -124,25 +124,26 @@ export default function AdminTecnicos() {
                             </div>
                           </td>
                           <td className="premium-td text-center">
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 text-amber-700 border border-amber-100 text-[10px] font-black uppercase tracking-wider shadow-sm">
-                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                              Pendiente
-                            </span>
+                            <StatusBadge status="pendiente" label="Pendiente" />
                           </td>
                           <td className="premium-td text-center">
                             <div className="flex items-center justify-center gap-2">
-                              <button 
+                              <Button
+                                variant="success"
+                                size="sm"
                                 onClick={() => handleAprobar(row._id)}
-                                className="px-4 py-2 rounded-xl bg-emerald-500 text-white text-[11px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-md active:scale-95"
+                                icon="check"
                               >
                                 Aprobar
-                              </button>
-                              <button 
+                              </Button>
+                              <Button
+                                variant="secondary"
+                                size="sm"
                                 onClick={() => handleDenegar(row._id)}
-                                className="px-4 py-2 rounded-xl bg-white text-slate-500 border hairline-border border-slate-200 text-[11px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-95"
+                                icon="close"
                               >
                                 Denegar
-                              </button>
+                              </Button>
                             </div>
                           </td>
                         </tr>
@@ -162,20 +163,14 @@ export default function AdminTecnicos() {
               </div>
 
               {/* Footer */}
-              <div className="pagination-footer">
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Moderación — Página {currentPage}</span>
-                  <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{totalItems} técnicos en espera</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="pagination-btn">
-                    <span className="material-symbols-outlined">chevron_left</span>
-                  </button>
-                  <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0} className="pagination-btn">
-                    <span className="material-symbols-outlined">chevron_right</span>
-                  </button>
-                </div>
-              </div>
+              <PaginationFooter
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                itemLabel="técnicos en espera"
+              />
             </section>
           </main>
         </AdminTecnicosLayout>

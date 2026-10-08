@@ -18,6 +18,8 @@ import {
   getWorkflowVersion,
   isLegacyWorkflow,
   nextPersistedEstado,
+  resolveCaseRole,
+  type CaseRole,
   sanitizePublicMotivo,
   type PersistedSolicitudEstado,
   type SolicitudActor,
@@ -46,6 +48,7 @@ export type WorkflowActionPayload = {
   fechaEsperada?: string
   causaIdentificada?: string
   attachmentId?: Types.ObjectId
+  expectedRevision?: number
 }
 
 export type WorkflowHttpError = {
@@ -93,8 +96,9 @@ function publicEventMessage(
       ? `La solicitud fue reasignada a ${name}. Motivo: ${motivo}.`
       : `La solicitud fue reasignada a ${name}.`
   }
-  if (type === 'updated' && payload.mensaje?.trim()) return payload.mensaje.trim()
-  if (type === 'waiting_for_requester' && payload.mensaje?.trim()) return payload.mensaje.trim()
+  if ((type === 'updated' || type === 'note_added' || type === 'requester_reply' || type === 'waiting_for_requester') && payload.mensaje?.trim()) {
+    return payload.mensaje.trim()
+  }
   if (type === 'cancelled' && payload.motivo?.trim()) {
     return `La solicitud fue cancelada. Motivo: ${sanitizePublicMotivo(payload.motivo)}.`
   }
@@ -428,6 +432,16 @@ export async function applySolicitudWorkflowAction(params: {
   }
 
   const currentRevision = currentRevisionOf(solicitud)
+  if (
+    action === 'reassign' &&
+    payload.expectedRevision != null &&
+    payload.expectedRevision !== currentRevision
+  ) {
+    throw asError(
+      409,
+      'El caso cambió desde que abriste la reasignación. Revisa el técnico actual y confirma de nuevo.',
+    )
+  }
   const appliedRevision = currentRevision + 1
   const { set, unset } = buildUpdates(action, solicitud, nextEstado, payload)
   const eventDoc = buildEventDoc({
@@ -578,47 +592,101 @@ export async function recordCreatedEvent(
   }
 }
 
-function toPublicHistorialEvent(event: IHistorialSolicitud & { toObject?: () => Record<string, unknown> }) {
+export interface HistorialTicketContext {
+  usuarioId?: unknown
+  tecnicoId?: unknown
+}
+
+function toPublicHistorialEvent(
+  event: IHistorialSolicitud & { toObject?: () => Record<string, unknown> },
+  ticketContext?: HistorialTicketContext,
+) {
   const plain = (event.toObject?.() ?? event) as Record<string, unknown> & {
     metadata?: {
       nextAction?: string
       nextActionAt?: Date
       resolutionType?: string
+      whatWasDone?: string
+      pendingWork?: string
+      reason?: string
+      assignedTechnicianId?: string
+      previousTechnicianId?: string
     }
-    author?: { nombre?: string } | Types.ObjectId
+    author?: { _id?: unknown; nombre?: string; rol?: string } | Types.ObjectId
     attachment?: { _id?: unknown; url?: string; filename?: string } | Types.ObjectId
   }
   const author =
     plain.author && typeof plain.author === 'object' && 'nombre' in plain.author
-      ? { nombre: (plain.author as { nombre?: string }).nombre }
+      ? {
+          _id: (plain.author as { _id?: unknown })._id != null ? String((plain.author as { _id?: unknown })._id) : undefined,
+          id: (plain.author as { _id?: unknown })._id != null ? String((plain.author as { _id?: unknown })._id) : undefined,
+          nombre: (plain.author as { nombre?: string }).nombre || '',
+          rol: (plain.author as { rol?: string }).rol || '',
+        }
       : undefined
+
   const attachment =
     plain.attachment && typeof plain.attachment === 'object' && 'url' in plain.attachment
       ? {
           _id: (plain.attachment as { _id?: unknown })._id,
+          id: (plain.attachment as { _id?: unknown })._id != null ? String((plain.attachment as { _id?: unknown })._id) : undefined,
           url: (plain.attachment as { url?: string }).url,
           filename: (plain.attachment as { filename?: string }).filename,
         }
       : undefined
 
+  // Determinación canónica de caseRole en el backend basada en IDs y tipo de evento
+  const caseRole = resolveCaseRole({
+    authorId: author?.id || (typeof plain.author === 'string' ? plain.author : undefined),
+    authorRol: author?.rol,
+    solicitudUsuarioId: ticketContext?.usuarioId,
+    solicitudTecnicoId: ticketContext?.tecnicoId,
+    eventType: plain.type as string,
+  })
+
+  // Determinación de recipient si aplica (ej. preguntas entre técnico y solicitante)
+  let recipient: { id: string; role: CaseRole } | undefined
+  if (plain.type === 'waiting_for_requester' && ticketContext?.usuarioId) {
+    recipient = {
+      id: String(ticketContext.usuarioId),
+      role: 'SOLICITANTE',
+    }
+  } else if (plain.type === 'requester_reply' && ticketContext?.tecnicoId) {
+    recipient = {
+      id: String(ticketContext.tecnicoId),
+      role: 'TECNICO_ASIGNADO',
+    }
+  } else if ((plain.type === 'assigned' || plain.type === 'reassigned') && plain.metadata?.assignedTechnicianId) {
+    recipient = {
+      id: String(plain.metadata.assignedTechnicianId),
+      role: 'TECNICO_ASIGNADO',
+    }
+  }
+
   return {
     _id: plain._id,
+    id: String(plain._id),
     type: plain.type,
     message: plain.message,
     createdAt: plain.createdAt,
     author,
+    caseRole,
+    ...(recipient ? { recipient } : {}),
     ...(attachment ? { attachment } : {}),
     metadata: {
       nextAction: plain.metadata?.nextAction,
       nextActionAt: plain.metadata?.nextActionAt,
       resolutionType: plain.metadata?.resolutionType,
+      whatWasDone: plain.metadata?.whatWasDone,
+      pendingWork: plain.metadata?.pendingWork,
+      reason: plain.metadata?.reason,
     },
   }
 }
 
 export async function loadPublicHistorial(
   solicitudId: Types.ObjectId,
-  options?: { limit?: number; before?: string },
+  options?: { limit?: number; before?: string; ticketContext?: HistorialTicketContext },
 ): Promise<PublicHistorialPage> {
   const limit = Math.min(Math.max(options?.limit ?? 50, 1), 100)
   const filter: Record<string, unknown> = { solicitud: solicitudId }
@@ -626,18 +694,30 @@ export async function loadPublicHistorial(
     filter._id = { $gt: new Types.ObjectId(options.before) }
   }
 
+  // Si no se proporcionó ticketContext, lo resolvemos de la Solicitud para cálculo de caseRole
+  let ticketContext = options?.ticketContext
+  if (!ticketContext) {
+    const sol = await Solicitud.findById(solicitudId).select('usuario tecnico').lean()
+    if (sol) {
+      ticketContext = {
+        usuarioId: extractEntityId(sol.usuario),
+        tecnicoId: extractEntityId(sol.tecnico),
+      }
+    }
+  }
+
   const events = await HistorialSolicitud.find(filter)
     .sort({ createdAt: 1, _id: 1 })
     .limit(limit + 1)
     .select('type message metadata createdAt author attachment')
-    .populate('author', 'nombre')
+    .populate('author', 'nombre rol')
     .populate('attachment', 'url filename')
 
   const hasMore = events.length > limit
   const page = hasMore ? events.slice(0, limit) : events
   const last = page[page.length - 1]
   return {
-    items: page.map((event) => toPublicHistorialEvent(event)),
+    items: page.map((event) => toPublicHistorialEvent(event, ticketContext)),
     nextCursor: hasMore && last ? String(last._id) : undefined,
   }
 }

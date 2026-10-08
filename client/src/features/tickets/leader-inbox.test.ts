@@ -10,9 +10,20 @@ import {
   parseSolicitudDate,
   solutionPreview,
   sortSolicitudesNewest,
+  sortSolicitudesOldest,
+  sortLeaderDispatch,
   unwrapWorkflowSolicitud,
   validateRequiredMotivo,
   workflowLabel,
+  filterLeaderOps,
+  countLeaderOps,
+  leaderFacingStatusLabel,
+  leaderResponsibilityLine,
+  leaderReassignIsPrimary,
+  reassignConsequence,
+  leaderCaseNarrative,
+  leaderUrgencyMarks,
+  tecnicoActiveLoad,
 } from './leader-inbox'
 
 function row(partial: Partial<Solicitud> & Pick<Solicitud, '_id' | 'estado'>): Solicitud {
@@ -29,7 +40,50 @@ describe('leader-inbox', () => {
       row({ _id: 'new', estado: 'nuevo', fecha: '2026-09-07T21:36:00.000Z' }),
     ])
     expect(sorted[0]?._id).toBe('new')
+    const waiting = sortSolicitudesOldest([
+      row({ _id: 'new', estado: 'nuevo', fecha: '2026-09-07T21:36:00.000Z' }),
+      row({ _id: 'undated', estado: 'nuevo' }),
+      row({ _id: 'old', estado: 'nuevo', fecha: '13-06-2026 05:28' }),
+    ])
+    expect(waiting.map((item) => item._id)).toEqual(['old', 'new', 'undated'])
     expect(parseSolicitudDate('07-09-2026 21:36')).toBeGreaterThan(parseSolicitudDate('13-06-2026'))
+  })
+
+  it('ordena despacho: express, luego atención al público, luego estándar; dentro del grupo el más antiguo', () => {
+    const expressNew = row({
+      _id: 'express-new',
+      estado: 'nuevo',
+      fecha: '2026-09-07T21:36:00.000Z',
+      descripcion: '[MODO: EXPRESS] Clase en vivo',
+    })
+    const expressOld = row({
+      _id: 'express-old',
+      estado: 'nuevo',
+      fecha: '13-06-2026 05:28',
+      descripcion: '[MODO: EXPRESS] Clase en vivo',
+    })
+    const publico = row({
+      _id: 'publico',
+      estado: 'nuevo',
+      fecha: '01-01-2026 10:00',
+      descripcion: '[IMPACTO: ATENCION_PUBLICO] Ventanilla',
+    })
+    const ordinario = row({
+      _id: 'ordinario',
+      estado: 'nuevo',
+      fecha: '01-01-2025 10:00',
+      descripcion: 'Falla de red en oficina',
+    })
+    const sinFecha = row({ _id: 'sin-fecha', estado: 'nuevo', descripcion: 'Sin marca' })
+
+    const ordered = sortLeaderDispatch([ordinario, publico, expressNew, sinFecha, expressOld])
+    expect(ordered.map((item) => item._id)).toEqual([
+      'express-old',
+      'express-new',
+      'publico',
+      'ordinario',
+      'sin-fecha',
+    ])
   })
 
   it('permite asignar v1 solicitado y v2 nuevo según capabilities', () => {
@@ -86,11 +140,35 @@ describe('leader-inbox', () => {
         }),
       ),
     ).toBe('Cambio de disco')
-    expect(
-      solutionPreview(
-        row({ _id: 'v2', estado: 'resuelto', headline: 'El funcionario debe confirmar.' }),
-      ),
-    ).toBe('El funcionario debe confirmar.')
+    expect(solutionPreview(row({ _id: 'v2', estado: 'resuelto', headline: 'El funcionario debe confirmar.' }))).toBe(
+      'Sin solución registrada',
+    )
     expect(workflowLabel(2)).toBe('v2')
+  })
+
+  it('separa la operación por cola y no llama solución al estado', () => {
+    const items = [
+      row({ _id: 'a', estado: 'asignado', workflowVersion: 2, queue: 'por_iniciar', tecnico: { _id: 't1', nombre: 'Ana' } as never }),
+      row({ _id: 'b', estado: 'en_progreso', workflowVersion: 2, queue: 'en_atencion' }),
+      row({ _id: 'c', estado: 'esperando_usuario', queue: 'esperando_funcionario' }),
+      row({ _id: 'd', estado: 'resuelto', queue: 'esperando_confirmacion' }),
+      row({ _id: 'e', estado: 'cerrado', queue: 'terminados' }),
+    ]
+    expect(filterLeaderOps(items, 'operacion').map((item) => item._id)).toEqual(['a', 'b', 'c', 'd'])
+    expect(filterLeaderOps(items, 'por_iniciar').map((item) => item._id)).toEqual(['a'])
+    expect(countLeaderOps(items).terminados).toBe(1)
+    expect(leaderResponsibilityLine(items[0]!)).toBe('Ana aún no inicia')
+    expect(leaderFacingStatusLabel({ ...items[2]!, displayStatus: 'Requiere tu información' })).toBe('Espera funcionario')
+    expect(leaderFacingStatusLabel(items[0]!)).toBe('Por iniciar')
+    expect(leaderFacingStatusLabel(items[3]!)).toBe('Espera confirmación')
+    expect(leaderResponsibilityLine(items[2]!)).toBe('Espera respuesta del funcionario')
+    expect(leaderReassignIsPrimary(items[2]!)).toBe(false)
+    expect(reassignConsequence(items[1]!)).toMatch(/por iniciar/)
+    expect(leaderCaseNarrative('[MODO: EXPRESS | IMPACTO: ATENCION_PUBLICO]\nProyector')).toBe('Proyector')
+    expect(leaderUrgencyMarks('[MODO: EXPRESS | IMPACTO: ATENCION_PUBLICO]\nProyector')).toEqual([
+      'clase_en_vivo',
+      'atencion_publico',
+    ])
+    expect(tecnicoActiveLoad(items, 't1')).toBe(1)
   })
 })

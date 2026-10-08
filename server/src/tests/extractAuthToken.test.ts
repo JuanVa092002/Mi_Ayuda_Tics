@@ -35,4 +35,11 @@ describe('extractAuthToken', () => {
   it('parseTokenFromCookie desde cookies object', () => {
     expect(parseTokenFromCookie(undefined, { token: 'from-object' })).toBe('from-object')
   })
+
+  it('lee query param token para soporte SSE nativo de EventSource', () => {
+    const token = extractAuthToken({
+      queryParamToken: 'sse-query-token',
+    })
+    expect(token).toBe('sse-query-token')
+  })
 })

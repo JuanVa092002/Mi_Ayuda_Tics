@@ -7,24 +7,26 @@ export interface TecnicoAprobadoEmailParams {
 export function buildTecnicoAprobadoEmail(params: TecnicoAprobadoEmailParams): EmailContent {
   const clientUrl = getClientUrl()
   return buildEmailLayout({
-    pageTitle: 'Aprobación de Registro — AyudaTIC',
-    icon: '✓',
+    pageTitle: 'Ya puedes salir a campo — MiAyudaTics',
+    icon: '',
     recipientName: params.nombre,
+    headline: 'Ya puedes salir a campo.',
     introHtml: `
-      <p style="margin:0 0 16px;">
-        Cordial saludo. Nos complace informarle que su cuenta ha sido aprobada y
-        ahora tiene acceso al sistema de Mesa de Servicio del CTPI-CAUCA.
-      </p>
       <p style="margin:0;">
-        Puede ingresar al sistema utilizando el enlace a continuación.
+        El líder aprobó tu cuenta. Desde ahora los casos del centro pueden llegar a tu guardia en <strong>MiAyudaTics</strong>.
       </p>`,
-    cta: { label: 'Ingresar al sistema', href: clientUrl },
+    steps: [
+      { state: 'done', label: 'Cuenta aprobada', detail: 'Quedaste habilitado como técnico.' },
+      { state: 'now', label: 'Entra a la consola', detail: 'Usa las mismas credenciales con las que te registraste.' },
+      { state: 'later', label: 'Durante el turno', detail: 'Deja la consola abierta para ver los casos que te asignen.' },
+    ],
+    cta: { label: 'Ingresar a mi consola de campo', href: clientUrl },
     alert: {
       tone: 'success',
-      title: '✓ Su registro como técnico ha sido aprobado.',
+      title: 'Tu cuenta de técnico está lista.',
+      body: 'La solicitud de registro fue aprobada.',
     },
     fallbackLink: clientUrl,
-    footerNoteHtml:
-      'Si tiene alguna pregunta o necesita asistencia, no dude en contactarnos.<br/><br/>Atentamente,<br/>Equipo de Mesa de Servicio CTPI-CAUCA',
+    footerNoteHtml: 'Coordinación de MiAyudaTics · SENA CTPI Regional Cauca',
   })
 }

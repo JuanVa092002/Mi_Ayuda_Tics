@@ -1,10 +1,9 @@
 import { useState, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link } from 'react-router-dom'
-import { toast } from 'react-toastify'
 import { isAxiosError } from 'axios'
 import { register as registerService } from '@/features/auth/api/auth.service'
-import { ErrorMessage } from '@/shared/ui'
+import { ErrorMessage, toast } from '@/shared/ui'
 import type { RegisterCredentials, UserRole } from '@/shared/types'
 
 export default function RegisterForm(): ReactNode {

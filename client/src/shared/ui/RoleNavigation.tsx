@@ -28,8 +28,7 @@ export const FUNCIONARIO_NAV_ITEMS: readonly NavItem[] = [
 ] as const
 
 export const TECNICO_NAV_ITEMS: readonly NavItem[] = [
-  { to: '/casos-por-resolver', label: 'Por resolver', icon: 'pending_actions', match: ['/casos-por-resolver'] },
-  { to: '/mis-casos', label: 'Mis casos', icon: 'assignment_ind', match: ['/mis-casos'] },
+  { to: '/casos-por-resolver', label: 'Por resolver', icon: 'pending_actions', match: ['/casos-por-resolver', '/mis-casos'] },
   { to: '/casos-resueltos', label: 'Casos resueltos', icon: 'task_alt', match: ['/casos-resueltos'] },
   { to: '/perfil', label: 'Mi perfil', icon: 'account_circle', match: ['/perfil'] },
 ] as const

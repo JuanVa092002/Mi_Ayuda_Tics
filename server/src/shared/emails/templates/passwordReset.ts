@@ -7,23 +7,25 @@ export interface PasswordResetEmailParams {
 
 export function buildPasswordResetEmail(params: PasswordResetEmailParams): EmailContent {
   return buildEmailLayout({
-    pageTitle: 'Recuperación de Contraseña — AyudaTIC',
-    icon: '🔐',
+    pageTitle: 'Restablece tu contraseña — MiAyudaTics',
+    icon: '',
     recipientName: params.nombre,
+    headline: 'Te dejamos una hora para entrar.',
     introHtml: `
-      <p style="margin:0 0 16px;">
-        Recibimos una solicitud para restablecer la contraseña
-        de tu cuenta en <strong>AyudaTIC</strong>.
-        Si fuiste tú, haz clic en el botón a continuación.
+      <p style="margin:0;">
+        Pediste una contraseña nueva en <strong>MiAyudaTics</strong>. El botón abre un enlace de un solo uso. Si no fuiste tú, ignora este correo: tu clave no cambia.
       </p>`,
-    cta: { label: 'Restablecer contraseña', href: params.resetLink },
+    steps: [
+      { state: 'now', label: 'Abre el enlace', detail: 'Define la clave nueva en la página que se abre.' },
+      { state: 'later', label: 'Caduca en 1 hora', detail: 'Después de eso hay que pedir otro enlace.' },
+    ],
+    cta: { label: 'Restablecer mi contraseña', href: params.resetLink },
     alert: {
       tone: 'warning',
-      title: '⏱ Este enlace expira en <strong>1 hora</strong>.',
-      body: 'Si ya expiró, solicita uno nuevo desde la página de inicio de sesión.',
+      title: 'Este enlace expira en 1 hora.',
+      body: 'Sirve una sola vez. Si no reconoces la solicitud, no hagas nada.',
     },
-    footerNoteHtml:
-      'Si no solicitaste este cambio, puedes ignorar este correo. Tu contraseña actual permanecerá sin cambios.',
+    footerNoteHtml: 'Seguridad de MiAyudaTics · SENA CTPI',
     fallbackLink: params.resetLink,
   })
 }

@@ -5,6 +5,7 @@ import type {
 } from '@miayuda/contracts'
 import { RealtimeEvents } from '@miayuda/contracts'
 import { emitToUser } from '../utils/handleSocket'
+import { broadcastToUser, broadcastToRole } from './sseBroadcaster'
 import type { INotificacion } from '../../features/shared/models/notificaciones'
 
 export { RealtimeEvents }
@@ -34,11 +35,22 @@ export function emitSolicitudUpdate(
   userId: string,
   solicitud: Parameters<typeof buildSolicitudUpdatePayload>[0]
 ): void {
-  emitToUser(userId, RealtimeEvents.ACTUALIZAR_SOLICITUD, buildSolicitudUpdatePayload(solicitud))
+  const payload = buildSolicitudUpdatePayload(solicitud)
+  emitToUser(userId, RealtimeEvents.ACTUALIZAR_SOLICITUD, payload)
+  broadcastToUser(userId, RealtimeEvents.ACTUALIZAR_SOLICITUD, payload)
+}
+
+export function emitSolicitudToRole(
+  role: string,
+  solicitud: Parameters<typeof buildSolicitudUpdatePayload>[0]
+): void {
+  const payload = buildSolicitudUpdatePayload(solicitud)
+  broadcastToRole(role, RealtimeEvents.ACTUALIZAR_SOLICITUD, payload)
 }
 
 export function emitTecnicoUpdate(userId: string, payload: ActualizarTecnicoPayload): void {
   emitToUser(userId, RealtimeEvents.ACTUALIZAR_TECNICO, payload)
+  broadcastToUser(userId, RealtimeEvents.ACTUALIZAR_TECNICO, payload)
 }
 
 export function toNotificacionPayload(doc: INotificacion): NotificacionPayload {
@@ -53,5 +65,8 @@ export function toNotificacionPayload(doc: INotificacion): NotificacionPayload {
 }
 
 export function emitNotificacion(userId: string, doc: INotificacion): void {
-  emitToUser(userId, RealtimeEvents.NUEVA_NOTIFICACION, toNotificacionPayload(doc))
+  const payload = toNotificacionPayload(doc)
+  emitToUser(userId, RealtimeEvents.NUEVA_NOTIFICACION, payload)
+  broadcastToUser(userId, RealtimeEvents.NUEVA_NOTIFICACION, payload)
 }
+

@@ -53,18 +53,18 @@ function useTicketPhotoUrl(foto?: MediaFile | string | null): { url?: string; lo
       cancelled = true
       if (objectUrl) URL.revokeObjectURL(objectUrl)
     }
-  }, [key])
+  }, [foto, key])
 
   return state
 }
 
-function EmptyThumb() {
+function EmptyThumb({ box, compact }: { box: string; compact: boolean }) {
   return (
     <div
-      className="mx-auto flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50"
+      className={`mx-auto flex shrink-0 items-center justify-center border border-dashed border-slate-200 bg-slate-50 ${box}`}
       aria-label="Sin evidencia"
     >
-      <span className="material-symbols-outlined text-[22px] text-slate-300">image_not_supported</span>
+      <span className={`material-symbols-outlined text-slate-300 ${compact ? 'text-[16px]' : 'text-[22px]'}`}>image_not_supported</span>
     </div>
   )
 }
@@ -72,10 +72,19 @@ function EmptyThumb() {
 export default function LeaderMediaThumb({
   foto,
   alt = 'Evidencia del caso',
+  size = 'md',
 }: {
   foto?: MediaFile | string | null
   alt?: string
+  size?: 'md' | 'compact' | 'row'
 }) {
+  const box =
+    size === 'compact'
+      ? 'h-8 w-8 rounded-lg'
+      : size === 'row'
+        ? 'h-14 w-14 rounded-xl'
+        : 'h-[4.5rem] w-[4.5rem] rounded-2xl'
+  const compact = size === 'compact' || size === 'row'
   const { url, loading } = useTicketPhotoUrl(foto)
   const [broken, setBroken] = useState(false)
   const [open, setOpen] = useState(false)
@@ -96,14 +105,14 @@ export default function LeaderMediaThumb({
   if (loading) {
     return (
       <div
-        className="mx-auto h-[4.5rem] w-[4.5rem] animate-pulse rounded-2xl bg-slate-100"
+        className={`mx-auto shrink-0 animate-pulse bg-slate-100 ${box}`}
         aria-label="Cargando evidencia"
       />
     )
   }
 
   if (!url || broken) {
-    return <EmptyThumb />
+    return <EmptyThumb box={box} compact={compact} />
   }
 
   return (
@@ -111,7 +120,7 @@ export default function LeaderMediaThumb({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="group/thumb relative mx-auto block h-[4.5rem] w-[4.5rem] overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-sm transition hover:border-verde-sena hover:shadow-md"
+        className={`group/thumb relative block shrink-0 overflow-hidden border border-slate-200 bg-slate-100 shadow-sm transition hover:border-verde-sena hover:shadow-md ${box}`}
         aria-label="Ver evidencia"
       >
         <img

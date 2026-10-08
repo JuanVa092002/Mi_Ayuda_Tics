@@ -36,3 +36,10 @@ export { WorkCanvas, Metric, CommandBar, SplitWorkspace, Pane } from './Workspac
 export { SlideOverDrawer } from './SlideOverDrawer'
 export { AdaptiveSkeletonList, AdaptiveSkeletonDetail } from './AdaptiveSkeleton'
 export type { ButtonProps, ButtonVariant, ButtonSize } from './Button'
+export { SemanticIcon } from './SemanticIcon'
+export type { SemanticIconProps, SemanticIconName } from './SemanticIcon'
+export { InlineAlert, FeedbackBanner } from './FeedbackBanner'
+export type { InlineAlertProps, FeedbackBannerProps, FeedbackTone } from './FeedbackBanner'
+export { AlertProvider, useAlert, notify, toast } from './SweetAlert'
+export type { AlertOptions, AlertType } from './SweetAlert'
+

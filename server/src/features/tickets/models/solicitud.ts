@@ -149,6 +149,13 @@ const solicitudSchema = new Schema<ISolicitud>(
   }
 )
 
+solicitudSchema.index({ usuario: 1, fecha: -1, _id: -1 })
+solicitudSchema.index({ tecnico: 1, estado: 1 })
+solicitudSchema.index({ estado: 1, createdAt: -1 })
+solicitudSchema.index({ fecha: -1 })
+solicitudSchema.index({ tipoCaso: 1 })
+solicitudSchema.index({ codigoCaso: 1 }, { unique: true, sparse: true })
+
 const Solicitud = model<ISolicitud, Model<ISolicitud>>('Solicitud', solicitudSchema)
 export default Solicitud
 

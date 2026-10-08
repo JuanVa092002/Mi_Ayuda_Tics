@@ -3,6 +3,7 @@ export interface AuthTokenSources {
   cookieHeader?: string
   cookies?: { token?: string }
   handshakeAuthToken?: unknown
+  queryParamToken?: unknown
 }
 
 export function extractBearerFromAuthorization(
@@ -29,7 +30,7 @@ export function parseTokenFromCookie(
 }
 
 /**
- * Priority: Authorization Bearer → httpOnly cookie → Socket handshake auth.token
+ * Priority: Authorization Bearer → httpOnly cookie → Socket handshake auth.token → Query param (?token=)
  */
 export function extractAuthToken(sources: AuthTokenSources): string | null {
   const bearer = extractBearerFromAuthorization(sources.authorizationHeader)
@@ -40,6 +41,10 @@ export function extractAuthToken(sources: AuthTokenSources): string | null {
 
   if (typeof sources.handshakeAuthToken === 'string' && sources.handshakeAuthToken.trim()) {
     return sources.handshakeAuthToken.trim()
+  }
+
+  if (typeof sources.queryParamToken === 'string' && sources.queryParamToken.trim()) {
+    return sources.queryParamToken.trim()
   }
 
   return null

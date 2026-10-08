@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AgentOSTaskSchemaV2_1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "risk_envelope",
+    "routing",
+    "hard_constraints",
+    "soft_preferences",
+    "verification_contract"
+  ],
+  "properties": {
+    "task_id": { "type": "string" },
+    "family": { "type": "string" },
+    "surface": { "type": "string", "enum": ["client", "server", "mobile", "packages", "cross"] },
+    "target_path": { "type": "string" },
+    "user_intent": { "type": "string" },
+    "risk_envelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["technical_complexity", "blast_radius", "reversibility", "security_risk", "data_risk", "production_risk"],
+      "properties": {
+        "technical_complexity": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
+        "blast_radius": { "type": "string", "enum": ["local", "component", "module", "multi_surface", "global"] },
+        "reversibility": { "type": "string", "enum": ["reversible", "partially_reversible", "irreversible"] },
+        "security_risk": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
+        "data_risk": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
+        "production_risk": { "type": "string", "enum": ["low", "medium", "high", "critical"] }
+      }
+    },
+    "routing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["preferred_tier", "acceptable_tiers", "unsafe_tiers"],
+      "properties": {
+        "preferred_tier": { "type": "string" },
+        "acceptable_tiers": { "type": "array", "items": { "type": "string" } },
+        "unsafe_tiers": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "hard_constraints": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "soft_preferences": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "preferred_skills": { "type": "array", "items": { "type": "string" } },
+        "acceptable_alternatives": { "type": "array", "items": { "type": "string" } },
+        "delegation_topology": { "type": "string" },
+        "contract_length": { "type": "string" },
+        "max_workers": { "type": "integer" }
+      }
+    },
+    "verification_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["level_required", "observable_assertions"],
+      "properties": {
+        "level_required": { "type": "string", "enum": ["NONE", "STATIC", "UNIT", "INTEGRATION", "E2E", "PRODUCTION_LIKE", "HITL_GATE"] },
+        "observable_assertions": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "expected_hitl": { "type": "boolean" },
+    "hitl_reason": { "type": "string" },
+    "security_invariants": { "type": "array", "items": { "type": "string" } },
+    "current_implementation_reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "session_transport": { "type": "string" }
+      }
+    }
+  }
+}

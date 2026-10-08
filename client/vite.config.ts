@@ -5,7 +5,11 @@ import path from 'path'
 function envGuardPlugin() {
   return {
     name: 'env-guard',
-    config(_config: unknown, { command }: { command: string }) {
+    config(_config: unknown, { command, mode }: { command: string; mode: string }) {
+      // QA mode no requiere vars obligatorias (usa las del .env por defecto)
+      if (mode === 'qa') return
+      
+      // Prod/build normal requiere vars
       if (command === 'build' && !process.env.VITE_BACKEND_URL && !process.env.VITE_API_URL) {
         throw new Error(
           'VITE_BACKEND_URL o VITE_API_URL es requerido para el build de producción.'

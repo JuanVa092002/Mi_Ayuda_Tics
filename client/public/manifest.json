@@ -1,25 +1,65 @@
 {
-  "name": "MiAyudaTics",
+  "name": "MiAyudaTics - Soporte Técnico SENA CTPI",
   "short_name": "MiAyudaTics",
-  "description": "Sistema Institucional de Gestión y Soporte Técnico TIC - SENA CTPI",
+  "description": "Sistema Institucional de Gestión y Soporte Técnico TIC - Mesa de Servicios CTPI",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#04324d",
-  "orientation": "any",
-  "categories": ["productivity", "utilities"],
+  "orientation": "portrait",
+  "categories": ["productivity", "utilities", "business"],
+  "lang": "es-CO",
   "icons": [
     {
-      "src": "/vite.svg",
+      "src": "/icon-192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/vite.svg",
+      "src": "/icon-192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
-  ]
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot-login.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nueva Solicitud",
+      "short_name": "Nueva Solicitud",
+      "description": "Crear una nueva solicitud de soporte",
+      "url": "/funcionario/new",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Mis Tickets",
+      "short_name": "Mis Tickets",
+      "description": "Ver mis solicitudes de soporte",
+      "url": "/funcionario",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
 }

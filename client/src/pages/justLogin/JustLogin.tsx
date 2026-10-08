@@ -1,9 +1,9 @@
 import { LoginForm } from '@/features/auth'
 import PhoneLogin from '@/features/auth/phone/PhoneLogin'
-import { usePhoneLayout } from '@/features/auth/phone/usePhoneLayout'
+import { useAuthPhoneLayout } from '@/features/auth/phone/usePhoneLayout'
 
 export default function JustLogin() {
-  const phone = usePhoneLayout()
+  const phone = useAuthPhoneLayout()
   if (phone) return <PhoneLogin />
 
   return (

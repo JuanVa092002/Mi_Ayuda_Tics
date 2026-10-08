@@ -1,9 +1,9 @@
 import { ForgotPasswordForm } from '@/features/auth'
 import PhoneForgot from '@/features/auth/phone/PhoneForgot'
-import { usePhoneLayout } from '@/features/auth/phone/usePhoneLayout'
+import { useAuthPhoneLayout } from '@/features/auth/phone/usePhoneLayout'
 
 export default function ForgotPassword() {
-  const phone = usePhoneLayout()
+  const phone = useAuthPhoneLayout()
   if (phone) return <PhoneForgot />
 
   return (

@@ -1,9 +1,9 @@
 import { RegisterForm } from '@/features/auth'
 import PhoneRegister from '@/features/auth/phone/PhoneRegister'
-import { usePhoneLayout } from '@/features/auth/phone/usePhoneLayout'
+import { useAuthPhoneLayout } from '@/features/auth/phone/usePhoneLayout'
 
 export default function RegisterLogin() {
-  const phone = usePhoneLayout()
+  const phone = useAuthPhoneLayout()
   if (phone) return <PhoneRegister />
 
   return (

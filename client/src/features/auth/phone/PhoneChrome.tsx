@@ -1,4 +1,4 @@
-import { useState, type InputHTMLAttributes, type ReactNode } from 'react'
+import React, { useState, type InputHTMLAttributes, type ReactNode } from 'react'
 import logoSena from '@/assets/logoSena.png'
 
 const blue = '#04324D'
@@ -130,7 +130,7 @@ type FieldProps = InputHTMLAttributes<HTMLInputElement> & {
   toggle?: { visible: boolean; onToggle: () => void }
 }
 
-export function PhoneField({ label, icon, error, toggle, onFocus, onBlur, value: _ignored, ...props }: FieldProps): ReactNode {
+export const PhoneField = React.forwardRef<HTMLInputElement, FieldProps>(function PhoneField({ label, icon, error, toggle, onFocus, onBlur, value: _ignored, ...props }, ref) {
   const [focused, setFocused] = useState(false)
   const borderColor = error ? '#D32F2F' : focused ? green : border
   const iconColor = error ? '#D32F2F' : focused ? green : secondary
@@ -147,6 +147,7 @@ export function PhoneField({ label, icon, error, toggle, onFocus, onBlur, value:
           <Feather name={icon} size={20} color={iconColor} />
         </span>
         <input
+          ref={ref}
           {...props}
           className="phone-auth-input min-w-0 flex-1 bg-transparent py-3 font-medium outline-none"
           style={{
@@ -187,6 +188,6 @@ export function PhoneField({ label, icon, error, toggle, onFocus, onBlur, value:
       ) : null}
     </div>
   )
-}
+})
 
 export const phoneText = { font, blue, green, text, secondary, tertiary, muted, border }

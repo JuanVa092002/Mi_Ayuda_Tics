@@ -1,0 +1,17 @@
+{
+  "projects": {
+    "default": "miayudatics"
+  },
+  "targets": {
+    "miayudatics": {
+      "hosting": {
+        "prod": [
+          "miayudatics"
+        ],
+        "qa": [
+          "qa-miayudatics"
+        ]
+      }
+    }
+  }
+}

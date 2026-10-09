@@ -44,3 +44,8 @@ server/storage/file-*
 # Marketing and Remotion video render outputs
 marketing/**/out/
 marketing/**/renders/
+
+# Firebase deploy cache + QA build output
+.firebase/
+client/dist-qa/
+

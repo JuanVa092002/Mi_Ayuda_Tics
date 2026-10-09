@@ -28,7 +28,7 @@ export const registerCtrl = async (req: Request, res: Response): Promise<void> =
 
     const correoExiste = await usuarioModel.findOne({ correo })
     if (correoExiste) {
-      res.status(400).send({ message: 'correo ya se encuentra registrado' })
+      res.status(400).send({ message: 'El correo ya está registrado. Intenta con otro o inicia sesión' })
       return
     }
 

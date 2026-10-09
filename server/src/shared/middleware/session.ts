@@ -21,19 +21,19 @@ export const authMiddleware = async (
     })
 
     if (!token) {
-      handleHttpError(res, 'error en inicio de sesion, no cuenta con token', 401)
+      handleHttpError(res, 'Se requiere autenticación para acceder a este recurso', 401)
       return
     }
 
     const dataToken = await verifyToken(token)
     if (!dataToken?._id) {
-      handleHttpError(res, 'error en inicio de sesion', 401)
+      handleHttpError(res, 'Token inválido. Por favor, inicia sesión nuevamente', 401)
       return
     }
 
     const usuario = await usuarioModel.findById(dataToken._id)
     if (!usuario) {
-      handleHttpError(res, 'usuario no encontrado', 401)
+      handleHttpError(res, 'Usuario no encontrado', 401)
       return
     }
 
@@ -44,6 +44,6 @@ export const authMiddleware = async (
     req.usuario = usuario
     next()
   } catch {
-    handleHttpError(res, 'error en inicio de sesion', 401)
+    handleHttpError(res, 'Sesión expirada. Por favor, inicia sesión nuevamente', 401)
   }
 }

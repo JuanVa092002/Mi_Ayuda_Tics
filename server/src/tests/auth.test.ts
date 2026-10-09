@@ -8,7 +8,7 @@ describe('Auth & RBAC Logic', () => {
   it('debe retornar 401 si no hay token en una ruta protegida', async () => {
     const response = await request(app).get('/api/usuarios/perfil')
     expect(response.status).toBe(401)
-    expect(response.body.message ?? response.body.error).toContain('error en inicio de sesion')
+    expect(response.body.message ?? response.body.error).toContain('Se requiere autenticación')
   })
 
   it('debe retornar 403 si un "funcionario" intenta acceder a ruta de "lider"', async () => {

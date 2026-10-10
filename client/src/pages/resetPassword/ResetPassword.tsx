@@ -3,8 +3,12 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { isAxiosError } from 'axios'
 import { resetPassword } from '@/features/auth'
 import logoSena from '@/assets/logoSena.png'
+import PhoneResetPassword from '@/features/auth/phone/PhoneResetPassword'
+import { usePhoneLayout } from '@/features/auth/phone/usePhoneLayout'
 
 export default function ResetPassword(): ReactNode {
+  const phone = usePhoneLayout()
+  if (phone) return <PhoneResetPassword />
   const { token } = useParams<{ token: string }>()
   const navigate = useNavigate()
   const [password, setPassword] = useState('')

@@ -16,8 +16,11 @@ export default function PhoneForgot(): ReactNode {
   const {
     register,
     handleSubmit,
-    formState: { errors },
-  } = useForm<ForgotFields>()
+    formState: { errors, touchedFields },
+  } = useForm<ForgotFields>({
+    mode: 'onBlur',
+    reValidateMode: 'onChange'
+  })
 
   const onSubmit = handleSubmit(async data => {
     setError(null)
@@ -82,7 +85,7 @@ export default function PhoneForgot(): ReactNode {
               type="email"
               autoComplete="email"
               placeholder="usuario@sena.edu.co"
-              error={errors.correo?.message}
+              error={touchedFields.correo ? errors.correo?.message : undefined}
               {...register('correo', { required: 'El correo es requerido' })}
             />
             <PhoneButton type="submit" disabled={sending}>{sending ? 'Enviando…' : 'Enviar enlace'}</PhoneButton>

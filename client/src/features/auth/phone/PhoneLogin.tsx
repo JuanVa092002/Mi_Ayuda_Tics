@@ -14,7 +14,10 @@ export default function PhoneLogin(): ReactNode {
   const [showPwd, setShowPwd] = useState(false)
   const [serverError, setServerError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const { register, handleSubmit, formState: { errors } } = useForm<LoginCredentials>({ mode: 'onTouched' })
+  const { register, handleSubmit, formState: { errors, touchedFields } } = useForm<LoginCredentials>({
+    mode: 'onBlur',
+    reValidateMode: 'onChange'
+  })
   const { font, secondary, text } = phoneText
 
   const onSubmit = handleSubmit(async data => {
@@ -53,7 +56,7 @@ export default function PhoneLogin(): ReactNode {
           type="email"
           autoComplete="email"
           placeholder="usuario@sena.edu.co"
-          error={errors.correo?.message}
+          error={touchedFields.correo ? errors.correo?.message : undefined}
           {...register('correo', {
             required: 'El correo es requerido',
             pattern: { value: /^\w+([.-_+]?\w+)*@\w+([.-]?\w+)*(\.\w{2,10})+$/, message: 'Ingresa un correo válido' },
@@ -65,7 +68,7 @@ export default function PhoneLogin(): ReactNode {
           type={showPwd ? 'text' : 'password'}
           autoComplete="current-password"
           placeholder="Tu contraseña"
-          error={errors.password?.message}
+          error={touchedFields.password ? errors.password?.message : undefined}
           toggle={{ visible: showPwd, onToggle: () => setShowPwd(value => !value) }}
           {...register('password', {
             required: 'La contraseña es requerida',

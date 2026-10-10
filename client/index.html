@@ -23,5 +23,27 @@
   <body class="w-full">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('/sw.js', { scope: '/' })
+            .then(function (reg) {
+              // Si hay una actualización esperando, activarla inmediatamente
+              if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' })
+              reg.addEventListener('updatefound', function () {
+                var newWorker = reg.installing
+                if (newWorker) {
+                  newWorker.addEventListener('statechange', function () {
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                      // Nueva versión disponible: recargar para usar el nuevo SW
+                      window.location.reload()
+                    }
+                  })
+                }
+              })
+            })
+        })
+      }
+    </script>
   </body>
 </html>

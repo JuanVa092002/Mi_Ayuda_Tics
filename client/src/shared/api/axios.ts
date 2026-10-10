@@ -19,7 +19,11 @@ if (!apiBaseUrl && import.meta.env.DEV) {
 }
 
 export function shouldClearSessionOnUnauthorized(url?: string, status?: number): boolean {
-  return status === 401 && !url?.includes('auth/verify-token')
+  if (status !== 401) return false
+  // Auth endpoints returning 401 is expected behavior (wrong credentials, no token yet)
+  // Only trigger the global session-expired handler for authenticated API calls
+  const authEndpoints = ['auth/verify-token', 'auth/login', 'auth/register', 'recuperarPassword', 'restablecerPassword']
+  return !authEndpoints.some(endpoint => url?.includes(endpoint))
 }
 
 const axiosConfig = axios.create({

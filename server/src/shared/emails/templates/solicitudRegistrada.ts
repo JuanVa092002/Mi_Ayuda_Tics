@@ -10,13 +10,13 @@ export function buildSolicitudRegistradaEmail(
 ): EmailContent {
   const clientUrl = getClientUrl()
   return buildEmailLayout({
-    pageTitle: 'Tu caso ya está radicado — MiAyudaTics',
+    pageTitle: 'Tu caso ya está radicado — MiAyudaTic',
     icon: '',
     recipientName: params.nombre,
     headline: 'Tu caso ya está en la mesa.',
     introHtml: `
       <p style="margin:0;">
-        Quedó radicado en <strong>MiAyudaTics</strong>. Guarda este número: es el que vas a decir si preguntas en el ambiente.
+        Quedó radicado en <strong>MiAyudaTic</strong>. Guarda este número: es el que vas a decir si preguntas en el ambiente.
       </p>`,
     caseLabel: 'Tu radicado',
     caseCode: params.codigoCaso,

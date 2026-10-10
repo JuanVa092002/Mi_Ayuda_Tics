@@ -23,11 +23,11 @@ export default function BrandWordmark({
     <div className={stacked ? 'flex flex-col items-center gap-1 px-1 text-center' : 'flex flex-col'}>
       <p
         className={`font-black uppercase ${sizeClass[size]} ${stacked ? 'flex flex-col items-center gap-0.5 tracking-[0.06em]' : ''}`}
-        aria-label="MIAYUDATICS"
+        aria-label="MIAYUDATIC"
       >
         <span className="text-azul-sena">MI</span>
         <span className="text-verde-sena">AYUDA</span>
-        <span className="text-azul-sena">TICS</span>
+        <span className="text-azul-sena">TIC</span>
       </p>
       {subtitle ? (
         <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-400">{subtitle}</p>

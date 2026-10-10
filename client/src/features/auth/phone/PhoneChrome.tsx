@@ -55,10 +55,10 @@ export function Wordmark({ size = 'default' }: { size?: 'large' | 'default' }): 
     ? { fontSize: 26, lineHeight: '32px', letterSpacing: '0.6px' }
     : { fontSize: 20, lineHeight: '26px', letterSpacing: '0.4px' }
   return (
-    <p className="text-center font-bold" style={{ ...font, ...metrics }} aria-label="MIAYUDATICS">
+    <p className="text-center font-bold" style={{ ...font, ...metrics }} aria-label="MIAYUDATIC">
       <span style={{ color: blue }}>MI</span>
       <span style={{ color: green }}>AYUDA</span>
-      <span style={{ color: blue }}>TICS</span>
+      <span style={{ color: blue }}>TIC</span>
     </p>
   )
 }

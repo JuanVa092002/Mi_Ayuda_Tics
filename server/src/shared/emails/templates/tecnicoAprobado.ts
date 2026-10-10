@@ -7,13 +7,13 @@ export interface TecnicoAprobadoEmailParams {
 export function buildTecnicoAprobadoEmail(params: TecnicoAprobadoEmailParams): EmailContent {
   const clientUrl = getClientUrl()
   return buildEmailLayout({
-    pageTitle: 'Ya puedes salir a campo — MiAyudaTics',
+    pageTitle: 'Ya puedes salir a campo — MiAyudaTic',
     icon: '',
     recipientName: params.nombre,
     headline: 'Ya puedes salir a campo.',
     introHtml: `
       <p style="margin:0;">
-        El líder aprobó tu cuenta. Desde ahora los casos del centro pueden llegar a tu guardia en <strong>MiAyudaTics</strong>.
+        El líder aprobó tu cuenta. Desde ahora los casos del centro pueden llegar a tu guardia en <strong>MiAyudaTic</strong>.
       </p>`,
     steps: [
       { state: 'done', label: 'Cuenta aprobada', detail: 'Quedaste habilitado como técnico.' },
@@ -27,6 +27,6 @@ export function buildTecnicoAprobadoEmail(params: TecnicoAprobadoEmailParams): E
       body: 'La solicitud de registro fue aprobada.',
     },
     fallbackLink: clientUrl,
-    footerNoteHtml: 'Coordinación de MiAyudaTics · SENA CTPI Regional Cauca',
+    footerNoteHtml: 'Coordinación de MiAyudaTic · SENA CTPI Regional Cauca',
   })
 }

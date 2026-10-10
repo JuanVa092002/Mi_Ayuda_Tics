@@ -342,7 +342,7 @@ export async function assignWorkflowV2(req: Request, res: Response): Promise<boo
         await sendMail({
           from: getEmailFrom(),
           to: tecnicoAsignado.correo,
-          subject: 'Este caso es tuyo — MiAyudaTics',
+          subject: 'Este caso es tuyo — MiAyudaTic',
           html,
           text,
         })

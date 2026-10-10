@@ -47,7 +47,7 @@ export function getEmailFrom(): string {
     process.env.EMAIL_FROM ||
     process.env.EMAIL_USER ||
     process.env.EMAIL ||
-    'MiAyudaTics <onboarding@brevo.com>'
+    'MiAyudaTic <onboarding@brevo.com>'
   )
 }
 
@@ -264,7 +264,7 @@ export function buildEmailLayout(options: EmailLayoutOptions): EmailContent {
           <tr>
             <td style="background-color:#f8fafc;border-top:1px solid #edf2f7;padding:24px 36px;text-align:center;">
               <p style="margin:0;color:#64748b;font-size:12px;line-height:1.6;">
-                Este correo fue enviado automáticamente por <strong style="color:#04324d;">MiAyudaTics</strong><br/>
+                Este correo fue enviado automáticamente por <strong style="color:#04324d;">MiAyudaTic</strong><br/>
                 SENA · Centro de Teleinformática y Producción Industrial · Cauca<br/>
                 <span style="color:#94a3b8;font-size:11px;">© 2026 · No respondas a este correo</span>
               </p>

@@ -8,7 +8,7 @@ export interface CasoCerradoEmailParams {
 export function buildCasoCerradoEmail(params: CasoCerradoEmailParams): EmailContent {
   const clientUrl = getClientUrl()
   return buildEmailLayout({
-    pageTitle: 'Tu caso quedó cerrado — MiAyudaTics',
+    pageTitle: 'Tu caso quedó cerrado — MiAyudaTic',
     icon: '',
     recipientName: params.nombre,
     headline: 'Este caso ya quedó cerrado.',
@@ -30,6 +30,6 @@ export function buildCasoCerradoEmail(params: CasoCerradoEmailParams): EmailCont
       body: 'La bitácora de la solución sigue disponible en tu historial.',
     },
     fallbackLink: clientUrl,
-    footerNoteHtml: 'Equipo de MiAyudaTics · CTPI Regional Cauca',
+    footerNoteHtml: 'Equipo de MiAyudaTic · CTPI Regional Cauca',
   })
 }

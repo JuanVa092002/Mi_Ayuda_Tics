@@ -8,7 +8,7 @@ export interface CasoAsignadoEmailParams {
 export function buildCasoAsignadoEmail(params: CasoAsignadoEmailParams): EmailContent {
   const clientUrl = getClientUrl()
   return buildEmailLayout({
-    pageTitle: 'Este caso es tuyo — MiAyudaTics',
+    pageTitle: 'Este caso es tuyo — MiAyudaTic',
     icon: '',
     recipientName: params.nombre,
     headline: 'Este caso es tuyo.',
@@ -25,6 +25,6 @@ export function buildCasoAsignadoEmail(params: CasoAsignadoEmailParams): EmailCo
     ],
     cta: { label: 'Ver mis casos', href: clientUrl },
     fallbackLink: clientUrl,
-    footerNoteHtml: 'Coordinación de MiAyudaTics · CTPI Cauca',
+    footerNoteHtml: 'Coordinación de MiAyudaTic · CTPI Cauca',
   })
 }

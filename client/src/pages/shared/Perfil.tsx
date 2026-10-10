@@ -82,7 +82,7 @@ export default function Perfil(): ReactNode {
               </div>
 
               <p className="mt-8 text-[11px] text-slate-400 font-bold uppercase tracking-[0.14em] text-center">
-                MIAYUDATICS · CTPI
+                MIAYUDATIC · CTPI
               </p>
             </div>
           </div>

@@ -361,7 +361,7 @@ export const crearSolicitud = async (req: Request, res: Response): Promise<void>
         await sendMail({
           from: getEmailFrom(),
           to: usuario.correo,
-          subject: 'Tu caso ya está en la mesa — MiAyudaTics',
+          subject: 'Tu caso ya está en la mesa — MiAyudaTic',
           html,
           text,
         })
@@ -485,7 +485,7 @@ export const asignarTecnicoSolicitud = async (req: Request, res: Response): Prom
       await sendMail({
         from: getEmailFrom(),
         to: tecnicoAsignado.correo,
-        subject: 'Este caso es tuyo — MiAyudaTics',
+        subject: 'Este caso es tuyo — MiAyudaTic',
         html,
         text,
       })

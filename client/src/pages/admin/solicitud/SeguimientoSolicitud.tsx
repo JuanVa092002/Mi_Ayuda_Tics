@@ -885,7 +885,7 @@ export default function SeguimientoSolicitud(): ReactNode {
             <div className="w-full overflow-x-auto hairline-scrollbar">
               <table className="w-full min-w-[960px] border-separate border-spacing-0 text-left">
                 <caption className="sr-only">
-                  Seguimiento de casos asignados en MiAyudaTics. Columnas: Situación, Responsable, Caso, Ambiente, Solución y Acciones.
+                  Seguimiento de casos asignados en MiAyudaTic. Columnas: Situación, Responsable, Caso, Ambiente, Solución y Acciones.
                 </caption>
                 <thead>
                   <tr className="bg-slate-100/70 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-600">

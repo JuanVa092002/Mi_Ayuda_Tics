@@ -57,7 +57,7 @@ describe('AppShell', () => {
     )
 
     expect(screen.getByTestId('test-content')).toBeDefined()
-    expect(screen.getByLabelText('MIAYUDATICS')).toBeDefined()
+    expect(screen.getByLabelText('MIAYUDATIC')).toBeDefined()
     expect(screen.getAllByText('Portal Funcionario').length).toBeGreaterThan(0)
   })
 })

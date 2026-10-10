@@ -6,13 +6,13 @@ export interface TecnicoDenegadoEmailParams {
 
 export function buildTecnicoDenegadoEmail(params: TecnicoDenegadoEmailParams): EmailContent {
   return buildEmailLayout({
-    pageTitle: 'Tu registro no quedó habilitado — MiAyudaTics',
+    pageTitle: 'Tu registro no quedó habilitado — MiAyudaTic',
     icon: '',
     recipientName: params.nombre,
     headline: 'Esta vez el registro no quedó habilitado.',
     introHtml: `
       <p style="margin:0;">
-        El líder revisó tu solicitud para entrar como técnico en <strong>MiAyudaTics</strong> y no fue aprobada. No es un cierre definitivo: puedes aclararlo con él.
+        El líder revisó tu solicitud para entrar como técnico en <strong>MiAyudaTic</strong> y no fue aprobada. No es un cierre definitivo: puedes aclararlo con él.
       </p>`,
     steps: [
       { state: 'done', label: 'Revisada', detail: 'Alguien del centro ya vio la solicitud.' },
@@ -24,6 +24,6 @@ export function buildTecnicoDenegadoEmail(params: TecnicoDenegadoEmailParams): E
       title: 'Tu solicitud de registro como técnico no fue aprobada.',
       body: 'Para una aclaración, habla con el líder TIC del centro.',
     },
-    footerNoteHtml: 'Coordinación de MiAyudaTics · SENA CTPI Regional Cauca',
+    footerNoteHtml: 'Coordinación de MiAyudaTic · SENA CTPI Regional Cauca',
   })
 }

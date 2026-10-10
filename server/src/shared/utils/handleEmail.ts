@@ -7,13 +7,13 @@ interface BrevoRecipient {
 }
 
 function parseFrom(from: string | undefined): { name: string; email: string } {
-  const fallback = process.env.EMAIL_FROM || 'MiAyudaTics <onboarding@brevo.com>'
+  const fallback = process.env.EMAIL_FROM || 'MiAyudaTic <onboarding@brevo.com>'
   const value = from || fallback
   const match = value.match(/^(.+?)\s*<([^>]+)>$/)
   if (match) {
     return { name: match[1].trim(), email: match[2].trim() }
   }
-  return { name: 'MiAyudaTics', email: value.trim() }
+  return { name: 'MiAyudaTic', email: value.trim() }
 }
 
 function normalizeRecipients(to: SendMailOptions['to']): BrevoRecipient[] {
@@ -106,7 +106,7 @@ async function sendViaSmtp(mailOptions: SendMailOptions): Promise<void> {
 
   const info = await transporter.sendMail({
     ...mailOptions,
-    from: mailOptions.from || process.env.EMAIL_FROM || 'MiAyudaTics <onboarding@brevo.com>',
+    from: mailOptions.from || process.env.EMAIL_FROM || 'MiAyudaTic <onboarding@brevo.com>',
   })
 
   console.log('Correo enviado vía Brevo SMTP: %s', info.messageId)

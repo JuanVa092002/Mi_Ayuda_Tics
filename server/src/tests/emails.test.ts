@@ -63,7 +63,7 @@ describe('email templates', () => {
   it.each(templates)('$name incluye branding y datos dinámicos', ({ build, expectInHtml }) => {
     const { html, text } = build()
 
-    expect(html).toContain('MiAyudaTics')
+    expect(html).toContain('MiAyudaTic')
     expect(html).not.toContain('AyudaTIC')
     expect(html).not.toContain('MiAyudaTIC')
     expect(html).toContain('Mesa de servicios · SENA CTPI')

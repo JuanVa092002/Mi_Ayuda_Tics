@@ -20,11 +20,11 @@ export interface WorkflowEmail {
 
 function needInfo(nombre: string, codigoCaso: string): WorkflowEmail {
   const content = buildEmailLayout({
-    pageTitle: 'Necesitamos un dato — MiAyudaTics',
+    pageTitle: 'Necesitamos un dato — MiAyudaTic',
     icon: '',
     recipientName: nombre,
     headline: 'El técnico no puede seguir sin ti.',
-    introHtml: `<p style="margin:0;">Paró el caso para esperar un dato tuyo. Cuando respondas en MiAyudaTics, la atención continúa.</p>`,
+    introHtml: `<p style="margin:0;">Paró el caso para esperar un dato tuyo. Cuando respondas en MiAyudaTic, la atención continúa.</p>`,
     caseLabel: 'Caso en espera',
     caseCode: codigoCaso,
     steps: [
@@ -35,14 +35,14 @@ function needInfo(nombre: string, codigoCaso: string): WorkflowEmail {
   })
   return {
     to: '',
-    subject: 'Necesitamos un dato de tu caso — MiAyudaTics',
+    subject: 'Necesitamos un dato de tu caso — MiAyudaTic',
     ...content,
   }
 }
 
 function askConfirm(nombre: string, codigoCaso: string): WorkflowEmail {
   const content = buildEmailLayout({
-    pageTitle: 'Revisa la solución y confirma — MiAyudaTics',
+    pageTitle: 'Revisa la solución y confirma — MiAyudaTic',
     icon: '',
     recipientName: nombre,
     headline: 'Revisa la solución y confirma.',
@@ -57,7 +57,7 @@ function askConfirm(nombre: string, codigoCaso: string): WorkflowEmail {
   })
   return {
     to: '',
-    subject: 'Revisa la solución y confirma — MiAyudaTics',
+    subject: 'Revisa la solución y confirma — MiAyudaTic',
     ...content,
   }
 }
@@ -71,7 +71,7 @@ export function buildWorkflowEmail(input: WorkflowEmailInput): WorkflowEmail | n
       nombre: input.tecnicoNombre,
       codigoCaso: input.codigoCaso,
     })
-    return { to: input.tecnicoCorreo, subject: 'Este caso es tuyo — MiAyudaTics', ...content }
+    return { to: input.tecnicoCorreo, subject: 'Este caso es tuyo — MiAyudaTic', ...content }
   }
 
   if (input.action === 'wait_for_requester') {
@@ -94,7 +94,7 @@ export function buildWorkflowEmail(input: WorkflowEmailInput): WorkflowEmail | n
     })
     return {
       to: input.funcionarioCorreo,
-      subject: 'Tu caso ya quedó cerrado — MiAyudaTics',
+      subject: 'Tu caso ya quedó cerrado — MiAyudaTic',
       ...content,
     }
   }

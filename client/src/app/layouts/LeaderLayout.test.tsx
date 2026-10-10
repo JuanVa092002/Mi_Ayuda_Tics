@@ -23,7 +23,7 @@ vi.mock('@/features/notifications', () => ({
 }))
 
 describe('LeaderLayout', () => {
-  it('muestra el wordmark MIAYUDATICS y la navegación institucional', () => {
+  it('muestra el wordmark MIAYUDATIC y la navegación institucional', () => {
     render(
       <MemoryRouter initialEntries={['/adminSolicitud']}>
         <LeaderLayout>
@@ -32,7 +32,7 @@ describe('LeaderLayout', () => {
       </MemoryRouter>,
     )
 
-    expect(screen.getAllByLabelText('MIAYUDATICS').length).toBeGreaterThan(0)
+    expect(screen.getAllByLabelText('MIAYUDATIC').length).toBeGreaterThan(0)
     expect(screen.getByText('AYUDA')).toBeInTheDocument()
     expect(screen.getByRole('navigation', { name: 'Navegación líder' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Cola de nuevos' })).toHaveAttribute('aria-current', 'page')

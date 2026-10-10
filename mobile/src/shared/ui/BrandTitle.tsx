@@ -24,11 +24,11 @@ export function BrandTitle({ size = 'default', showSubtitle = false }: BrandTitl
       <View style={styles.wordmark}>
         <Text
           style={[styles.wordmarkBase, metrics]}
-          accessibilityLabel="MIAYUDATICS"
+          accessibilityLabel="MIAYUDATIC"
         >
           <Text style={[styles.segment, metrics, styles.blue]}>MI</Text>
           <Text style={[styles.segment, metrics, styles.green]}>AYUDA</Text>
-          <Text style={[styles.segment, metrics, styles.blue]}>TICS</Text>
+          <Text style={[styles.segment, metrics, styles.blue]}>TIC</Text>
         </Text>
       </View>
       {showSubtitle ? (

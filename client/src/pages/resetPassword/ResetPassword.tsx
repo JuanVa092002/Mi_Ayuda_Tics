@@ -6,9 +6,7 @@ import logoSena from '@/assets/logoSena.png'
 import PhoneResetPassword from '@/features/auth/phone/PhoneResetPassword'
 import { usePhoneLayout } from '@/features/auth/phone/usePhoneLayout'
 
-export default function ResetPassword(): ReactNode {
-  const phone = usePhoneLayout()
-  if (phone) return <PhoneResetPassword />
+function DesktopResetPassword(): ReactNode {
   const { token } = useParams<{ token: string }>()
   const navigate = useNavigate()
   const [password, setPassword] = useState('')
@@ -246,4 +244,10 @@ export default function ResetPassword(): ReactNode {
       </div>
     </div>
   )
+}
+
+export default function ResetPassword(): ReactNode {
+  const phone = usePhoneLayout()
+  if (phone) return <PhoneResetPassword />
+  return <DesktopResetPassword />
 }

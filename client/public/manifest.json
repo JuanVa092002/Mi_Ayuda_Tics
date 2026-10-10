@@ -18,7 +18,7 @@
     },
     {
       "src": "/icons/logo.png",
-      "sizes": "192x192",
+      "sizes": "512x512",
       "form_factor": "wide",
       "type": "image/png"
     }

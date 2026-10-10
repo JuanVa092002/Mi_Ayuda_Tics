@@ -2,9 +2,11 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5.0" />
     <meta name="theme-color" content="#04324d" />
-    <title>Sin Conexión · MiAyudaTIC</title>
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>MiAyudaTIC</title>
     <style>
       * {
         margin: 0;
@@ -12,207 +14,292 @@
         box-sizing: border-box;
       }
       
-      body {
+      html, body {
+        width: 100%;
+        height: 100%;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-          'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-          sans-serif;
+          'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
         -webkit-font-smoothing: antialiased;
-        background: linear-gradient(135deg, #04324d 0%, #1a5f7a 100%);
-        min-height: 100vh;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      
+      body {
+        background: linear-gradient(135deg, #ffffff 0%, #e8f0f7 100%);
         display: flex;
         align-items: center;
         justify-content: center;
+        min-height: 100vh;
         padding: 20px;
+        overflow: hidden;
       }
-      
+
+      /* Animated background elements */
+      .background {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+        overflow: hidden;
+        pointer-events: none;
+      }
+
+      .circle {
+        position: absolute;
+        border-radius: 50%;
+        opacity: 0.1;
+        animation: float 6s ease-in-out infinite;
+      }
+
+      .circle1 {
+        width: 300px;
+        height: 300px;
+        background: #04324d;
+        top: -100px;
+        left: -100px;
+        animation-delay: 0s;
+      }
+
+      .circle2 {
+        width: 250px;
+        height: 250px;
+        background: #39a900;
+        bottom: -80px;
+        right: -50px;
+        animation-delay: 2s;
+      }
+
+      @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-20px); }
+      }
+
       .container {
+        position: relative;
+        z-index: 10;
         max-width: 500px;
         text-align: center;
         background: white;
-        border-radius: 20px;
-        padding: 40px 30px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        border-radius: 24px;
+        padding: 50px 30px;
+        box-shadow: 0 20px 60px rgba(4, 50, 77, 0.15);
+        animation: slideIn 0.6s ease-out;
       }
-      
-      .icon {
-        font-size: 80px;
-        margin-bottom: 20px;
-        display: block;
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
       }
-      
-      h1 {
-        color: #04324d;
-        font-size: 28px;
-        margin-bottom: 12px;
-        font-weight: 700;
+
+      .logo {
+        width: 100px;
+        height: 100px;
+        margin: 0 auto 30px;
+        animation: pulse 2s ease-in-out infinite;
       }
-      
-      .subtitle {
-        color: #666;
+
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.05); opacity: 0.8; }
+      }
+
+      .title {
+        font-size: 32px;
+        font-weight: 800;
+        margin-bottom: 10px;
+        letter-spacing: -0.5px;
+      }
+
+      .title .mi { color: #04324d; }
+      .title .ayuda { color: #39a900; }
+      .title .tic { color: #04324d; }
+
+      .status-icon {
+        font-size: 48px;
+        margin: 20px 0;
+        animation: bounce 1s ease-in-out infinite;
+      }
+
+      @keyframes bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+      }
+
+      .message {
         font-size: 16px;
-        margin-bottom: 20px;
+        color: #636e95;
+        margin-bottom: 12px;
         line-height: 1.6;
       }
-      
-      .status {
-        background: #f5f5f5;
-        border-left: 4px solid #ff9800;
-        padding: 12px 16px;
-        margin: 24px 0;
-        border-radius: 4px;
-        text-align: left;
+
+      .hint {
         font-size: 14px;
-        color: #666;
-      }
-      
-      .status-label {
-        font-weight: 600;
-        color: #ff9800;
-        display: block;
-        margin-bottom: 4px;
-      }
-      
-      .tips {
-        background: #e3f2fd;
-        border-left: 4px solid #2196f3;
-        padding: 16px;
-        margin: 20px 0;
-        border-radius: 4px;
-        text-align: left;
-      }
-      
-      .tips h3 {
-        color: #1976d2;
-        font-size: 14px;
-        margin-bottom: 8px;
-      }
-      
-      .tips ul {
-        list-style: none;
-        font-size: 13px;
-        color: #555;
-      }
-      
-      .tips li {
-        margin: 4px 0;
-        padding-left: 20px;
-        position: relative;
-      }
-      
-      .tips li:before {
-        content: '✓';
-        position: absolute;
-        left: 0;
-        color: #2196f3;
-        font-weight: bold;
-      }
-      
-      button {
-        background: #04324d;
-        color: white;
-        border: none;
-        padding: 14px 32px;
-        border-radius: 8px;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
+        color: #97a0c3;
         margin-top: 20px;
-        transition: background 0.3s ease;
+        padding-top: 20px;
+        border-top: 1px solid #f0f4f8;
       }
-      
-      button:hover {
-        background: #1a5f7a;
+
+      .loading-bar {
+        width: 100%;
+        height: 3px;
+        background: #f0f4f8;
+        border-radius: 2px;
+        margin-top: 30px;
+        overflow: hidden;
       }
-      
-      button:active {
-        transform: scale(0.98);
+
+      .loading-bar::after {
+        content: '';
+        display: block;
+        width: 30%;
+        height: 100%;
+        background: linear-gradient(90deg, #39a900, #04324d);
+        animation: slide 2s ease-in-out infinite;
       }
-      
-      .footer {
-        margin-top: 24px;
-        font-size: 12px;
-        color: #999;
+
+      @keyframes slide {
+        0% { transform: translateX(-100%); }
+        50% { transform: translateX(400%); }
+        100% { transform: translateX(400%); }
       }
-      
-      .wifi-icon {
-        display: inline-block;
-        animation: pulse 2s infinite;
+
+      .dots {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 20px;
       }
-      
-      @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.5; }
+
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #e8ecf4;
+        animation: dotPulse 1.4s infinite;
       }
-      
+
+      .dot:nth-child(2) { animation-delay: 0.2s; }
+      .dot:nth-child(3) { animation-delay: 0.4s; }
+
+      @keyframes dotPulse {
+        0%, 60%, 100% { opacity: 0.5; transform: scale(0.8); }
+        30% { opacity: 1; transform: scale(1.2); background: #39a900; }
+      }
+
+      /* Dark mode support */
       @media (prefers-color-scheme: dark) {
         body {
-          background: #0a1f2e;
+          background: linear-gradient(135deg, #0a1628 0%, #1a3a4a 100%);
         }
+
         .container {
-          background: #1a1a1a;
-          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+          background: #1e2d3d;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
         }
-        h1 { color: #64b5f6; }
-        .subtitle { color: #aaa; }
-        .status { background: #2a2a2a; color: #bbb; border-left-color: #ff9800; }
-        .status-label { color: #ff9800; }
-        .tips { background: #1a3a52; border-left-color: #64b5f6; }
-        .tips h3 { color: #64b5f6; }
-        .tips ul { color: #bbb; }
-        .tips li:before { color: #64b5f6; }
-        button { background: #2196f3; }
-        button:hover { background: #1976d2; }
-        .footer { color: #666; }
+
+        .message {
+          color: #b0bac9;
+        }
+
+        .hint {
+          color: #7a8799;
+          border-top-color: #2a3a4a;
+        }
+
+        .loading-bar {
+          background: #2a3a4a;
+        }
+
+        .dot {
+          background: #3a4a5a;
+        }
+      }
+
+      /* Mobile optimizations */
+      @media (max-width: 480px) {
+        .container {
+          padding: 40px 20px;
+          border-radius: 16px;
+        }
+
+        .title {
+          font-size: 24px;
+        }
+
+        .logo {
+          width: 80px;
+          height: 80px;
+          margin-bottom: 20px;
+        }
+
+        .message {
+          font-size: 14px;
+        }
       }
     </style>
   </head>
   <body>
-    <div class="container">
-      <span class="icon wifi-icon">📡</span>
-      <h1>Sin Conexión</h1>
-      <p class="subtitle">
-        No hay conexión a Internet. Algunas funciones pueden no estar disponibles.
-      </p>
-      
-      <div class="status">
-        <span class="status-label">Estado:</span>
-        Esperando conexión de red...
-      </div>
-      
-      <div class="tips">
-        <h3>Qué puedes hacer:</h3>
-        <ul>
-          <li>Revisar tu conexión WiFi o datos móviles</li>
-          <li>Activar/desactivar modo avión</li>
-          <li>Intentar acceder nuevamente</li>
-          <li>Algunos datos guardados estarán disponibles offline</li>
-        </ul>
-      </div>
-      
-      <button onclick="location.reload()">
-        🔄 Reintentar Conexión
-      </button>
-      
-      <div class="footer">
-        <p>MiAyudaTIC v4.0 · Centro de Soporte TIC SENA</p>
-      </div>
+    <!-- Background animations -->
+    <div class="background">
+      <div class="circle circle1"></div>
+      <div class="circle circle2"></div>
     </div>
 
-    <script>
-      // Detectar cuando vuelve la conexión
-      window.addEventListener('online', () => {
-        console.log('✓ Conexión recuperada')
-        // Esperar un poco para que se estabilice
-        setTimeout(() => {
-          location.reload()
-        }, 500)
-      })
-      
-      // Log de estado
-      console.log('🔌 Modo offline - esperando conexión')
-      if (navigator.onLine) {
-        console.warn('⚠️ navigator.onLine dice true pero no hay conexión')
-      }
-    </script>
+    <!-- Content -->
+    <div class="container">
+      <!-- Logo -->
+      <svg class="logo" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#04324d;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#39a900;stop-opacity:1" />
+          </linearGradient>
+        </defs>
+        <!-- Simple circle for SENA inspired icon -->
+        <circle cx="12" cy="8" r="3" fill="url(#grad)"/>
+        <path d="M12 12 L8 20 L16 20 Z" stroke="url(#grad)" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <line x1="8" y1="16" x2="16" y2="16" stroke="url(#grad)" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+
+      <!-- Title -->
+      <h1 class="title">
+        <span class="mi">MI</span><span class="ayuda">AYUDA</span><span class="tic">TIC</span>
+      </h1>
+
+      <!-- Status -->
+      <div class="status-icon">📡</div>
+
+      <!-- Messages -->
+      <p class="message">
+        Cargando aplicación...
+      </p>
+      <p class="message" style="font-size: 13px; margin-bottom: 0;">
+        Preparando tu experiencia
+      </p>
+
+      <!-- Loading animation -->
+      <div class="dots">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+      </div>
+
+      <!-- Loading bar -->
+      <div class="loading-bar"></div>
+
+      <!-- Hint -->
+      <p class="hint">
+        Si esto tarda mucho, verifica tu conexión de internet
+      </p>
+    </div>
   </body>
 </html>

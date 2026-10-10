@@ -1,7 +1,7 @@
-// Service Worker - MiAyudaTIC PWA v6
+// Service Worker - MiAyudaTIC PWA v7
 // Network-first para HTML y navegación, cache-first para assets hasheados
 
-const CACHE_VERSION = 'miayudatics-v6'
+const CACHE_VERSION = 'miayudatics-v7'
 const OFFLINE_PAGE = '/offline.html'
 
 // App shell: crítico para funcionamiento offline
@@ -54,6 +54,13 @@ self.addEventListener('fetch', event => {
 
   // Solo interceptar requests al mismo origin
   if (url.origin !== self.location.origin) return
+
+  // === ARCHIVOS CRÍTICOS DE PWA: siempre network-first, nunca cachear ===
+  // El manifest y sw.js deben ser siempre frescos para que el splash se actualice
+  if (url.pathname === '/manifest.json' || url.pathname === '/sw.js') {
+    event.respondWith(fetch(request))
+    return
+  }
 
   // === NAVEGACIÓN HTML: Network-First ===
   if (request.mode === 'navigate') {

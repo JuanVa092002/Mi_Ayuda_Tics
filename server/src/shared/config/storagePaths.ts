@@ -13,7 +13,7 @@ export function getStorageDir(): string {
 export function getPublicBaseUrl(): string {
   return (
     process.env.PUBLIC_URL?.trim() ||
-    process.env.RENDER_URL?.trim() ||
+    process.env.RENDER_EXTERNAL_URL?.trim() ||
     `http://localhost:${process.env.PORT || 8000}`
   ).replace(/\/$/, '')
 }

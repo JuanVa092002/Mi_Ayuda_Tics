@@ -6,6 +6,7 @@ import 'react-toastify/dist/ReactToastify.css'
 import { AuthProvider } from '@/features/auth'
 import { ExperienceProvider } from '@/shared/experiments/ExperienceContext'
 import { AlertProvider } from '@/shared/ui'
+import PWAInstallPrompt from '@/shared/pwa/PWAInstallPrompt'
 import Allroutes from '@/app/router/Allroutes'
 
 interface ErrorBoundaryState {
@@ -50,6 +51,7 @@ export default function App(): ReactNode {
           <AlertProvider>
             <ErrorBoundary>
               <Allroutes />
+              <PWAInstallPrompt />
             </ErrorBoundary>
             {/* Ocultamos ToastContainer clásico para que prevalezca el modal SweetAlert2 */}
             <div className="hidden" aria-hidden="true">

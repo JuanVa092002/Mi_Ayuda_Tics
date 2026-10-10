@@ -40,6 +40,15 @@ export function resolveTicketPhotoSource(
     return { kind: 'authenticated', path: `/media/local/${filename}` }
   }
 
+  // http://localhost URLs must be authenticated (CSP blocks http: in img-src)
+  if (/^http:\/\/(localhost|127\.0\.0\.1)/i.test(raw)) {
+    const match = raw.match(/\/(?:api\/)?media\/local\/([^/?#]+)/i)
+    if (match?.[1]) {
+      const filename = safeLocalFilename(match[1])
+      if (filename) return { kind: 'authenticated', path: `/media/local/${filename}` }
+    }
+  }
+
   if (/^https:\/\//i.test(raw) && !/localhost|127\.0\.0\.1/i.test(raw)) {
     return { kind: 'public', url: raw }
   }

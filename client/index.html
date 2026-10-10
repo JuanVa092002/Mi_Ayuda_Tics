@@ -2,48 +2,115 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5.0, user-scalable=no" />
+    
+    <!-- Manifest PWA -->
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- Theme & App Colors -->
     <meta name="theme-color" content="#04324d" />
+    <meta name="color-scheme" content="light dark" />
+    
+    <!-- iOS App Mode -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="MiAyudaTIC" />
+    
+    <!-- iOS Icons & Splash -->
+    <link rel="apple-touch-icon" href="/icons/logo.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/logo.png" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="MiAyudaTics" />
+    
+    <!-- iPad Splash Screen (2048x2732) -->
+    <link rel="apple-touch-startup-image" 
+          media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)" 
+          href="/icons/logo.png" />
+    <!-- iPhone Splash Screen (1284x2778) -->
+    <link rel="apple-touch-startup-image" 
+          media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)" 
+          href="/icons/logo.png" />
+    <!-- Generic fallback -->
+    <link rel="apple-touch-startup-image" href="/icons/logo.png" />
+    
+    <!-- Disable Tap Highlight on iOS -->
     <meta name="format-detection" content="telephone=no" />
-    <link rel="manifest" href="/manifest.json" />
+    <style>
+      * { -webkit-tap-highlight-color: transparent; }
+      input, textarea, select { -webkit-user-select: text; user-select: text; }
+    </style>
+    
+    <!-- Standard Favicon -->
+    <link rel="icon" type="image/png" href="/icons/logo.png" />
+    
+    <!-- Open Graph for sharing -->
+    <meta property="og:title" content="MiAyudaTIC" />
+    <meta property="og:description" content="Sistema de Gestión y Soporte Técnico TIC - SENA CTPI" />
+    <meta property="og:image" content="/icons/logo.png" />
+    <meta property="og:type" content="application/x-web-app" />
+    
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Public+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <title>MiAyudaTIC · Centro de Soporte TIC</title>
   </head>
   <body class="w-full">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Service Worker Registration with Auto-Update -->
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', function () {
+          // Register Service Worker
           navigator.serviceWorker.register('/sw.js', { scope: '/' })
             .then(function (reg) {
+              console.log('✓ Service Worker registered', reg.scope)
+              
               // Si hay una actualización esperando, activarla inmediatamente
-              if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' })
+              if (reg.waiting) {
+                reg.waiting.postMessage({ type: 'SKIP_WAITING' })
+                console.log('⚡ Update available - activating...')
+              }
+              
+              // Detectar nuevas versiones en background
               reg.addEventListener('updatefound', function () {
                 var newWorker = reg.installing
                 if (newWorker) {
                   newWorker.addEventListener('statechange', function () {
                     if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                       // Nueva versión disponible: recargar para usar el nuevo SW
+                      console.log('⚡ New version available - reloading...')
                       window.location.reload()
                     }
                   })
                 }
               })
             })
+            .catch(function (err) {
+              console.warn('⚠️ Service Worker registration failed:', err)
+            })
+        })
+        
+        // Reload page when SW takes control
+        navigator.serviceWorker.addEventListener('controllerchange', function () {
+          console.log('🔄 Service Worker controller changed')
         })
       }
+      
+      // Prevent zoom on double-tap (iOS)
+      let lastTouchEnd = 0
+      document.addEventListener('touchend', function (event) {
+        let now = Date.now()
+        if (now - lastTouchEnd <= 300) {
+          event.preventDefault()
+        }
+        lastTouchEnd = now
+      }, false)
     </script>
   </body>
 </html>

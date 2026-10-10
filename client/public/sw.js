@@ -1,69 +1,160 @@
-// Service Worker - MiAyudaTics
-// Versión 3 - cache-busting: invalida cualquier versión anterior
-const CACHE_VERSION = 'miayudatics-v3'
+// Service Worker - MiAyudaTIC PWA v4
+// Cache-first para assets, network-first para HTML, offline fallback
 
-// Instalar: toma control inmediatamente sin esperar
-self.addEventListener('install', () => {
-  self.skipWaiting()
-})
+const CACHE_VERSION = 'miayudatics-v4'
+const OFFLINE_PAGE = '/offline.html'
 
-// Activar: elimina TODOS los caches viejos y reclama clientes activos
-self.addEventListener('activate', event => {
+// App shell: crítico para funcionamiento offline
+const CRITICAL_ASSETS = [
+  '/',
+  '/index.html',
+  '/offline.html'
+]
+
+// Instalar: precachear app shell + descartar viejos caches
+self.addEventListener('install', event => {
   event.waitUntil(
-    caches.keys()
-      .then(names => Promise.all(
-        names
-          .filter(name => name !== CACHE_VERSION)
-          .map(name => caches.delete(name))
-      ))
-      .then(() => self.clients.claim())
+    caches.open(CACHE_VERSION)
+      .then(cache => {
+        console.log('[SW] Precaching critical assets...')
+        return cache.addAll(CRITICAL_ASSETS).catch(err => {
+          console.warn('[SW] Precache failed (offline ok):', err)
+        })
+      })
+      .then(() => self.skipWaiting())
   )
 })
 
-// Fetch: network-first para HTML, cache-first para assets con hash
+// Activar: elimina caches viejos, toma control inmediato
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys()
+      .then(names => {
+        return Promise.all(
+          names
+            .filter(name => name !== CACHE_VERSION)
+            .map(name => {
+              console.log('[SW] Deleting old cache:', name)
+              return caches.delete(name)
+            })
+        )
+      })
+      .then(() => {
+        console.log('[SW] Claiming all clients')
+        return self.clients.claim()
+      })
+  )
+})
+
+// Fetch: estrategia según el tipo de request
 self.addEventListener('fetch', event => {
   const { request } = event
   const url = new URL(request.url)
+  const isApi = url.pathname.startsWith('/api/')
 
-  // Solo interceptar requests a nuestro propio origin
+  // Solo interceptar requests al mismo origin
   if (url.origin !== self.location.origin) return
 
-  // Para HTML (navegación) y rutas SPA: SIEMPRE red, sin cache
-  if (
-    request.mode === 'navigate' ||
-    url.pathname === '/' ||
-    url.pathname.endsWith('.html') ||
-    // Rutas de la SPA
-    url.pathname.startsWith('/login') ||
-    url.pathname.startsWith('/register') ||
-    url.pathname.startsWith('/forgot') ||
-    url.pathname.startsWith('/funcionario') ||
-    url.pathname.startsWith('/casos') ||
-    url.pathname.startsWith('/admin') ||
-    url.pathname.startsWith('/perfil') ||
-    url.pathname.startsWith('/restablecerPassword')
-  ) {
+  // === NAVEGACIÓN HTML: Network-First ===
+  if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
-        .catch(() => caches.match('/index.html'))
+        .catch(() => {
+          console.log('[SW] Navigation failed, serving offline page')
+          return caches.match(OFFLINE_PAGE) || 
+                 new Response('Offline', { status: 503 })
+        })
     )
     return
   }
 
-  // Para assets con hash (Vite): cache-first con actualización en background
-  if (url.pathname.startsWith('/assets/')) {
+  // === API: Network-First con fallback ===
+  if (isApi) {
     event.respondWith(
-      caches.open(CACHE_VERSION).then(cache =>
-        cache.match(request).then(cached => {
-          const networkFetch = fetch(request).then(response => {
-            if (response.ok) cache.put(request, response.clone())
-            return response
-          })
-          // Si está en cache, devolver inmediato; sino esperar red
-          return cached || networkFetch
+      fetch(request)
+        .then(response => {
+          // Cache éxito (200-299)
+          if (response && response.ok) {
+            const cloned = response.clone()
+            caches.open(CACHE_VERSION).then(cache => {
+              cache.put(request, cloned)
+            })
+          }
+          return response
         })
-      )
+        .catch(() => {
+          console.log('[SW] API request failed, checking cache')
+          return caches.match(request)
+        })
     )
     return
+  }
+
+  // === ASSETS (Vite hashed): Cache-First ===
+  if (url.pathname.startsWith('/assets/')) {
+    event.respondWith(
+      caches.open(CACHE_VERSION)
+        .then(cache => {
+          return cache.match(request)
+            .then(cached => {
+              if (cached) return cached
+
+              return fetch(request)
+                .then(response => {
+                  if (response && response.ok) {
+                    cache.put(request, response.clone())
+                  }
+                  return response
+                })
+                .catch(() => {
+                  console.warn('[SW] Asset fetch failed:', request.url)
+                  return null
+                })
+            })
+        })
+    )
+    return
+  }
+
+  // === FONTS y otros: Stale-While-Revalidate ===
+  if (url.pathname.includes('fonts.googleapis') || 
+      url.pathname.includes('fonts.gstatic') ||
+      url.pathname.includes('material-symbols')) {
+    event.respondWith(
+      caches.open(CACHE_VERSION)
+        .then(cache => {
+          return cache.match(request)
+            .then(cached => {
+              const fetchPromise = fetch(request)
+                .then(response => {
+                  if (response && response.ok) {
+                    cache.put(request, response.clone())
+                  }
+                  return response
+                })
+                .catch(() => cached)
+
+              return cached || fetchPromise
+            })
+        })
+    )
+    return
+  }
+
+  // === DEFAULT: Network-First ===
+  event.respondWith(
+    fetch(request)
+      .catch(() => {
+        return caches.match(request)
+          .catch(() => caches.match(OFFLINE_PAGE))
+      })
+  )
+})
+
+// Message handling: skip waiting para hot-reload
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    console.log('[SW] SKIP_WAITING triggered')
+    self.skipWaiting()
   }
 })

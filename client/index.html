@@ -36,8 +36,29 @@
     <!-- Disable Tap Highlight on iOS -->
     <meta name="format-detection" content="telephone=no" />
     <style>
+      /* Tap highlight */
       * { -webkit-tap-highlight-color: transparent; }
+      /* Allow text selection in inputs */
       input, textarea, select { -webkit-user-select: text; user-select: text; }
+
+      /* Fix Chrome/Safari autofill gray background on desktop inputs (bg-white) */
+      input:-webkit-autofill,
+      input:-webkit-autofill:hover,
+      input:-webkit-autofill:focus,
+      input:-webkit-autofill:active {
+        -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+        -webkit-text-fill-color: #111827 !important;
+        transition: background-color 86400s ease-in-out 0s !important;
+      }
+      /* Override for phone auth fields (bg: #F8FAFB, text: #2E3E5C) */
+      .phone-auth-input:-webkit-autofill,
+      .phone-auth-input:-webkit-autofill:hover,
+      .phone-auth-input:-webkit-autofill:focus,
+      .phone-auth-input:-webkit-autofill:active {
+        -webkit-box-shadow: 0 0 0 1000px #F8FAFB inset !important;
+        -webkit-text-fill-color: #2E3E5C !important;
+        transition: background-color 86400s ease-in-out 0s !important;
+      }
     </style>
     
     <!-- Standard Favicon -->
@@ -65,51 +86,53 @@
     <!-- Service Worker Registration with Auto-Update -->
     <script>
       if ('serviceWorker' in navigator) {
+        // Track if there was already an active SW when the page loaded.
+        // If yes, a controllerchange means an UPDATE → force reload for fresh code.
+        // If no, it's the first install → no reload needed (page already loading fresh).
+        var _swHadController = Boolean(navigator.serviceWorker.controller)
+        var _swReloading = false
+
         window.addEventListener('load', function () {
-          // Register Service Worker
           navigator.serviceWorker.register('/sw.js', { scope: '/' })
             .then(function (reg) {
-              console.log('✓ Service Worker registered', reg.scope)
-              
+              console.log('[SW] Registered', reg.scope)
+
               // Si hay una actualización esperando, activarla inmediatamente
               if (reg.waiting) {
                 reg.waiting.postMessage({ type: 'SKIP_WAITING' })
-                console.log('⚡ Update available - activating...')
               }
-              
-              // Detectar nuevas versiones en background
+
               reg.addEventListener('updatefound', function () {
                 var newWorker = reg.installing
                 if (newWorker) {
                   newWorker.addEventListener('statechange', function () {
                     if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                      // Nueva versión disponible: recargar para usar el nuevo SW
-                      console.log('⚡ New version available - reloading...')
-                      window.location.reload()
+                      newWorker.postMessage({ type: 'SKIP_WAITING' })
                     }
                   })
                 }
               })
             })
             .catch(function (err) {
-              console.warn('⚠️ Service Worker registration failed:', err)
+              console.warn('[SW] Registration failed:', err)
             })
         })
-        
-        // Reload page when SW takes control
+
+        // When a new SW takes control, reload ONLY if it's an update (not first install)
         navigator.serviceWorker.addEventListener('controllerchange', function () {
-          console.log('🔄 Service Worker controller changed')
+          if (_swReloading || !_swHadController) return
+          _swReloading = true
+          console.log('[SW] Updated — reloading for fresh assets')
+          window.location.reload()
         })
       }
-      
+
       // Prevent zoom on double-tap (iOS)
-      let lastTouchEnd = 0
-      document.addEventListener('touchend', function (event) {
-        let now = Date.now()
-        if (now - lastTouchEnd <= 300) {
-          event.preventDefault()
-        }
-        lastTouchEnd = now
+      var _lastTouch = 0
+      document.addEventListener('touchend', function (e) {
+        var now = Date.now()
+        if (now - _lastTouch <= 300) e.preventDefault()
+        _lastTouch = now
       }, false)
     </script>
   </body>

@@ -1,7 +1,7 @@
-// Service Worker - MiAyudaTIC PWA v4
-// Cache-first para assets, network-first para HTML, offline fallback
+// Service Worker - MiAyudaTIC PWA v6
+// Network-first para HTML y navegación, cache-first para assets hasheados
 
-const CACHE_VERSION = 'miayudatics-v5'
+const CACHE_VERSION = 'miayudatics-v6'
 const OFFLINE_PAGE = '/offline.html'
 
 // App shell: crítico para funcionamiento offline

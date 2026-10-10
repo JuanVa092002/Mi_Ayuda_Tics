@@ -16,7 +16,7 @@ export default function ForgotPasswordForm(): ReactNode {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<ForgotPasswordFields>()
+  } = useForm<ForgotPasswordFields>({ mode: 'onChange' })
 
   const onSubmit = handleSubmit(async data => {
     setError(null)

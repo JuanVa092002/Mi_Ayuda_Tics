@@ -5,12 +5,12 @@ export function isLocalWebHost(hostname: string = window.location.hostname): boo
 }
 
 export function getSessionToken(): string | null {
-  if (typeof window === 'undefined' || !isLocalWebHost()) return null
+  if (typeof window === 'undefined') return null
   return window.sessionStorage.getItem(SESSION_TOKEN_KEY)
 }
 
 export function setSessionToken(token: string | undefined): void {
-  if (typeof window === 'undefined' || !isLocalWebHost()) return
+  if (typeof window === 'undefined') return
   const value = token?.trim()
   if (!value) {
     window.sessionStorage.removeItem(SESSION_TOKEN_KEY)

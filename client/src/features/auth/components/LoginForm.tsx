@@ -22,7 +22,7 @@ export default function LoginForm(): ReactNode {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginCredentials>({ mode: 'onTouched', reValidateMode: 'onChange' })
+  } = useForm<LoginCredentials>({ mode: 'onChange', reValidateMode: 'onChange' })
 
   const onSubmit = handleSubmit(async data => {
     setServerError('')
@@ -77,6 +77,7 @@ export default function LoginForm(): ReactNode {
             <input
               id="correo"
               type="email"
+              autoComplete="email"
               placeholder="usuario@sena.edu.co"
               className={`block w-full pl-[44px] pr-4 py-3 bg-white border ${
                 errors.correo ? 'input-error' : 'border-gray-200'
@@ -114,6 +115,7 @@ export default function LoginForm(): ReactNode {
             <input
               id="password"
               type={changeTypePwd}
+              autoComplete="current-password"
               placeholder="••••••••"
               className={`block w-full pl-[44px] pr-12 py-3 bg-white border ${
                 errors.password ? 'input-error' : 'border-gray-200'

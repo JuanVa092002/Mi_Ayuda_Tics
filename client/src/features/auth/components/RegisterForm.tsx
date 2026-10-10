@@ -22,7 +22,7 @@ export default function RegisterForm(): ReactNode {
     formState: { errors },
     watch,
     reset,
-  } = useForm<RegisterCredentials>({ mode: 'onTouched', reValidateMode: 'onChange' })
+  } = useForm<RegisterCredentials>({ mode: 'onChange', reValidateMode: 'onChange' })
 
   const password = watch('password')
 

@@ -1,4 +1,4 @@
-import { useState, type InputHTMLAttributes, type ReactNode } from 'react'
+import { useState, forwardRef, type InputHTMLAttributes, type ReactNode } from 'react'
 import logoSena from '@/assets/logoSena.png'
 
 const blue = '#04324D'
@@ -130,63 +130,71 @@ type FieldProps = InputHTMLAttributes<HTMLInputElement> & {
   toggle?: { visible: boolean; onToggle: () => void }
 }
 
-export function PhoneField({ label, icon, error, toggle, onFocus, onBlur, value: _ignored, ...props }: FieldProps): ReactNode {
-  const [focused, setFocused] = useState(false)
-  const borderColor = error ? '#D32F2F' : focused ? green : border
-  const iconColor = error ? '#D32F2F' : focused ? green : secondary
-  return (
-    <div className="mb-4">
-      <label className="mb-2 block font-medium" style={{ ...font, color: secondary, fontSize: 13, lineHeight: '18px' }}>
-        {label}
-      </label>
-      <div
-        className="flex min-h-14 items-center rounded-[32px] px-4"
-        style={{ background: muted, borderStyle: 'solid', borderColor, borderWidth: error || focused ? 2 : 1 }}
-      >
-        <span className="mr-3 shrink-0">
-          <Feather name={icon} size={20} color={iconColor} />
-        </span>
-        <input
-          {...props}
-          className="phone-auth-input min-w-0 flex-1 bg-transparent py-3 font-medium outline-none"
-          style={{
-            ...font,
-            color: '#2E3E5C',
-            WebkitTextFillColor: '#2E3E5C',
-            caretColor: '#2E3E5C',
-            opacity: 1,
-            fontSize: 16,
-            lineHeight: '22px',
-            background: 'transparent',
-            border: 'none',
-            boxShadow: 'none',
-            borderRadius: 0,
-            WebkitAppearance: 'none',
-            appearance: 'none',
-          }}
-          onFocus={event => {
-            setFocused(true)
-            onFocus?.(event)
-          }}
-          onBlur={event => {
-            setFocused(false)
-            onBlur?.(event)
-          }}
-        />
-        {toggle ? (
-          <button type="button" className="ml-2 rounded-full p-1 active:opacity-[0.85]" style={{ background: muted }} aria-label={toggle.visible ? 'Ocultar contraseña' : 'Mostrar contraseña'} onClick={toggle.onToggle}>
-            <Feather name={toggle.visible ? 'eye-off' : 'eye'} size={22} color={blue} />
-          </button>
+export const PhoneField = forwardRef<HTMLInputElement, FieldProps>(
+  function PhoneField({ label, icon, error, toggle, onFocus, onBlur, onChange, ...props }, ref) {
+    const [focused, setFocused] = useState(false)
+    const borderColor = error ? '#D32F2F' : focused ? green : border
+    const iconColor = error ? '#D32F2F' : focused ? green : secondary
+    return (
+      <div className="mb-4">
+        <label className="mb-2 block font-medium" style={{ ...font, color: secondary, fontSize: 13, lineHeight: '18px' }}>
+          {label}
+        </label>
+        <div
+          className="flex min-h-14 items-center rounded-[32px] px-4"
+          style={{ background: muted, borderStyle: 'solid', borderColor, borderWidth: error || focused ? 2 : 1 }}
+        >
+          <span className="mr-3 shrink-0">
+            <Feather name={icon} size={20} color={iconColor} />
+          </span>
+          <input
+            {...props}
+            ref={ref}
+            className="phone-auth-input min-w-0 flex-1 bg-transparent py-3 font-medium outline-none"
+            style={{
+              ...font,
+              color: '#2E3E5C',
+              WebkitTextFillColor: '#2E3E5C',
+              caretColor: '#2E3E5C',
+              opacity: 1,
+              fontSize: 16,
+              lineHeight: '22px',
+              background: 'transparent',
+              border: 'none',
+              boxShadow: 'none',
+              borderRadius: 0,
+              WebkitAppearance: 'none',
+              appearance: 'none',
+            }}
+            onChange={onChange}
+            onInput={e => {
+              // Captura autofill del navegador que no dispara onChange
+              onChange?.(e as React.ChangeEvent<HTMLInputElement>)
+            }}
+            onFocus={event => {
+              setFocused(true)
+              onFocus?.(event)
+            }}
+            onBlur={event => {
+              setFocused(false)
+              onBlur?.(event)
+            }}
+          />
+          {toggle ? (
+            <button type="button" className="ml-2 rounded-full p-1 active:opacity-[0.85]" style={{ background: muted }} aria-label={toggle.visible ? 'Ocultar contraseña' : 'Mostrar contraseña'} onClick={toggle.onToggle}>
+              <Feather name={toggle.visible ? 'eye-off' : 'eye'} size={22} color={blue} />
+            </button>
+          ) : null}
+        </div>
+        {error ? (
+          <p className="mt-2 flex items-start gap-2 px-1 font-medium" style={{ ...font, color: '#D32F2F', fontSize: 13, lineHeight: '18px' }}>
+            <Feather name="alert-circle" size={14} color="#D32F2F" />
+            <span>{error}</span>
+          </p>
         ) : null}
       </div>
-      {error ? (
-        <p className="mt-2 flex items-start gap-2 px-1 font-medium" style={{ ...font, color: '#D32F2F', fontSize: 13, lineHeight: '18px' }}>
-          <Feather name="alert-circle" size={14} color="#D32F2F" />
-          <span>{error}</span>
-        </p>
-      ) : null}
-    </div>
-  )
-}
+    )
+  }
+)
 
 export const phoneText = { font, blue, green, text, secondary, tertiary, muted, border }

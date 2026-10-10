@@ -1,4 +1,4 @@
-import { Component, type ErrorInfo, type ReactNode } from 'react'
+import { Component, type ErrorInfo, type ReactNode, useState, useEffect } from 'react'
 import { BrowserRouter } from 'react-router-dom'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
@@ -6,6 +6,7 @@ import 'react-toastify/dist/ReactToastify.css'
 import { AuthProvider } from '@/features/auth'
 import { ExperienceProvider } from '@/shared/experiments/ExperienceContext'
 import { AlertProvider } from '@/shared/ui'
+import LoadingScreen from '@/shared/ui/LoadingScreen'
 import PWAInstallPrompt from '@/shared/pwa/PWAInstallPrompt'
 import Allroutes from '@/app/router/Allroutes'
 
@@ -43,6 +44,27 @@ class ErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryStat
   }
 }
 
+function AppContent(): ReactNode {
+  const [showLoading, setShowLoading] = useState(true)
+
+  useEffect(() => {
+    // Show loading screen for minimum 2 seconds for smooth UX
+    // or until content is ready
+    const timer = setTimeout(() => setShowLoading(false), 2000)
+    return () => clearTimeout(timer)
+  }, [])
+
+  return (
+    <>
+      <LoadingScreen isVisible={showLoading} onComplete={() => setShowLoading(false)} />
+      <div className={showLoading ? 'opacity-0' : 'opacity-100 transition-opacity duration-500'}>
+        <Allroutes />
+        <PWAInstallPrompt />
+      </div>
+    </>
+  )
+}
+
 export default function App(): ReactNode {
   return (
     <BrowserRouter>
@@ -50,8 +72,7 @@ export default function App(): ReactNode {
         <ExperienceProvider>
           <AlertProvider>
             <ErrorBoundary>
-              <Allroutes />
-              <PWAInstallPrompt />
+              <AppContent />
             </ErrorBoundary>
             {/* Ocultamos ToastContainer clásico para que prevalezca el modal SweetAlert2 */}
             <div className="hidden" aria-hidden="true">
@@ -63,4 +84,5 @@ export default function App(): ReactNode {
     </BrowserRouter>
   )
 }
+
 

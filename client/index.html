@@ -81,6 +81,12 @@
   </head>
   <body class="w-full">
     <div id="root"></div>
+    <style>
+      /* Hide root while React is loading */
+      #root:empty {
+        display: none;
+      }
+    </style>
     <script type="module" src="/src/main.tsx"></script>
     
     <!-- Service Worker Registration with Auto-Update -->

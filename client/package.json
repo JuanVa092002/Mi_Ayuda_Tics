@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/update-version.mjs",
     "build": "vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest",

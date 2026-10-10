@@ -134,6 +134,53 @@
         if (now - _lastTouch <= 300) e.preventDefault()
         _lastTouch = now
       }, false)
+
+      // === VERSION CHECK: Fuerza reload si hay deploy nueva ===
+      // Cada 5 minutos verifica si la versión cambió
+      // Si cambió → reload automático → todos consumen la versión nueva
+      ;(function() {
+        var CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutos
+        var STORAGE_KEY = 'app_build_id';
+        var currentBuildId = null;
+
+        // Fetch version.json and get current buildId
+        function checkVersion() {
+          fetch('/version.json?t=' + Date.now())
+            .then(r => r.json())
+            .then(data => {
+              currentBuildId = data.buildId;
+              var storedBuildId = localStorage.getItem(STORAGE_KEY);
+              
+              // Primera vez o versión cambió → actualizar y recargar
+              if (!storedBuildId) {
+                localStorage.setItem(STORAGE_KEY, currentBuildId);
+              } else if (storedBuildId !== currentBuildId) {
+                console.log('[VERSION] Nuevo deploy detectado: ' + storedBuildId + ' → ' + currentBuildId + '. Recargando...');
+                localStorage.setItem(STORAGE_KEY, currentBuildId);
+                // Espera un poquito para asegurar que el localStorage se escribió
+                setTimeout(function() {
+                  window.location.reload();
+                }, 100);
+              }
+            })
+            .catch(err => {
+              console.warn('[VERSION] Error al verificar versión:', err);
+            });
+        }
+
+        // Check on load
+        window.addEventListener('load', checkVersion);
+
+        // Check periódicamente (cada 5 min)
+        setInterval(checkVersion, CHECK_INTERVAL_MS);
+
+        // También check cuando la app vuelve del background (visible change)
+        document.addEventListener('visibilitychange', function() {
+          if (document.visibilityState === 'visible') {
+            checkVersion();
+          }
+        });
+      })();
     </script>
   </body>
 </html>

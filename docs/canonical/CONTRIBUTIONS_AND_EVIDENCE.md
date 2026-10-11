@@ -12,7 +12,7 @@
 | Role-based access control | Source code server/middleware/checkRol.ts, express-jwt roles | Role enums + middleware + 403 guards | 100% |
 | Real-time notifications via SSE | Source code server/app.ts, client/src/features/notificaciones/ | SSE broadcaster, web push, 60s poll fallback | 100% |
 | Workflow v2 state machine engine | Commit 48a67f8f, files server/src/features/solicitud- workflow .ts | isolado lifecycle + orchestrator + dedup + historial log + v1/v2 coexist | 100% |
-| Auto-increment case codes unique | Sequence ConsecutivoCaso model + codigoCaso field | lastCodigo deduplicates sobreANOVA | 100% |
+| Auto-increment case codes unique | Sequence ConsecutivoCaso model + codigoCaso field | ConsecutivoCaso sequence counter + migrate-only unique index on codigoCaso field | 100% |
 | Expo mobile app with offline queue | mobile/ directory, offline-store.ts file | Expo Router + TanStack Query + offline mutations | 100% |
 | Contracts package shared schemas | packages/contracts/ with Zod | @miayuda/contracts used server + mobile | 100% |
 | CI/CD pipelines | .github/workflows/ci.yml, deploy-qa-render.yml, post-deploy-smoke.yml | GitHub Actions for Render + Firebase Hosting | 100% |
@@ -23,8 +23,8 @@
 | Claim | Issue | Confidence |
 |-------|------|------------|
 | User adoption metrics | No telemetry in codebase, no dashboards. git log has 17-month gap | Need human testimony |
-| Production incidents | State handling during Brevo outage | No incident records in git. Brevo blocked Render IP start (I1) logged but not complete timeline |
-| Team size / collaborators | Git history 1 author + 1 bot commit: only automated tools involved within single author | Need human testimony |
+| Production incidents | State handling during Brevo outage | P0 incident documented: commit a76951f49bbccb1b9353861f4b3bc682b42621e6 + docs/history/incidents/2026-06-14-forgot-password-prod.md |
+| Team size / collaborators | Git history 1 author + 15 commits with Co-authored-by Cursor (AI-assisted sessions); no other human git authors | Need human testimony for team context beyond git |
 | SENA/CTPI institutional adoption | No institutional email domains in test data, no SESNA text in workflow | Declare as private project built for SENA-like institutions |
 | Mobile app user installed count | No analytics SDK, no MSI install reports | Cannot claim thousands of users without telemetry |
 
@@ -103,12 +103,12 @@ Role Type means role-based access control via JWT + role checks in controllers.
 ### PWA Strategy
 
 - PWAansible = desktop web + mobile web + mobile device install all with same code -> single workstream instead of native mobile branch
-- Mounts: Role-scheduled install nudge (lider prompt after 10s, tecnico after 30s, funcionario after 5s IDLE web)
+- Mounts: Nudge shows immediately on desktop for funcionario and tecnico roles; lider never sees it; dismissed per session (sessionStorage) so reappears on next browser open
 - Not done: Push notifications (stub only); no manifest badge; install cache invalidation looks flee -> documented
 
 ## Honest Representation
 
-- All commits: single author + 1 bot (cursor) -> this is a solo project
+- All commits: single author + 15 commits with Co-authored-by Cursor (AI-assisted development sessions) -> this is a solo project
 - 17 months gap: story unknown -> cite personal gap -> never claim continuous 24-month collaboration without gap explanation
 - No peer review: solo PR merge -> declare autonomous development; zero external review evidence
 - Electrons focus: workflow v2 is the rocket -> it is the best represented artifact

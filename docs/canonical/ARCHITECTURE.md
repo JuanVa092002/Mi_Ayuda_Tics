@@ -18,7 +18,7 @@ graph TD
 |-----------|----------------|----------|
 | **Web Client** | Feature-based UI + PWA + Auth via JWT in HttpOnly cookie | `client/` |
 | **API Server** | Auth + RBAC + Workflow v2 + Events broadcast | `server/` |
-| **Mobile App** | Offline queue + Realtime raped push + Auth via JWT Bearer | `mobile/` |
+| **Mobile App** | Offline queue + file-backed persistence + Auth via JWT Bearer | `mobile/` |
 | **Contracts** | Shared Zod schemas (mean-closed DS>TSs) | `packages/contracts/` |
 
 ## All API Routes (confirmed from evidence)
@@ -27,25 +27,25 @@ graph TD
 |--------|-------|------|------|---------|
 | POST | `/api/auth/login` | ✅ | all | JWT login (cookie/web, bearer/mobile) |
 | POST | `/api/auth/register` | ❌ | none | Funcionario registration |
-| POST | `/api/auth/forgot-password` | ❌ | none | Email reset link |
-| POST | `/api/auth/reset-password/:token` | ❌ | none | Complete password reset |
-| GET | `/api/auth/me` | ✅ | all | Current user profile |
+| POST | `/api/recuperarPassword` | ❌ | none | Email reset link |
+| POST | `/api/restablecerPassword/:token` | ❌ | none | Complete password reset |
+| GET | `/api/auth/verify-token` | ✅ | all | Current user profile |
 | GET | `/api/notificaciones/stream` | ✅ | all | SSE event stream |
 | GET | `/api/notificaciones/poll` | ✅ | all | Poll fallback |
-| POST | `/api/solicitudes` | ✅ | funcionario | Create solicitud (flow v2) |
-| GET | `/api/solicitudes` | ✅ | all | List solicitudes (role filtered) |
-| GET | `/api/solicitudes/:id` | ✅ | stakeholder | Detail + historial |
-| POST | `/api/solicitudes/:id/assign` | ✅ | lider | Assign to técnico |
-| POST | `/api/solicitudes/:id/reassign` | ✅ | lider | Reassign |
-| POST | `/api/solicitudes/:id/start` | ✅ | tecnico | Start work |
-| POST | `/api/solicitudes/:id/wait` | ✅ | tecnico | Await requester reply |
-| POST | `/api/solicitudes/:id/update` | ✅ | tecnico | Update |
-| POST | `/api/solicitudes/:id/reply` | ✅ | funcionario | Requester reply |
-| POST | `/api/solicitudes/:id/resolve` | ✅ | tecnico | Mark resolved |
-| POST | `/api/solicitudes/:id/confirm` | ✅ | funcionario | Confirm solved |
-| POST | `/api/solicitudes/:id/reopen` | ✅ | all | Reopen |
-| POST | `/api/solicitudes/:id/cancel` | ✅ | lider | Cancel |
-| GET | `/api/consecutivos` | ✅ | lider | Consecutive counter |
+| POST | `/api/solicitud` | ✅ | funcionario | Create solicitud (flow v2) |
+| GET | `/api/solicitud` | ✅ | all | List solicitudes (role filtered) |
+| GET | `/api/solicitud/:id` | ✅ | stakeholder | Detail + historial |
+| PUT | `/api/solicitud/:id/asignarTecnico` | ✅ | lider | Assign to técnico |
+| PUT | `/api/solicitud/:id/reasignarTecnico` | ✅ | lider | Reassign |
+| POST | `/api/solicitud/:id/iniciarAtencion` | ✅ | tecnico | Start work |
+| POST | `/api/solicitud/:id/solicitarInformacion` | ✅ | tecnico | Await requester reply |
+| POST | `/api/solicitud/:id/actualizacion` | ✅ | tecnico | Update |
+| POST | `/api/solicitud/:id/responder` | ✅ | funcionario | Requester reply |
+| POST | `/api/solicitud/:id/solucionTotal` | ✅ | tecnico | Mark resolved |
+| POST | `/api/solicitud/:id/confirmarSolucion` | ✅ | funcionario | Confirm solved |
+| POST | `/api/solicitud/:id/reabrir` | ✅ | all | Reopen |
+| POST | `/api/solicitud/:id/cancelar` | ✅ | lider | Cancel |
+| GET | `/api/consecutivoCaso` | ✅ | lider | Consecutive counter |
 | POST | `/api/storage` | ✅ | all | Upload file |
 
 ## Authentication Architecture

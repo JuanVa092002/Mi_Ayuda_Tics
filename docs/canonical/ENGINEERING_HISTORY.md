@@ -39,15 +39,7 @@
 ### Phase 4: Workflow v2 & Mobile (Aug 30-Sep 7, 2026)
 **Core commit**: `48a67f8f` (Sep 7 2026)
 
-#### Workflow v2 landed (Aug 30)
-- Flow v1: `solicitado | asignado | pendiente | finalizado` (no history, no idempotency)
-- Flow v2: `nuevo | en_progreso | esperando_usuario | resuelto | cerrado | cancelado`
-- Append-only event log → `HistorialSolicitud` (14 event types)
-- Idempotency via `operationId` + `payloadHash`
-- Atomicity: transactions (Atlas) vs compensating (standalone)
-- V1/V2 coexistence → `workflowVersion` field + `isLegacyWorkflow()`
-
-#### Mobile app added (Sep 7)
+#### Mobile app added (Aug 30)
 - Directory: `mobile/` → Expo 56 + React Native 0.85.3 + Expo Router + TanStack Query
 - Mobile rather web not PWA → separate engineering decision
 - Auth flow: `SessionStatus` 6-state machine + `commitMobileSession`
@@ -55,6 +47,14 @@
 - Flows built: funcionario create/list/detail → técnico list/detail + v2 actions
 - Offline queue: `offline-store.ts` for técnico mutations
 - Native forgot/reset password screens
+
+#### Workflow v2 landed (Sep 7)
+- Flow v1: `solicitado | asignado | pendiente | finalizado` (no history, no idempotency)
+- Flow v2: `nuevo | en_progreso | esperando_usuario | resuelto | cerrado | cancelado`
+- Append-only event log → `HistorialSolicitud` (14 event types)
+- Idempotency via `operationId` + `payloadHash`
+- Atomicity: transactions (Atlas) vs compensating (standalone)
+- V1/V2 coexistence → `workflowVersion` field + `isLegacyWorkflow()`
 
 ### Phase 5: Design Consolidation (Sep 14-Sep 27, 2026)
 - Design system tokens + components

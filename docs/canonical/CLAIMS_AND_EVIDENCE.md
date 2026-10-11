@@ -5,7 +5,7 @@
 | Claim | Evidence Type | Confidence | How to Verify | Limits |
 |-------|--------------|------------|----------------|--------|
 | Implemented production-grade monorepo for SENA/CTPI institutions | git commit a61cde32b3131c4e6d3be284afb6d5eb2aa5d566 | 100% | git log --oneline | None; codebase fully present |
-| Built Workflow v2 state machine engine with 6-state RBAC isolation and idempotency keys | commit 48a67f8f files server/src/features/solicitud- lifecycle.ts, sol-workflow.ts, workflow-idempotency.ts, workflow-atomicity.ts | 100% | Read source files | None; code present + tested |
+| Built Workflow v2 state machine engine with 6-state lifecycle and role-gated transitions (funcionario/tecnico/lider) and idempotency keys | commit 48a67f8f files server/src/features/solicitud- lifecycle.ts, sol-workflow.ts, workflow-idempotency.ts, workflow-atomicity.ts | 100% | Read source files | None; code present + tested |
 | Added atomic transaction strategy with MongoDB Atlas + compensating logic for standalone | workflow-atomicity.ts runtime decision in boot + tests | 100% | git blame | None; code present |
 | Designed role isolation: JWT roles + middleware 403 guards + valid transitions per role | server/middleware/checkRol.ts + server/src/features/solicitud-lifecycle.ts guards | 100% | Read guards + tests | None |
 | Implemented mobile offline queue with file persistence and auto-sync | mobile/libs/offline/offline-store.ts + offline-sync.ts | 100% | HEAD commit | No telemetry on sync rate |
@@ -21,8 +21,7 @@
 | Team size X or collaboration volume | git log: single author + 1 bot commit | 0% | Declare as solo project or cite internal team size separately |
 | User adoption metrics / KPIs | No telemetry / analytics SDK in codebase | 0% | Avoid counts; claim qualitative outcomes from user interviews |
 | Zero-downtime deployments | No blue/green, canary, or Sentry timbers materials | 0% | Do not claim zero-downtime | Rephrase as reliable deployment workflow |
-| Production incidents and failover | Git log has gaps and no incident MD files |
-| | 0% | Do not claim specific MTTR numbers without metadata |
+| Production incidents and failover | P0 incident did occur and is documented in docs/history/incidents/2026-06-14-forgot-password-prod.md + commit a76951f | 100% (same-day resolution) | MTTR was same-day (opened and closed 2026-06-14) but exact hours unknown |
 
 ## Claims to AVOID (Misleading Without Context)
 
@@ -36,7 +35,7 @@
 
 ## Sample CV Bullets (English)
 
-> Built Workflow v2 state machine engine (commit 48a67f8f) with Atomic transactions (MongoDB Atlas), idempotency keys, 6-state RBAC isolation matrix, and append-only event log (14 event types), allowing safe coexistence of legacy v1 cases so migration could run without downtime.
+> Built Workflow v2 state machine engine (commit 48a67f8f) with Atomic transactions (MongoDB Atlas), idempotency keys, 6-state lifecycle and role-gated transitions (funcionario/tecnico/lider), and append-only event log (14 event types), allowing safe coexistence of legacy v1 cases so migration could run without downtime.
 
 > Implemented production-grade monorepo: React 18 + Express 5 + Expo, loosely coupled features (/server/src/features), shared Zod contract package (@miayuda/contracts), and CI/CD GitHub Actions pipelines to Render, Firebase (prod+qa), and EAS mobile builds.
 

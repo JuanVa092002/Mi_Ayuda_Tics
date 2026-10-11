@@ -27,7 +27,7 @@ Link to north-star metric or roadmap stage in `product.md`.
 ### Relevant context
 
 Files/docs read:
-- [ ] `docs/product.md`
+- [ ] `docs/product/PRODUCT_OVERVIEW.md`
 - [ ] `docs/contracts.md`
 - [ ] `docs/architecture.md`
 - [ ] `archive/audits/...`

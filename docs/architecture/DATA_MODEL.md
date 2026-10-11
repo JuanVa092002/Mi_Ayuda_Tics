@@ -1,4 +1,11 @@
-# contracts.md — MiAyudaTIC
+# DATA_MODEL.md — MiAyudaTIC
+
+**Status:** Active  
+**Last Updated:** 2026-10-11  
+**Audience:** engineering, architecture  
+**Domain:** architecture  
+
+---
 
 > **Single source of truth** for business invariants, permissions, and shared types.  
 > Code package: `packages/contracts` (`@miayuda/contracts`). Clients **must converge** here.

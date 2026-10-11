@@ -1,41 +1,52 @@
 # Documentation Policy — MiAyudaTIC
-> Version: 1.0 | Established: 2026-10-10
+> Version: 2.0 | Established: 2026-10-10 | Updated: 2026-10-11
 
 ## Purpose
 
 Prevent the re-accumulation of redundant, outdated, and misleading documentation.
 
-## 1. Where to document what
+## 1. Where to document what (9-domain architecture)
 
-| Type | Location | Authority |
-|------|----------|-----------|
-| Business invariants, RBAC, contracts | docs/contracts.md | Single source of truth |
-| System architecture | docs/ARCHITECTURE.md | Single source of truth |
-| Product vision and ICP | docs/product.md | Single source of truth |
-| Workflow and state machines | docs/workflow-v2.md | Single source of truth |
-| Architectural decisions (ADRs) | docs/system-overview/15-ARCHITECTURAL-DECISIONS.md | Append-only |
-| Operational runbooks | docs/rollback-procedure.md, docs/runbooks/ | Single source of truth |
-| Deploy procedures | docs/deploy-* | Must note environment scope |
-| Security controls | docs/security/ | Single source of truth |
-| Surface context (for AI agents) | docs/current/ | Auto-generated via pnpm context:* |
-| Technical debt | docs/system-overview/12-TECHNICAL-DEBT.md | Maintained with code |
-| Forensic evidence + claims | docs/canonical/ | Append-only, verified |
-| Historical decisions | docs/history/ | Append-only |
+| Domain | Type | Location | Authority |
+|--------|------|----------|-----------|
+| **PRODUCT** | Product vision, ICP, roadmap | docs/product/PRODUCT_OVERVIEW.md | Single source of truth |
+| **ARCHITECTURE** | System architecture | docs/architecture/ARCHITECTURE.md | Single source of truth |
+| **ARCHITECTURE** | Data model, contracts, invariants | docs/architecture/DATA_MODEL.md | Single source of truth |
+| **ARCHITECTURE** | Workflows and state machines | docs/architecture/WORKFLOWS.md | Single source of truth |
+| **ARCHITECTURE** | Architectural decisions (ADRs) | docs/architecture/DECISIONS.md | Append-only |
+| **ARCHITECTURE** | Operating model | docs/architecture/operating-model.md | Canonical |
+| **ENGINEERING** | Quality and testing standards | docs/engineering/QUALITY_AND_TESTING.md | Canonical |
+| **ENGINEERING** | Visual and interaction standards | docs/engineering/DESIGN_SYSTEM.md | Canonical |
+| **ENGINEERING** | Development process | docs/engineering/DEVELOPMENT_PROCESS.md | Canonical |
+| **ENGINEERING** | CI/CD pipelines | docs/engineering/CI_CD.md | Canonical |
+| **OPERATIONS** | Deployment procedures | docs/operations/DEPLOYMENT.md | Must note environment scope |
+| **OPERATIONS** | Environment management | docs/operations/ENVIRONMENTS.md | Canonical |
+| **OPERATIONS** | Rollback procedures | docs/operations/ROLLBACK.md | Canonical |
+| **OPERATIONS** | QA deployment | docs/operations/DEPLOYMENT-QA.md | Canonical |
+| **OPERATIONS** | Runbooks | docs/runbooks/ | Single source of truth |
+| **AGENTS** | Agent roles and context | docs/agents/AGENT_ROLES.md | Canonical |
+| **AGENTS** | Handoff template | docs/agents/HANDOFF_TEMPLATE.md | Canonical |
+| **SECURITY** | Security controls | docs/security/ | Single source of truth |
+| **SECURITY** | Security posture and compliance | docs/security/SECURITY_POSTURE.md | Canonical |
+| **EVIDENCE** | Forensic evidence + claims | docs/evidence/ | Append-only, verified |
+| **HISTORY** | Historical decisions and context | docs/history/ | Append-only, reference |
+| **CURRENT** | Surface context (AI agents) | docs/current/ | Auto-generated via pnpm context:* |
 
 ## 2. Updating canonical sources
 
-Before creating a new document, check if the topic already has a canonical source.
+Before creating a new document, check if the topic already has a canonical source in the 9-domain structure.
 
 When modifying a canonical source:
 - Verify claims against the code, not against other documents
 - Preserve historical information under clearly labeled sections
 - Mark superseded content with `> [SUPERSEDED as of DATE]`
 - Do not silently overwrite the previous state
+- Maintain cross-domain consistency
 
 ## 3. Recording decisions
 
 Every significant architectural or product decision must be recorded in:
-`docs/system-overview/15-ARCHITECTURAL-DECISIONS.md`
+`docs/architecture/DECISIONS.md`
 
 Format:
 ```
@@ -63,6 +74,7 @@ Before creating a new document:
 1. Check docs/README.md for an existing owner
 2. If a canonical source exists, extend it — don't create a parallel
 3. Working session notes belong in docs/history/archive/ after the workstream closes
+4. Verify the location aligns with the 9-domain architecture
 
 ## 6. Links and references
 
@@ -73,6 +85,8 @@ After moving any file, update:
 - Any document that linked to the old path
 
 Verify internal links with: `grep -r "old-path" docs/`
+
+Always use relative paths within docs/ for stability.
 
 ## 7. Fact, inference, and declaration
 
@@ -97,9 +111,39 @@ Retire means `git mv to archive/`, not delete.
 ## 9. Review triggers
 
 Update relevant docs when:
-- Schemas or contracts change → docs/contracts.md
-- New workflow states or transitions → docs/workflow-v2.md
-- Authentication changes → docs/system-overview/10-SECURITY-MODEL.md
-- Deployment platform changes → deploy docs + README.md prod URL
-- New architectural decision made → docs/system-overview/15-ARCHITECTURAL-DECISIONS.md
-- Known technical debt resolved → docs/system-overview/12-TECHNICAL-DEBT.md
+- Schemas or contracts change → docs/architecture/DATA_MODEL.md
+- New workflow states or transitions → docs/architecture/WORKFLOWS.md
+- Architecture changes → docs/architecture/ARCHITECTURE.md
+- New architectural decision made → docs/architecture/DECISIONS.md
+- Known technical debt resolved → history/12-TECHNICAL-DEBT.md
+- Quality or testing standards change → docs/engineering/QUALITY_AND_TESTING.md
+- Deployment platform changes → docs/operations/* + README.md prod URL
+- Known technical debt resolved → history/12-TECHNICAL-DEBT.md
+- Security controls change → docs/security/SECURITY_POSTURE.md
+
+## 10. Domain consistency rules
+
+1. **No cross-domain duplication** — maintain single source of truth
+2. **Language alignment** — match terminology to domain (product ≠ engineering ≠ operations)
+3. **Link semantics** — use domain-relative paths for intra-docs navigation
+4. **Fail fast on contradictions** — surface inconsistencies, don't silently reconcile
+
+## 11. New: 9-domain structure rules
+
+```
+docs/
+├── product/              # Business vision and user needs
+├── architecture/         # System design and technical decisions
+├── engineering/          # Implementation standards and quality
+├── operations/           # Deployment and maintenance procedures
+├── agents/               # AI agent context and workflows
+├── security/             # Security controls and compliance
+├── history/              # Historical context and archive
+│   └── archive/          # Session logs (preserved forever)
+├── evidence/             # Canonical truth and forensic evidence
+├── current/              # Auto-generated surface profiles
+├── README.md             # Navigation index (current doc)
+└── DOCUMENTATION_POLICY.md (this file)
+```
+
+Prefer consolidation over creation.

@@ -1,84 +1,118 @@
 # MiAyudaTIC — Documentation Index
-> Last updated: 2026-10-10 | HEAD: 29c39075ed1b7b85353f8c78ca938dbc37cd1b34
+> Last updated: 2026-10-11 | Reorganized to 9-domain architecture
 
 ## How to use this index
 
 This index organizes documentation by **reader task** rather than by filename or directory structure. Use it to quickly find the right document for your current goal.
 
 ## 🧭 Understand the project
-- What is MiAyudaTIC? → docs/product.md
-- System context and users → docs/system-overview/01-PROJECT-CONTEXT.md
-- Current state overview → docs/system-overview/02-CURRENT-STATE.md
-- Feature map → docs/system-overview/03-FEATURE-MAP.md
+- **Product vision and ICP** → product/PRODUCT_OVERVIEW.md
+- **System context and users** → history/01-PROJECT-CONTEXT.md
+- **Current state overview** → history/02-CURRENT-STATE.md
+- **Feature map** → history/03-FEATURE-MAP.md
 
 ## 🏗️ Understand the architecture
-- System topology and components → docs/ARCHITECTURE.md
-- Detailed architecture → docs/system-overview/05-ARCHITECTURE.md
-- Domain model and entities → docs/system-overview/04-DOMAIN-MODEL.md
-- Database architecture → docs/system-overview/06-DATA-ARCHITECTURE.md
-- Backend API map → docs/system-overview/07-BACKEND-MAP.md
-- Frontend structure → docs/system-overview/08-FRONTEND-MAP.md
-- Role UX flows → docs/system-overview/09-ROLES-UX.md
+- **System topology and components** → architecture/ARCHITECTURE.md
+- **Detailed architecture** → history/05-ARCHITECTURE.md
+- **Domain model and entities** → history/04-DOMAIN-MODEL.md
+- **Database architecture** → history/06-DATA-ARCHITECTURE.md
+- **Backend API map** → history/07-BACKEND-MAP.md
+- **Frontend structure** → history/08-FRONTEND-MAP.md
+- **Role UX flows** → history/09-ROLES-UX.md
+- **Architectural decisions (ADRs)** → architecture/DECISIONS.md
+- **Workflows and state machines** → architecture/WORKFLOWS.md
+- **Business invariants and contracts** → architecture/DATA_MODEL.md
+- **Operating model** → architecture/operating-model.md
 
 ## ⚙️ Understand business logic
-- Contracts, RBAC, invariants → docs/contracts.md
-- Workflow and state machines → docs/workflow-v2.md
-- Critical invariants → docs/system-overview/16-CRITICAL-INVARIANTS.md
-- Blast radius / change risk → docs/system-overview/17-BLAST-RADIUS.md
+- **Contract invariants and RBAC** → architecture/DATA_MODEL.md
+- **Workflow and state machines** → architecture/WORKFLOWS.md
+- **Critical invariants** → history/16-CRITICAL-INVARIANTS.md
+- **Blast radius / change risk** → history/17-BLAST-RADIUS.md
 
 ## 🛠️ Develop
-- Onboarding (human) → docs/system-overview/18-HUMAN-ONBOARDING.md
-- Onboarding (agent) → docs/system-overview/19-AGENT-ONBOARDING.md
-- Quality bar → docs/quality-bar.md
-- Design system → docs/design-system.md
-- Architectural decisions → docs/system-overview/15-ARCHITECTURAL-DECISIONS.md
+- **Onboarding (human)** → history/18-HUMAN-ONBOARDING.md
+- **Onboarding (agent)** → history/19-AGENT-ONBOARDING.md
+- **Quality bar** → engineering/QUALITY_AND_TESTING.md
+- **Design system** → engineering/DESIGN_SYSTEM.md
+- **Architectural decisions** → architecture/DECISIONS.md
+- **Development process** → engineering/DEVELOPMENT_PROCESS.md
+- **CI/CD pipelines** → engineering/CI_CD.md
 
 ## 🧪 Test and quality
-- Testing strategy → docs/system-overview/11-TESTING-QUALITY.md
-- Technical debt → docs/system-overview/12-TECHNICAL-DEBT.md
-- Known limitations → docs/canonical/KNOWN_LIMITATIONS.md
-- Known unknowns → docs/system-overview/20-KNOWN-UNKNOWNS.md
+- **Testing strategy** → history/11-TESTING-QUALITY.md
+- **Technical debt** → history/12-TECHNICAL-DEBT.md
+- **Known limitations** → evidence/KNOWN_LIMITATIONS.md
+- **Known unknowns** → history/20-KNOWN-UNKNOWNS.md
 
 ## 🚀 Deploy and operate
-- Deploy (web/Firebase) → docs/deploy-firebase-hosting.md ⚠️
-- Deploy (100% cloud) → docs/deploy-100-cloud-environments.md ⚠️
-- Deploy (mobile) → docs/mobile-deployment.md
-- Deploy (QA backend) → docs/qa-backend-deploy.md
-- Rollback → docs/rollback-procedure.md
-- Runbooks → docs/runbooks/
+- **Web deployment** → operations/DEPLOYMENT.md
+- **100% cloud environments** → operations/ENVIRONMENTS.md
+- **Mobile deployment** → operations/DEPLOYMENT-MOBILE.md
+- **QA backend deployment** → operations/DEPLOYMENT-QA.md
+- **Rollback procedures** → operations/ROLLBACK.md
+- **Runbooks** → runbooks/
 
 ## 🔐 Security
-- Security model → docs/system-overview/10-SECURITY-MODEL.md
-- Security docs → docs/security/
-- Dependency triage → docs/security/dependency-triage.md
+- **Security model** → history/10-SECURITY-MODEL.md
+- **Security posture and compliance** → security/SECURITY_POSTURE.md
+- **Security docs** → security/
+- **Dependency triage** → security/SUPPLY_CHAIN.md
 
 ## 📜 Decisions and history
-- Architectural decisions → docs/system-overview/15-ARCHITECTURAL-DECISIONS.md
-- Engineering history → docs/canonical/ENGINEERING_HISTORY.md
-- Production incidents → docs/history/incidents/
-- Past specs → docs/history/openspec/
+- **Architectural decisions (ADRs)** → architecture/DECISIONS.md
+- **Engineering history** → evidence/ENGINEERING_HISTORY.md
+- **Production incidents** → history/incidents/
+- **Past specs** → history/openspec/
+- **All historical context** → history/
 
 ## 👤 Agents and AI context
-- Gentle AI contract → docs/agent-os/gentle-ai-ide-agnostic-architecture.md
-- Agent onboarding → docs/system-overview/19-AGENT-ONBOARDING.md
-- Agent context (compact) → docs/canonical/AGENT_CONTEXT.md
-- Surface profiles → docs/current/ (web, backend, mobile, video)
+- **Gentle AI contract** → agent-os/gentle-ai-ide-agnostic-architecture.md
+- **Agent roles and context** → agents/AGENT_ROLES.md
+- **Agent onboarding** → history/19-AGENT-ONBOARDING.md
+- **Agent context (compact)** → evidence/AGENT_CONTEXT.md
+- **Handoff template** → agents/HANDOFF_TEMPLATE.md
+- **Surface profiles** → current/ (web, backend, mobile, video)
 
 ## 📁 Evidence and portfolio
-- Engineering forensics → docs/canonical/
-- Claims and evidence → docs/canonical/CLAIMS_AND_EVIDENCE.md
-- Contributions map → docs/canonical/CONTRIBUTIONS_AND_EVIDENCE.md
-- Workflow V2 deep dive → docs/canonical/WORKFLOW_V2.md
+- **Canonical truth and forensics** → evidence/
+- **Claims and evidence** → evidence/CLAIMS_AND_EVIDENCE.md
+- **Contributions map** → evidence/CONTRIBUTIONS_AND_EVIDENCE.md
+- **Workflow V2 deep dive** → evidence/WORKFLOW_V2.md
+- **All canonical documents** → evidence/
 
 ## 📦 Archive (historical reference)
-- Agent OS evaluation → docs/history/archive/agent-os-evaluation/
-- UX reconstruction sessions → docs/history/archive/ux-web-reconstruction/
-- Mission session records → docs/history/archive/missions/
-- Historical audits → docs/history/audits/
-- Product briefs → docs/history/briefs/
-- Case study → docs/history/case-study/
-- Incidents → docs/history/incidents/
+- **Agent OS evaluation** → history/archive/agent-os-evaluation/
+- **UX reconstruction sessions** → history/archive/ux-web-reconstruction/
+- **Mission session records** → history/archive/missions/
+- **Historical audits** → history/audits/
+- **Product briefs** → history/briefs/
+- **Case study** → history/case-study/
+- **Incidents** → history/incidents/
+
+## 📁 Directory Structure
+
+```
+docs/
+├── product/              # Business vision, ICP, roadmap
+├── architecture/         # System design, workflows, decisions
+├── engineering/          # Implementation standards, design, quality
+├── operations/           # Deployment, environments, rollback
+├── agents/               # AI agent roles and context
+├── security/             # Security controls and compliance
+├── history/              # Historical context, past decisions
+│   └── archive/          # Session logs and working records
+├── evidence/             # Canonical truth and forensic evidence
+├── current/              # Auto-generated surface profiles
+└── README.md             # This navigation index
+```
 
 ---
 
 **Production URLs:** Web → `https://miayudatics.web.app` (Firebase Hosting) · API → `https://miayudatics-v1-0.onrender.com` (Render)
+
+**Active contradictions requiring resolution:**
+- Green color split: `#2f9600` vs `#39a900` (needs design resolution)
+- Mobile strategy: Expo vs Flutter legacy vs PWA (needs pathway clarification)
+- Environment routing: Branch→target mapping (needs verification)
+- Production URL: `miayudatics.vercel.app` vs `miayudatics.web.app` (needs consolidation)

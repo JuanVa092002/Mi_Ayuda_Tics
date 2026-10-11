@@ -1,6 +1,13 @@
-# architecture.md — MiAyudaTIC
+# ARCHITECTURE.md — MiAyudaTIC
 
-> System design memo. **Code wins on conflict** — verify in `archive/audits/` before changing this doc.
+**Status:** Active  
+**Last Updated:** 2026-10-11  
+**Audience:** engineering, architecture  
+**Domain:** architecture  
+
+---
+
+> System design memo. **Code wins on conflict** — verify in `evidence/` before changing this doc.
 
 ---
 

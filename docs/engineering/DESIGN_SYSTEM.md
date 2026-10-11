@@ -1,4 +1,11 @@
-# design-system.md — MiAyudaTIC
+# DESIGN_SYSTEM.md — MiAyudaTIC
+
+**Status:** Active  
+**Last Updated:** 2026-10-11  
+**Audience:** engineering, design  
+**Domain:** engineering  
+
+---
 
 > Visual and interaction standards for web + mobile. **Code wins on conflict** — verify tokens in `client/tailwind.config.js` and `mobile/.../theme/colors.ts`.
 

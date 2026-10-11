@@ -32,7 +32,7 @@ flowchart TB
 | | |
 |---|---|
 | **Scope** | Architecture decisions, roadmap, RBAC/auth changes, release go/no-go, hiring bar, cross-role conflict resolution |
-| **Inputs** | `docs/product.md`, `architecture.md`, `contracts.md`, `archive/audits/*`, handoffs, metrics |
+| **Inputs** | `docs/product/PRODUCT_OVERVIEW.md`, `docs/architecture/ARCHITECTURE.md`, `docs/architecture/DATA_MODEL.md`, `archive/audits/*`, handoffs, metrics |
 | **Outputs** | Decision memos, prioritized backlog, approved specs, merge approval on HITL changes |
 | **DoD** | Tradeoff documented; contracts updated if invariant changes; quality-bar gates defined for workstream |
 | **Never** | Unscoped refactors; bypassing RBAC review; shipping without smoke gates |
@@ -211,7 +211,7 @@ See also: [`AGENTS.md`](../AGENTS.md) § QA / Review.
 ```
 Role: [Founding Mobile Engineer]
 Mission: [Implement funcionario solicitud create in Expo]
-Context: docs/product.md, contracts.md, architecture.md
+Context: docs/product/PRODUCT_OVERVIEW.md, docs/architecture/DATA_MODEL.md, docs/architecture/ARCHITECTURE.md
 Boundary: mobile/MiAyudaTIC-Mobile only; no server changes without PE2 handoff
 Verify: pnpm typecheck; test on emulator
 Output: Completed handoff-template.md section

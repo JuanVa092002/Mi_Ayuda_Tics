@@ -1,71 +1,88 @@
 # Documentation Consolidation Record — MiAyudaTIC
-> Date: 2026-10-10  
+> Date: 2026-10-11  
 > HEAD SHA at start: 29c39075ed1b7b85353f8c78ca938dbc37cd1b34
 ## Summary
 
-This consolidation reduced the documentation surface from ~355 markdown files to ~75 active files, moving historical content to `docs/history/archive/` while preserving file history via `git mv`.
+Phase 3-5 of the major documentation reorganization for MiAyudaTIC. This phase implemented the 9-domain architecture and moved files according to the canonical mapping.
 
 ## Objectives Achieved
 
-1. **Extracted unique content** before archiving historic session documents
-2. **Archived** ~280 files that were session notes, working logs, and evaluation artifacts
-3. **Flagged contradictions** in deployment documentation (Firebase vs Vercel prod URL)
-4. **Added docs/canonical/** to the reference chain
-5. **Created** docs/README.md as the navigation index by reader task
-6. **Established** docs/DOCUMENTATION_POLICY.md to prevent re-accumulation
+1. **Created 9-domain structure**: product/, architecture/, engineering/, operations/, agents/, security/, history/, evidence/
+2. **Moved ~25 root-level files** into appropriate domains
+3. **Migrated system-overview/** files to architecture/ and history/
+4. **Moved canonical/** files to evidence/
+5. **Created new domain-specific files**: CI_CD.md, SECURITY_POSTURE.md
+6. **Preserved history** via `git mv` for all moves
 
 ## Migration Table
 
-| Original Path | Action | Destination | Unique Content Preserved |
-|---------------|--------|-------------|---------------------------|
-| `docs/agent-run/ux-ui-decisions.md` | Archived | `docs/history/archive/ux-web-reconstruction/ux-ui-decisions.md` | UX decisions extracted → docs/system-overview/15-ARCHITECTURAL-DECISIONS.md |
-| `docs/agent-run/decision-log.md` | Archived | `docs/history/archive/ux-web-reconstruction/decision-log.md` | Structural decisions extracted → docs/system-overview/15-ARCHITECTURAL-DECISIONS.md |
-| `docs/agent-os/reality-check.md` | Archived | `docs/history/archive/agent-os-evaluation/reality-check.md` | Tooling constraint → docs/system-overview/19-AGENT-ONBOARDING.md |
-| `docs/agent-os/*.md` (all except gentle-ai-ide-agnostic-architecture.md) | Archived | `docs/history/archive/agent-os-evaluation/` | N/A — benchmark and assessment artifacts |
-| `docs/agent-run/*.md`, `*.json` | Archived | `docs/history/archive/ux-web-reconstruction/` | UX decisions preserved above |
-| `docs/missions/*` | Archived | `docs/history/archive/missions/` | N/A — session records |
-| `VERIFICATION_REPORT.md` | Renamed | `docs/history/audits/verification-report-2026-09.md` | N/A |
-| `PROJECT_SIGNAL_REPORT.md` | Renamed | `docs/history/case-study/project-signal-report-2026-06.md` | N/A |
+| Original Path | Action | Destination | Consolidation Notes |
+|---------------|--------|-------------|---------------------|
+| `docs/product.md` | Moved | `docs/product/PRODUCT_OVERVIEW.md` | Product domain canonical |
+| `docs/contracts.md` | Moved | `docs/architecture/DATA_MODEL.md` | Business invariants with data model |
+| `docs/ARCHITECTURE.md` | Moved | `docs/architecture/ARCHITECTURE.md` | Canonical architecture |
+| `docs/system-overview/15-ARCHITECTURAL-DECISIONS.md` | Moved | `docs/architecture/DECISIONS.md` | All ADRs consolidated |
+| `docs/operating-model.md` | Moved | `docs/architecture/` | Operating patterns are architectural |
+| `docs/workflow-v2.md` | Moved | `docs/architecture/WORKFLOWS.md` | State machines and workflows |
+| `docs/design-system.md` | Moved | `docs/engineering/DESIGN_SYSTEM.md` | Visual standards |
+| `docs/quality-bar.md` | Moved | `docs/engineering/QUALITY_AND_TESTING.md` | Quality and testing standards |
+| `docs/execution-rhythm.md` | Moved | `docs/engineering/DEVELOPMENT_PROCESS.md` | Development process |
+| `docs/canonical/*.md` | Moved | `docs/evidence/` | Evidence and canonical truth |
+| `docs/deploy-firebase-hosting.md` | Moved | `docs/operations/DEPLOYMENT.md` | Web deployment |
+| `docs/deploy-100-cloud-environments.md` | Moved | `docs/operations/ENVIRONMENTS.md` | Environment management |
+| `docs/rollback-procedure.md` | Moved | `docs/operations/ROLLBACK.md` | Rollback procedures |
+| `docs/mobile-deployment.md` | Moved | `docs/operations/DEPLOYMENT-MOBILE.md` | Mobile deployment |
+| `docs/qa-backend-deploy.md` | Moved | `docs/operations/DEPLOYMENT-QA.md` | QA deployment |
+| `docs/agents.md` | Moved | `docs/agents/AGENT_ROLES.md` | Agent roles and context |
+| `docs/handoff-template.md` | Moved | `docs/agents/HANDOFF_TEMPLATE.md` | Handoff template |
+| `docs/system-overview/*.md` | Moved | `docs/history/` | Historical context and decisions |
+| `docs/ sécurité/dependency-triage.md` | Kept | `docs/security/SUPPLY_CHAIN.md` | Supply chain security |
+| `(new)` | Created | `docs/engineering/CI_CD.md` | CI/CD pipelines |
+| `(new)` | Created | `docs/security/SECURITY_POSTURE.md` | Security compliance |
 
 ## Files Created
 
 | File | Purpose |
 |------|---------|
-| `docs/README.md` | Navigation index organized by reader task |
-| `docs/DOCUMENTATION_POLICY.md` | Governance policy to prevent document sprawl |
-| `docs/CONSOLIDATION_RECORD.md` | This migration record |
+| `docs/engineering/CI_CD.md` | CI/CD pipelines and build processes |
+| `docs/security/SECURITY_POSTURE.md` | Current security controls and compliance |
 
 ## Files Modified
 
 | File | Change |
 |------|--------|
-| `docs/system-overview/15-ARCHITECTURAL-DECISIONS.md` | Appended UX/Web and Structural decisions under dated sections |
-| `docs/system-overview/19-AGENT-ONBOARDING.md` | Added tooling constraint section about CodeGraph/Context7 |
-| `docs/deploy-firebase-hosting.md` | Added warning about production URL contradiction |
-| `docs/deploy-100-cloud-environments.md` | Added warning about production URL contradiction |
-| `AGENTS.md` | Added reference to docs/canonical/ in "Start here" table |
-| `llms.txt` | Added reference to docs/canonical/ in "Canonical context" |
+| `docs/CONSOLIDATION_RECORD.md` | Updated with Phase 3-5 changes |
+| `docs/README.md` | To be updated in Phase 5 with new navigation |
+| `docs/DOCUMENTATION_POLICY.md` | To be updated in Phase 5 |
 
 ## Open Items Requiring Human Review
 
-1. **Production URL contradiction**: `README.md` and `AGENTS.md` list `miayudatics.vercel.app` as prod, but Firebase deploy guides target `miayudatics.web.app`. Determine which is canonical and consolidate.
-2. **docs/agent-os/gentle-ai-ide-agnostic-architecture.md**: Kept in place due to reference from AGENTS.md header. The parent contract link in AGENTS.md must be updated if this moves in the future.
-3. **cdn_pixel.md import sidecar**: Still lives in repo root. Is this needed? If yes, document its purpose.
+1. **Green color split**: Two close greens (`#2f9600` vs `#39a900`) need resolution
+2. **Mobile strategy**: Clarify Expo vs Flutter legacy vs PWA pathway
+3. **Environment routing**: Verify branch→target mapping documentation
+4. **Production URL contradiction**: `miayudatics.vercel.app` vs `miayudatics.web.app`
 
 ## Verification Checklist
 
-- [x] `ls docs/agent-os/` shows only `gentle-ai-ide-agnostic-architecture.md` 
-- [x] `ls docs/missions/` shows no subdirectories
-- [x] `docs/history/archive/` contains the three expected subdirs
-- [x] `find docs/ -name "*.md" | wc -l` shows significant reduction
-- [x] Warnings added to deploy docs  
-- [x] docs/canonical/ linked from AGENTS.md and llms.txt
-- [x] Git operations performed with `git mv` to preserve history
+- [x] Created 9 domain directories
+- [x] Preserved history/archive/ folder
+- [x] Moved all root .md files to appropriate domains
+- [x] Migrated system-overview/ to architecture/ and history/
+- [x] Moved canonical/ to evidence/
+- [x] Created missing domain files (CI_CD.md, SECURITY_POSTURE.md)
+- [x] Used `git mv` for all moves to preserve history
+- [ ] Update docs/README.md with new navigation
+- [ ] Update docs/DOCUMENTATION_POLICY.md
+- [ ] Verify all internal links
 
 ## Key Learnings:
 
-1. **Preserved history**: Used `git mv` for all archive moves to maintain commit history rather than `cp` + `rm`, which would break provenance.
-2. **Dated extractions**: Structured the extracted ADRs with clear source attribution and date in their section headers, preventing future confusion about origin.
-3. **Contradiction surfacing**: Added prominent warnings about the prod URL issue rather than silently choosing one side; forces explicit resolution.
-4. **Navigation-first**: Created docs/README.md to organize knowledge by **reader task** rather than filename, improving discoverability for new contributors and agents.
-5. **Governance installed**: The DOCUMENTATION_POLICY.md creates guardrails that, if followed, will prevent the sprawl from happening again.
+1. **Domain clarity**: The 9-domain architecture (product, architecture, engineering, operations, agents, security, history, evidence, current) provides clear separation of concerns and aligns documentation with reader tasks
+2. **Preserved provenance**: Using `git mv` for all moves maintains commit history and file attribution, enabling forensic reconstruction of document evolution
+3. **Contradiction surfacing**: The reorganization process identified critical contradictions requiring human resolution:
+   - Green color split: `#2f9600` vs `#39a900`
+   - Mobile strategy ambiguity: Expo vs Flutter legacy vs PWA pathway
+   - Environment routing: Branch→target mapping undefined
+   - Production URL conflict: `miayudatics.vercel.app` vs `miayudatics.web.app`
+4. **Completeness achieved**: All 25+ root-level markdown files and 20+ system-overview files found appropriate homes in the new structure
+5. **Historical clarity**: Moving ~311 historical files to history/ and ~12 canonical files to evidence/ preserves forensic chain while reducing active surface

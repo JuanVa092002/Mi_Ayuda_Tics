@@ -1,7 +1,14 @@
-# product.md — MiAyudaTIC
+# PRODUCT_OVERVIEW.md — MiAyudaTIC
+
+**Status:** Active  
+**Last Updated:** 2026-10-11  
+**Audience:** product, engineering, stakeholders  
+**Domain:** product  
+
+---
 
 > Founder memo. Source of truth for **what we build and why**.  
-> Verified product facts live in `archive/audits/`; this doc defines **direction**.
+> Verified product facts live in `evidence/`; this doc defines **direction**.
 
 ---
 

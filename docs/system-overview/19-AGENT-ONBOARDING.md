@@ -46,6 +46,13 @@ FASE 4: INSPECCIÓN DE CÓDIGO LOCALIZADO
 
 ---
 
+## Tooling Constraints (verified 2026-10-07)
+Source: docs/agent-os/reality-check.md (archived 2026-10-10)
+
+**Constraint:** CodeGraph and Context7 tools are NOT installed in the MiAyudaTics workspace. Despite being documented as available capabilities, `codegraph` CLI and `context7` MCP server are not present in PATH. All code intelligence must rely on Antigravity's native tooling (`grep_search`, `view_file`) and the registry skill `modern-web-guidance`.
+
+---
+
 ## 3. Comandos Útiles para el Agente
 
 ```bash

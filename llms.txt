@@ -5,7 +5,7 @@ LLM / agent index (2025–2026 `llms.txt` convention).
 ## Canonical context & surface profiles
 
 - [Web profile](docs/current/web.md) — Web frontend scope, routes, commands
-- [Backend profile](docs/current/backend.md) — API, contracts, endpoints
+- [Backend profile](docs/current/backend.md) — API, contracts, endpoints  
 - [Mobile profile](docs/current/mobile.md) — Expo native app scope
 - [Video profile](docs/current/video.md) — Remotion & marketing assets
 - [Mobile current state](docs/current/current-mobile-agent-context.md) — Expo app detailed state
@@ -13,6 +13,7 @@ LLM / agent index (2025–2026 `llms.txt` convention).
 - [Agent operating system](AGENTS.md) — roles, surfaces, HITL, verify
 - [Business contracts](docs/contracts.md) — RBAC, solicitud states, naming
 - [Architecture](docs/architecture.md) — deploy, security, mobile API notes
+- [Forensic evidence suite](docs/canonical/) — verified architecture, engineering history, workflow V2, claims, onboarding, agent context
 
 ## Surfaces (do not mix in one workstream)
 

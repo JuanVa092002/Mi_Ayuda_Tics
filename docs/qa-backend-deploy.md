@@ -59,5 +59,5 @@ Si el deploy falla:
 
 ## URL de prod
 
-Frontend web (Firebase Hosting) → `https://miayudatics.vercel.app` (master)
+Frontend web (Firebase Hosting) → `https://miayudatics.web.app` (master)
 Frontend web (Firebase Hosting) → `https://qa-miayudatics-v1-0.onrender.com` (develop)

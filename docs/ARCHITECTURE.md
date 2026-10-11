@@ -64,7 +64,7 @@ flowchart TB
 
 **Realtime today:** HTTP poll 30s for notifications. **Target:** Socket.IO client (Stage 2).
 
-**Deploy:** `client/vercel.json` SPA rewrite; `VITE_BACKEND_URL` required.
+**Deploy:** Firebase Hosting (prod `miayudatics.web.app`, qa `qa-miayudatics.web.app`); `VITE_BACKEND_URL` required.
 
 ---
 
@@ -232,7 +232,7 @@ Report to líder TIC via email: description, reproduction steps, estimated impac
 
 ## Deployment
 
-**Prod URLs:** Web `https://miayudatics.vercel.app` · API `https://miayudatics-v1-0.onrender.com`
+**Prod URLs:** Web `https://miayudatics.web.app` (Firebase Hosting) · API `https://miayudatics-v1-0.onrender.com`
 
 ### Render (backend)
 
@@ -260,7 +260,7 @@ Report to líder TIC via email: description, reproduction steps, estimated impac
 | Output | `dist` |
 | Install | `pnpm install` |
 
-**Env:** `VITE_BACKEND_URL` (or `VITE_API_URL` with `/api` suffix). SPA rewrites in `client/vercel.json`.
+**Env:** `VITE_BACKEND_URL` (or `VITE_API_URL` with `/api` suffix). Firebase Hosting rewrites in `firebase.json`.
 
 ### Socket.IO scaling
 

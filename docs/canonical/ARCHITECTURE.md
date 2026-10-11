@@ -60,7 +60,7 @@ classDiagram
     + HttpOnly cookie
     + SameSite=Lax
     + Secure
-    + Domain=miayudatics.vercel.app
+    + Domain=miayudatics.web.app
   }
   class MobileAuth {
     + Authorization: Bearer <JWT>
@@ -126,9 +126,9 @@ stateDiagram-v2
   Mobile_Build: EAS Android via eas.json
 ```
 
-- **Backend**: Render.com Docker (vars `ENV लगीत versioning`) → `miayudatics-v1-0.onrender.com`
-- **Frontend**: Firebase Hosting vercel.app/cwl (prod+qa targets) → `miayudatics.vercel.app`
-- **Mobile**: PWA installed via browser (Chrome Safari) → deployed at `miayudatics.web.app` (Expo app exists but not in production)
+- **Backend**: Render.com Docker → `miayudatics-v1-0.onrender.com`
+- **Frontend + PWA Mobile**: Firebase Hosting (prod+qa targets) → `miayudatics.web.app` (prod) / `qa-miayudatics.web.app` (qa)
+- **Expo app**: archived, not production deployed
 - **CI/CD**: GitHub Actions (3 workflows: ci, deploy-qa-render, post-deploy-smoke)
 
 ## Contracts Package

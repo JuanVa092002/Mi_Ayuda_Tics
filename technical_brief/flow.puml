@@ -1,0 +1,93 @@
+@startuml flujo-auditoria
+!theme plain
+skinparam shadow false
+skinparam roundcorner 8
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 12
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam ArrowColor #334155
+skinparam ArrowThickness 1.2
+
+skinparam rectangle {
+  BackgroundColor #F8FAFC
+  BorderColor #334155
+}
+skinparam database {
+  BackgroundColor #ECFDF5
+  BorderColor #047857
+}
+skinparam cloud {
+  BackgroundColor #EFF6FF
+  BorderColor #1D4ED8
+}
+skinparam node {
+  BackgroundColor #FFF7ED
+  BorderColor #C2410C
+}
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #475569
+}
+skinparam actor {
+  BackgroundColor #F1F5F9
+  BorderColor #334155
+}
+
+title Diagrama de Flujo - Auditor Médico\n
+
+database "CUPS 2026\n(catalogo)" as CUPS
+database "CIE-10 <-> CUPS\n(base de conocimiento)" as KB
+
+file "Historia clinica + Prefactura" as HC
+
+node "Reglas deterministas" as REGLAS {
+  rectangle "NO_FACTURADO" as NF
+  rectangle "SIN_SOPORTE_CLINICO" as SSC
+  rectangle "CANTIDAD_DISCORDANTE" as CD
+}
+
+node "Conocimiento CIE-10 / CUPS" as CIE {
+  rectangle "DIAGNOSTICO_NO_RELACIONADO" as DNR
+}
+
+node "Deep Learning" as DL {
+  rectangle "Resolucion + Normalizacion\ndescripcion CUPS" as NORM
+  component "RoBERTa biomedical-clinical-es\n(cross-encoder pairwise)" as RX
+  rectangle "Politica de atributos\n(via/abordaje/lateralidad/modalidad)" as POL
+  rectangle "CODIGO_NO_COINCIDE" as CNC
+}
+
+node "Compositor multi-label" as COMP {
+  rectangle "VALIDADO" as VAL
+  rectangle "justificacion" as JUST
+  rectangle "accion_recomendada" as ACC
+  rectangle "alertas" as ALERTAS
+  rectangle "severidad" as SEV
+}
+
+rectangle "Validacion enriquecida\n(export CSV / API)" as OUT
+
+' --- Entradas a reglas HC - prefactura ---
+HC --> REGLAS
+
+' --- Conocimiento CIE-10 / CUPS ---
+HC --> CIE
+KB --> CIE
+
+' --- Deep Learning: cross-encoder + politica de atributos ---
+HC --> DL
+CUPS --> DL
+NORM --> RX
+RX --> POL
+POL --> CNC
+
+' --- Las 5 inconsistencias al compositor ---
+REGLAS --> COMP
+CIE --> COMP
+DL --> COMP
+
+' --- Salida ---
+COMP --> OUT
+
+@enduml

@@ -1,0 +1,110 @@
+@startuml arquitectura-auditor-medico
+!theme plain
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 12
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam ArrowColor #334155
+skinparam ArrowThickness 1.2
+
+skinparam rectangle {
+  BackgroundColor #F8FAFC
+  BorderColor #334155
+}
+skinparam database {
+  BackgroundColor #ECFDF5
+  BorderColor #047857
+}
+skinparam cloud {
+  BackgroundColor #EFF6FF
+  BorderColor #1D4ED8
+}
+skinparam node {
+  BackgroundColor #FFF7ED
+  BorderColor #C2410C
+}
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #475569
+}
+skinparam actor {
+  BackgroundColor #F1F5F9
+  BorderColor #334155
+}
+
+title Diagrama de Arquitectura - Auditor Médico\n
+
+actor "Usuario IPS\n(auditor)" as Usuario
+actor "Visitante" as Visitante
+
+node "Firebase Hosting\n(Landing Page)" as Firebase
+node "Vercel\n(Frontend Angular)" as Vercel
+node "Looker Studio\n(Data Studio)" as DataStudio
+node "Dominio Registrado" as Dominio
+node "Cloudflare\n(Tunnel + TLS)" as Cloudflare
+node "GitHub Actions (CI/CD)" as GitHub
+node "GitHub Container Registry\n(GHCR)" as GHCR
+
+node "AWS EC2" as EC2 {
+  rectangle "cloudflared\n(tunnel daemon)" as TunnelAgent
+  rectangle "Docker Engine" as Docker {
+    component "Backend FastAPI\n(uvicorn)" as Backend
+  }
+}
+
+database "Supabase\nPostgreSQL" as Supabase
+
+' --- Tráfico de usuarios ---
+Visitante --> Firebase
+Firebase -> Vercel
+Usuario --> Vercel
+
+' --- Frontend embeds analytics ---
+Vercel <-- DataStudio
+
+' --- Edge compute ---
+Dominio --> Cloudflare
+Cloudflare <-down-> TunnelAgent
+TunnelAgent <-down-> Backend
+
+' --- Consumidores de API ---
+Vercel <..> Cloudflare
+DataStudio <..> Cloudflare
+
+' --- Persistencia e imagen ---
+Backend <--> Supabase
+GitHub -down-> GHCR
+GHCR -down-> Docker
+
+legend right
+  |= Flujo |= Descripción |
+  | HTTPS público | Firebase / Vercel / Cloudflare |
+  | Analytics | Looker Studio embebido en Vercel; consume el API |
+  | Tunnel | cloudflared en EC2 expone el API sin inbound ports |
+  | Contenedor | Backend dockerizado, imagen desde GHCR |
+  | Datos | API sirve validaciones desde Postgres (Supabase) |
+endlegend
+
+note right of Cloudflare
+  Hostname público fijo de API
+  TLS gestionado por Cloudflare
+end note
+
+note bottom of EC2
+  Única carga de cómputo del backend.
+  El túnel inicia la conexión saliente.
+end note
+
+note right of DataStudio
+  Dashboards de analytics
+  embebidos en el frontend Vercel.
+end note
+
+note right of Supabase
+  Fuente de verdad de validaciones.
+  API usa la BD para carga, lectura, exports y BI.
+end note
+
+@enduml

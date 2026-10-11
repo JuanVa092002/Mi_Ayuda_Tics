@@ -2,7 +2,7 @@
 
 Monorepo de la mesa de ayuda institucional SENA (CTPI-Cauca).
 
-**Producción:** [miayudatics.vercel.app](https://miayudatics.vercel.app) · API [miayudatics-v1-0.onrender.com](https://miayudatics-v1-0.onrender.com)
+**Producción:** [miayudatics.web.app](https://miayudatics.web.app) · API [miayudatics-v1-0.onrender.com](https://miayudatics-v1-0.onrender.com)
 
 ## Agentes Cursor
 

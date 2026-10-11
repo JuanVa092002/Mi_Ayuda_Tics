@@ -81,4 +81,4 @@ This index organizes documentation by **reader task** rather than by filename or
 
 ---
 
-⚠️ **Warning:** The deploy guides marked with ⚠️ have a known contradiction about the production URL (Firebase vs Vercel). Verify current production deployment before following these instructions. See the warning notes at the top of `docs/deploy-firebase-hosting.md` and `docs/deploy-100-cloud-environments.md` for details.
+**Production URLs:** Web → `https://miayudatics.web.app` (Firebase Hosting) · API → `https://miayudatics-v1-0.onrender.com` (Render)

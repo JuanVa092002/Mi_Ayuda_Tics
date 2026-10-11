@@ -28,7 +28,7 @@
 | [`.agents/PROJECT-INDEX.md`](.agents/PROJECT-INDEX.md) | Project index, surfaces & scope rules |
 | [`llms.txt`](llms.txt) | LLM index — start here if you are another model |
 
-**Also:** [`docs/design-system.md`](docs/design-system.md), [`docs/analytics.md`](docs/analytics.md), [`docs/quality-bar.md`](docs/quality-bar.md)
+**Also:** [`docs/design-system.md`](docs/design-system.md), [`docs/analytics.md`](docs/analytics.md), [`docs/quality-bar.md`](docs/quality-bar.md), [`docs/canonical/`](docs/canonical/) | Forensic evidence suite: verified architecture, engineering history, workflow V2, claims, onboarding, agent context
 
 **Code truth:** [`docs/history/audits/`](docs/history/audits/) when docs conflict.
 
@@ -176,7 +176,7 @@ Memory is organized under the `miayudatics` project in Engram. Key topics:
 
 ## Prod URLs
 
-- Web: `https://miayudatics.vercel.app`
+- Web: `https://miayudatics.web.app`
 - API: `https://miayudatics-v1-0.onrender.com`
 
 ## Agent skills

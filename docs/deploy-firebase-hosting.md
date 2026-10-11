@@ -1,3 +1,7 @@
+> ✅ **PROD CONFIRMED:** Firebase Hosting (`miayudatics.web.app`) is the canonical production frontend.
+> API: `https://miayudatics-v1-0.onrender.com` (Render).
+> (Confirmed 2026-10-10)
+
 # Despliegue Completo a Firebase Hosting
 
 ## Estructura

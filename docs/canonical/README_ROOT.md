@@ -22,20 +22,23 @@ pnpm run dev
 # Runs on http://localhost:3000
 ```
 
-### Mobile (Expo)
+### Mobile (PWA)
+The web app at https://miayudatics.web.app behaves as a native mobile app when installed.
+Mobile-specific UI renders automatically via `usePhoneLayout` detection (UserAgent + viewport + touch).
+
+(archived) Expo Native App
 ```bash
-cd mobile
-pnpm install
-pnpm run start
-# Scan QR code with Expo Go
+cd mobile && pnpm install && pnpm run start
+# Note: Nearly complete Expo app, but NOT the production mobile strategy.
+# Production mobile = PWA (client/ above)
 ```
 
 ## Architecture
 
-**Monorepo** with three independent surfaces:
-- **Web Client**: React 18 + Vite + TypeScript + Tailwind (Feature-Sliced Design)
+**Monorepo** with production surfaces:
+- **Web Client + PWA Mobile**: React 18 + Vite + TypeScript + Tailwind (extends to mobile via phone detection)
 - **API Server**: Express 5 + Mongoose 8 + TypeScript + Zod (Feature-based `features/`)
-- **Mobile**: Expo 56 + React Native 0.85.3 + TanStack Query
+- **Archived Mobile**: Expo 56 + React Native 0.85.3 + TanStack Query (not production deployment)
 - **Contracts**: Shared Zod schemas (`@miayuda/contracts`)
 
 All services communicate via JWT-authenticated REST API with dual token extraction (HttpOnly cookie for web, `Authorization: Bearer` for mobile).
@@ -63,6 +66,6 @@ cd mobile && pnpm test
 
 ## Production URLs
 
-- **Web**: https://miayudatics.vercel.app
-- **API**: https://miayudatics-v1-0.onrender.com
-- **Mobile**: (via EAS build distribution)
+- **Web**: https://miayudatics.web.app (Firebase Hosting)
+- **API**: https://miayudatics-v1-0.onrender.com (Render)
+- **Mobile**: Install via Chrome on phone → `https://miayudatics.web.app` → menu (⋮) → Add to Home Screen

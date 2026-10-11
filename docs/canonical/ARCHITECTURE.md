@@ -4,21 +4,25 @@
 
 ```mermaid
 graph TD
-  A[Mobile Expo] -->|JWT Bearer| B[API Server]
+  A[Mobile PWA] -->|JWT Cookie| B[API Server]
   C[Web React] -->|JWT Cookie| B[API Server]
   B --> D[MongoDB Atlas]
   B --> E[Brevo Email]
   B --> F[Cloudinary Media]
   G[Browser] -->|PWA Service Worker| C[Web React]
+  H[Mobile Expo] -->|JWT Bearer| B[API Server]
+  style H fill:#f9f、 stroke:#9f9f9f、 stroke-width:2px、 stroke-dasharray: 5 5
 ```
+
+Note: Mobile PWA is the **production** mobile strategy. Expo app exists but is not actively deployed.
 
 ## Component Responsibilities
 
 | Component | Responsibility | Location |
 |-----------|----------------|----------|
-| **Web Client** | Feature-based UI + PWA + Auth via JWT in HttpOnly cookie | `client/` |
+| **Web Client + PWA Mobile** | Feature-based UI + PWA + Phone detection + Auth via JWT in HttpOnly cookie | `client/` |
 | **API Server** | Auth + RBAC + Workflow v2 + Events broadcast | `server/` |
-| **Mobile App** | Offline queue + file-backed persistence + Auth via JWT Bearer | `mobile/` |
+| **Expo App** | Offline queue + file-backed persistence + Auth via JWT Bearer | `mobile/` |
 | **Contracts** | Shared Zod schemas (mean-closed DS>TSs) | `packages/contracts/` |
 
 ## All API Routes (confirmed from evidence)
@@ -69,9 +73,9 @@ classDiagram
 ```
 
 - **Dual token extraction**: `extractAuthToken(req)` checks cookie header first (`Cookie: jwt=...`), falls back to Authorization header (`Authorization: Bearer ...`)
-- **Mobile storage**: Expo SecureStore with `commitMobileSession` pattern
-- **Session states**: 6 states handled by `SessionStatus`
-- **Líder restriction**: Mobile routes block líder role
+- **Mobile storage**: PWA uses HttpOnly cookies, Expo uses SecureStore with `commitMobileSession` pattern
+- **Session states**: 6 states handled by `SessionStatus` (Expo), PWA uses web JWT cookie pattern
+- **Líder restriction**: Expo mobile routes block líder role; PWA uses responsive design for all roles
 
 ## Database Models
 
@@ -124,7 +128,7 @@ stateDiagram-v2
 
 - **Backend**: Render.com Docker (vars `ENV लगीत versioning`) → `miayudatics-v1-0.onrender.com`
 - **Frontend**: Firebase Hosting vercel.app/cwl (prod+qa targets) → `miayudatics.vercel.app`
-- **Mobile**: Expo EAS builds (Android) → distributed via APK/IPA
+- **Mobile**: PWA installed via browser (Chrome Safari) → deployed at `miayudatics.web.app` (Expo app exists but not in production)
 - **CI/CD**: GitHub Actions (3 workflows: ci, deploy-qa-render, post-deploy-smoke)
 
 ## Contracts Package
@@ -146,8 +150,8 @@ classDiagram
 ```
 
 - Shared schemas in `packages/contracts/` → published as `@miayuda/contracts`
-- Used by both **server** and **mobile**
-- Enforces consistency across surfaces
+- Used by **server**, **web client**, and **Expo mobile**
+- Enforces consistency across surfaces; PWA client uses web contracts via React
 
 ## PWA Architecture
 
@@ -162,10 +166,13 @@ graph LR
   E --> H[Install prompt timed per role]
 ```
 
-- **Service worker**: `client/public/sw.js`
-- **Manifest**: `manifest.json`
-- **Install prompt**: Role-aware ( unresponsive after 5s idle web )
-- **No mobile push**: Native mobile has separate push stub, not PWA push
+- **Service worker**: `client/public/sw.js` v7 with hybrid caching (network-first HTML/API, cache-first hashed assets)
+- **Manifest**: `client/public/manifest.json` with SENA branding, standalone display, portrait orientation, and app shortcuts
+- **Mobile detection**: `client/src/features/auth/phone/usePhoneLayout.ts` (triple detection: UA + viewport + touch)
+- **Phone UI components**: 7 components in `client/src/features/auth/phone/` (Chrome, Welcome, Login, Register, Forgot, ResetPassword)
+- **Install prompt**: `client/src/shared/pwa/PWAInstallPrompt.tsx` for mobile + desktop nudge in LoginMain
+- **Offline page**: `client/public/offline.html` with branded offline experience
+- **Auto-update**: Service Worker checks `version.json` every 5 minutes and triggers auto-reload
 
 ## Key Files
 
@@ -175,8 +182,16 @@ graph LR
 | `server/src/features/solicitud-workflow.ts` | Orchestrator (transactions) |
 | `server/src/features/workflow-idempotency.ts` | OperationId + payloadHash dedup |
 | `server/src/features/workflow-atomicity.ts` | Transactions vs compensating logic |
-| `mobile/app/(flows)/solicitudes/...` | Mobile flows (auth, create, list, detail) |
-| `client/src/pages/loginMain/LoginMain.tsx` | Web auth flow |
-| `mobile/libs/offline/offline-store.ts` | TECNICO offline queue |
+| `client/src/features/auth/phone/usePhoneLayout.ts` | Mobile device detection (triple strategy) |
+| `client/src/features/auth/phone/PhoneChrome.tsx` | Phone UI base components and design system |
+| `client/src/features/auth/phone/PhoneWelcome.tsx` | Mobile landing screen |
+| `client/src/features/auth/phone/PhoneLogin.tsx` | Mobile-optimized login flow |
+| `client/src/features/auth/phone/PhoneRegister.tsx` | Mobile registration flow |
+| `client/public/sw.js` | Service Worker v7 with hybrid caching strategy |
+| `client/public/manifest.json` | PWA manifest with standalone mode and SENA branding |
+| `client/src/shared/pwa/PWAInstallPrompt.tsx` | PWA install prompt (role-aware) |
+| `client/public/offline.html` | Branded offline page |
+| `mobile/app/(flows)/solicitudes/...` | Expo mobile flows (archived, not production) |
+| `mobile/libs/offline/offline-store.ts` | Expo TECNICO offline queue (archived) |
 | `server/src/middleware/extractAuthToken.ts` | Dual extraction (cookie + bearer) |
 | `server/src/app.ts` | SSE broadcaster setup |

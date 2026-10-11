@@ -4,10 +4,10 @@
 
 MiAyudaTIC is a **feature-based monorepo** for SENA/CTPI institutions that need to digitize paper / WhatsApp support workflows. It provides:
 
-- **Web** (React 18 + Vite + TypeScript) + **Mobile** (Expo + React Native) + **PWA** parallel delivery
+- **Web + Mobile** (single codebase: React 18 + Vite + TypeScript) delivered as **PWA** — phone-native UI via `usePhoneLayout` detection, manifest.json standalone, Service Worker v7
 - **Workflow v2 engine**: 6-state RBAC machine with idempotency & append-only log
-- **Real-time**: SSE push notifications (web) + offline queue (mobile)
-- **Deploy**: Render backend + Firebase Hosting prod+qa + EAS mobile
+- **Real-time**: SSE push notifications (web) + offline page (PWA)
+- **Deploy**: Render backend + Firebase Hosting prod+qa
 
 ## Run Everything Locally
 
@@ -31,12 +31,10 @@ cp .env.sample .env
 # Fix VITE_API_URL=http://localhost:3001
 pnpm run dev
 
-# Mobile App
-taskkill -f -im adb.exe # kill any stale devices
-cd ../mobile
-cp .env.sample .env
-npx expo start --clear
-# Use Android Studio Emulator or iOS Simulator; EAS not needed for dev
+# Mobile (PWA) — open in Chrome on phone
+# https://miayudatics.web.app → Chrome menu (⋮) → Add to Home Screen
+# Detects mobile automatically via usePhoneLayout (UA + viewport + touch)
+# Note: mobile/ directory contains an archived Expo app (not production deployment)
 ```
 
 ## Key Files to Understand the System

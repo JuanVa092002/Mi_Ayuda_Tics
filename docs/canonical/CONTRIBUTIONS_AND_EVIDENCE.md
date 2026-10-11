@@ -13,10 +13,11 @@
 | Real-time notifications via SSE | Source code server/app.ts, client/src/features/notificaciones/ | SSE broadcaster, web push, 60s poll fallback | 100% |
 | Workflow v2 state machine engine | Commit 48a67f8f, files server/src/features/solicitud- workflow .ts | isolado lifecycle + orchestrator + dedup + historial log + v1/v2 coexist | 100% |
 | Auto-increment case codes unique | Sequence ConsecutivoCaso model + codigoCaso field | ConsecutivoCaso sequence counter + migrate-only unique index on codigoCaso field | 100% |
-| Expo mobile app with offline queue | mobile/ directory, offline-store.ts file | Expo Router + TanStack Query + offline mutations | 100% |
+| PWA mobile client with phone-native UI | client/src/features/auth/phone/ + public/sw.js + public/manifest.json | usePhoneLayout triple detection + PhoneChrome + SW v7 + manifest standalone | 100% |
+| Expo mobile app with offline queue (archived) | mobile/ directory, offline-store.ts file | Expo Router + TanStack Query + offline mutations | 100% |
 | Contracts package shared schemas | packages/contracts/ with Zod | @miayuda/contracts used server + mobile | 100% |
 | CI/CD pipelines | .github/workflows/ci.yml, deploy-qa-render.yml, post-deploy-smoke.yml | GitHub Actions for Render + Firebase Hosting | 100% |
-| Production deployments operational | Render (backend), Firebase (prod+qa), EAS (mobile) | HEAD tag a61cde32b3131c4e6d3be284afb6d5eb2aa5d566 | 100% |
+| Production deployments operational (web + PWA mobile) | Render (backend), Firebase Hosting (prod+qa web with PWA) | HEAD tag a61cde32b3131c4e6d3be284afb6d5eb2aa5d566 | 100% | EAS mobile archived, not in production |
 
 ## DECLARED - Need qualification or confirmation
 
@@ -61,7 +62,7 @@ Role Type means role-based access control via JWT + role checks in controllers.
 - Built Workflow v2 state machine engine: 6-state RBAC isolation matrix, idempotency keys, atomic transactions (Atlas) / compensating logic (local), append-only event log (14 types), V1/V2 coexistence guard
 - Designed role isolation: 100% coverage of valid transitions by JWT role (funcionario/tecnico/lider) plus guards in orchestrator; zero accidental tech allowing unwarranted state transitions
 - Added mobile offline queue with file-based persistence and auto-sync on resume; technicians stay productive in train tunnels
-- Deployed full system (Render backend + Firebase Hosting prod+qa + EAS mobile) with CI/CD (GitHub Actions), dual auth extraction (cookie + bearer), all routes tested
+- Deployed web + PWA mobile system (Render backend + Firebase Hosting prod+qa) with CI/CD (GitHub Actions), dual auth extraction (cookie + bearer), all routes tested; EAS mobile archived
 
 ## CV Bullets - READY (Spanish)
 
@@ -69,12 +70,13 @@ Role Type means role-based access control via JWT + role checks in controllers.
 - Construí el motor de workflow v2: máquina de estados con matriz RBAC 6 roles, llaves de idempotencia, transacciones atómicas (Atlas) / lógica compensatoria (local), registro append-only (14 eventos), guardia coexistencia V1/V2
 - Diseñé aislamiento de roles: 100% cobertura de transiciones válidas por JWT role (funcionario/tecnico/lider) + guards en orchestrator; cero instancia de técnico permitir transiciones demasiado
 - Agregué cola offline móvil con persistencia en archivo y sincronización auto; técnicos productivos en túneles tren
-- Desplegué sistema completo (Render backend + Firebase Hosting prod+qa + EAS mobile) con CI/CD (GitHub Actions), extracción dual auth (cookie + bearer), todas las rutas testeadas
+- Desplegué sistema web + PWA móvil (Render backend + Firebase Hosting prod+qa) con CI/CD (GitHub Actions), extracción dual auth (cookie + bearer), todas las rutas testeadas; EAS mobile archivada
 
 ## CV Bullets - QUALIFY (Need human testimony)
 
 - Led end-to-end QRAD adoption project within SENA/CTPI institutions (EVIDENCE: zero institutional tracking, declare adoption volume from private knowledge)
 - Improved productivity metrics X% within 6 months (EVIDENCE: no telemetry exists; must cite user interview quotes)
+- Designed PWA mobile architecture extending React web to mobile with 99% code reuse (triple detection + dedicated phone UI + Service Worker offline) vs native separate codebase
 
 ## CV Bullets - AVOID (No evidence)
 
@@ -100,11 +102,26 @@ Role Type means role-based access control via JWT + role checks in controllers.
 - Ops: PWA + Expo Push mutually exclusive; offline queue JSONL only -> keep structured
 - Not Done: Push notifications; single queue no shrinkage; native media upload override queue -> upload planned
 
-### PWA Strategy
+### PWA Mobile Strategy (Production)
 
-- PWAansible = desktop web + mobile web + mobile device install all with same code -> single workstream instead of native mobile branch
-- Mounts: Nudge shows immediately on desktop for funcionario and tecnico roles; lider never sees it; dismissed per session (sessionStorage) so reappears on next browser open
-- Not done: Push notifications (stub only); no manifest badge; install cache invalidation looks flee -> documented
+**Weight**: 8/10 - production mobile delivery architecture.
+
+- Decision: Single codebase delivers web + mobile via PWA, replacing separate native development
+- Detection: Triple strategy (UA + viewport < 768 + touch) returns mobile=true on ANY match
+- UI: 7 dedicated phone components (Chrome, Welcome, Login, Register, Forgot, ResetPassword, Screen) with SENA design tokens and touch targets
+- Cache: Service Worker v7 with hybrid strategy (network-first HTML/API, cache-first versioned assets)
+- Offline: Branded offline.html with SENA styling, animation, and reconnection logic
+- Install: Role-aware prompts (mobile: persistent banner, desktop: sessionStorage nudge)
+- Update: Version polling every 5min triggers auto-reload on new deploy
+- Dashboards: PWA post-auth uses responsive Tailwind breakpoints for mobile flow
+
+### Expo Native App (Archived)
+
+**Weight**: 4/10 - exists but not production choice.
+
+- Built: Expo 56 + React Native 0.85.3 with TanStack Query, offline queue, and 6-state SessionStatus
+- Status: Nearly complete but replaced by PWA strategy in Phase 6
+- Reason: Single codebase via PWA preferred over separate native maintenance
 
 ## Honest Representation
 

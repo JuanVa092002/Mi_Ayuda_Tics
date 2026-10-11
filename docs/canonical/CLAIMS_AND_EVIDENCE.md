@@ -8,8 +8,8 @@
 | Built Workflow v2 state machine engine with 6-state lifecycle and role-gated transitions (funcionario/tecnico/lider) and idempotency keys | commit 48a67f8f files server/src/features/solicitud- lifecycle.ts, sol-workflow.ts, workflow-idempotency.ts, workflow-atomicity.ts | 100% | Read source files | None; code present + tested |
 | Added atomic transaction strategy with MongoDB Atlas + compensating logic for standalone | workflow-atomicity.ts runtime decision in boot + tests | 100% | git blame | None; code present |
 | Designed role isolation: JWT roles + middleware 403 guards + valid transitions per role | server/middleware/checkRol.ts + server/src/features/solicitud-lifecycle.ts guards | 100% | Read guards + tests | None |
-| Implemented mobile offline queue with file persistence and auto-sync | mobile/libs/offline/offline-store.ts + offline-sync.ts | 100% | HEAD commit | No telemetry on sync rate |
-| Deployed full system to production (Render + Firebase + EAS mobile) | GitHub Actions workflows + Render repo mirror + EAS eas.json config | 100% | CI/CD logs | No uptime metrics |
+| Implemented PWA mobile delivery with phone-native UI | client/src/features/auth/phone/usePhoneLayout.ts + PhoneChrome/Welcome/Login/Register/Forgot/ResetPassword.tsx + public/sw.js + manifest.json | 100% | HEAD commit | Production PWA strategy; Expo offline queue archived |
+| Deployed full system to production (Render backend + Firebase web + PWA mobile) | GitHub Actions workflows + Render repo mirror + Firebase Hosting targets | 100% | CI/CD logs | No uptime metrics; EAS mobile not in production |
 | Added PWA capabilities (Service Worker + Manifest + role-aware nudge) | client/public/sw.js + manifest.json + nudge logic | 100% | HEAD commit | No PWA push notifications |
 | Implemented Server-Sent Events broadcaster and listener for web push notifications | SSE listener client/src/features/notificaciones/ + SSE broadcaster server/app.ts + 60s poll fallback | 100% | HEAD commit | SSE in-memory; no Redis horizontal scale |
 
@@ -37,13 +37,15 @@
 
 > Built Workflow v2 state machine engine (commit 48a67f8f) with Atomic transactions (MongoDB Atlas), idempotency keys, 6-state lifecycle and role-gated transitions (funcionario/tecnico/lider), and append-only event log (14 event types), allowing safe coexistence of legacy v1 cases so migration could run without downtime.
 
-> Implemented production-grade monorepo: React 18 + Express 5 + Expo, loosely coupled features (/server/src/features), shared Zod contract package (@miayuda/contracts), and CI/CD GitHub Actions pipelines to Render, Firebase (prod+qa), and EAS mobile builds.
+> Designed PWA mobile architecture: extended React 18 web app to mobile via triple detection (UA + viewport + touch), dedicated phone-native components, Service Worker v7 offline caching, and role-aware install prompts, replacing separate native workstream for single-codebase delivery across web + mobile.
+
+> Implemented production-grade monorepo: React 18 + Express 5, loosely coupled features (/server/src/features), shared Zod contract package (@miayuda/contracts), CI/CD GitHub Actions pipelines to Render (backend) and Firebase Hosting (prod+qa web with PWA mobile), and archived Expo native exploration.
 
 ## Sample CV Bullets (Spanish)
 
 > Construí el motor de workflow v2 (commit 48a67f8f) con transacciones atómicas (MongoDB Atlas), llaves de idempotencia, matriz RBAC de 6 roles, y registro append-only (14 eventos), permitiendo coexistencia con casos legacy v1 para migración sin downtime.
 
-> Implementé monorepo producción-ready: React 18 + Express 5 + Expo, features desconectados (/server/src/features), package @miayuda/contracts, y CI/CD GitHub Actions hacia Render, Firebase (prod+qa), y builds EAS móviles.
+> Implementé monorepo producción-ready: React 18 + Express 5, features desconectados (/server/src/features), package @miayuda/contracts, CI/CD GitHub Actions hacia Render y Firebase Hosting (prod+qa). Entrega mobile vía PWA (Service Worker v7, manifest.json standalone, componentes Phone dedicados). App Expo archivada.
 
 ## Interview Talking Points
 
@@ -61,29 +63,26 @@
 
 **Cite**: Commit 48a67f8f; files solicitud-lifecycle.ts, regi-workflow.ts, workflow-idempotency.ts, workflow-atomicity.ts, solicitud-workflow.ts.
 
-### Topic: Mobile Offline Queue (Niche but Deep)
+### Topic: Mobile Offline Queue — Expo App (Archived, not production)
 
-**Weight**: 7/10 - mobile-specific but shows attention to field constraints.
+**Weight**: 4/10 - demonstrates engineering quality on archived workstream.
 
-- Design: technicos offline (train tunnels) still complete assigned workflow v2 mutations
-- Offline store: mutable JSONL file-backed per solicitud persisted; auto-sync on WIFI resume
-- Offline mode: disable SSE (no realtime); disable polling; queue JSONL per case unique until network
-- Auto-resume: background thread watches connectivity; replays JSONL to API only when network verified
-- Safety: append-only JSONL never drops entries; one-byte resumption cursor tracked
+- Design: técnicos offline still complete workflow v2 mutations (for Expo app)
+- Offline store: file-backed JSONL per solicitud, auto-sync on WiFi resume
+- **Note**: This is in `mobile/` (Expo, archived). Production mobile is the PWA — no offline queue yet on PWA.
 
-**Cite**: mobile/libs/offline directory; offline-store.ts, offline-sync.ts; commit 48a67f8f added offline Queue in same as Workflow v2.
+**Cite**: mobile/libs/offline directory; offline-store.ts, offline-sync.ts.
 
-### Topic: PWA vs Native vs Flutter (Context)
+### Topic: PWA Mobile Architecture (Context)
 
-**Weight**: 5/10 - strategy-level conversation.
+**Weight**: 6/10 - architectural decision with product impact.
 
-- Three mobile strategies coexist: native Expo, PWA, and Flutter legacy (untracked)
-- Expo: priority for field technicians (native install, no browser tabs)
-- PWA: covers desktop web + mobile web + device install all with same code (single workstream instead branch skew)
-- Flutter: legacy started but untracked; stopped when Expo proved sufficient
-- Strategy: "right tool for the job"
+- **Decision**: At end of project, chose PWA over Expo native as production mobile strategy
+- **PWA**: single codebase (client/), `usePhoneLayout` triple detection (UA + viewport + touch), 7 Phone components, manifest.json standalone, SW v7
+- **Expo** (`mobile/`): built to ~80-100%, but NOT chosen for production; archived
+- **Strategy**: no app store friction, instant updates via SW, same codebase as web
 
-**Cite**: mobile/ directory; mobile_flutter/ untracked; client/public/sw.js, manifest.json; commit 2026-10-10 added PWA.
+**Cite**: client/src/features/auth/phone/, client/public/sw.js, client/public/manifest.json; docs/canonical/PWA_MOBILE_ARCHITECTURE.md.
 
 ## Git History Provenance Command
 

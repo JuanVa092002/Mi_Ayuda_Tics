@@ -76,10 +76,16 @@ MiAyudaTIC provides:
 ⚠️ ** 22-commit gap between master ↔ develop** — QA runs pre-PWA.
 ⚠️ ** 17-month commit gap (2024-10-30 ↔ 2026-04-20)** — Human testimony required.
 
-## Three Mobile Strategies (coexisting)
+## Mobile Strategies (production vs archived)
 
-1. **Native Expo app** (`mobile/`) — official mobile strategy
-2. **PWA** (`client/public/sw.js` + `manifest.json`) — web client with PWA features
-3. **Flutter legacy** (`mobile_flutter/` — untracked, wrong URL, abandoned)
+### Production Mobile Strategy
+1. **PWA** (`client/`) — Service Worker v7 + Manifest + triple mobile detection + 7 dedicated phone UI components
+   - Single codebase extends web to mobile
+   - Deployed at `miayudatics.web.app`
+   - Browser-based install (Chrome/Safari)
 
-These are parallel strategies, not sequential transitions.
+### Archived Mobile Explorations
+1. **Expo native app** (`mobile/`) — Expo 56 + React Native, nearly complete but not production
+2. **Flutter legacy** (`mobile_flutter/` — untracked, wrong URL, abandoned)
+
+These coexist but only PWA is actively deployed as production mobile.

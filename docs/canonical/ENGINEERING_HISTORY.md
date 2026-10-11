@@ -74,9 +74,9 @@
 | Feature-based architecture | Phase 2 | Apr 2026 | Scale codebase 6+ mo, keep related code co-located |
 | Backend TS migration in 4 batches | Phase 2 | Apr 2026 | Minimize breakage, max editor static checks |
 | Workflow v2 engine | `48a67f8f` | Sep 7 2026 | Replace v1 4-state linear with state machine + idempotency + audit trail |
-| Expo mobile (not PWA) | Phase 4 | Sep 7 2026 | Reach técnicos sin laptops needing install without app store friction |
-| Dual extraction (cookie + bearer) | Phase 6 | Oct 2026 | Single API codebase services web (cookie) + mobile (secure store) |
-| PWA (web) | Phase 6 | Oct 10 2026 | Improve retention + offline UX for web users using mobile devices |
+| Expo mobile app (archived) | Phase 4 | Sep 7 2026 | Built native mobile separate workstream for técnicos without laptops |
+| Dual extraction (cookie + bearer) | Phase 6 | Oct 2026 | Single API codebase services web/PWA (cookie) + native (secure store) |
+| PWA mobile strategy (production) | Phase 6 | Oct 10 2026 | Official mobile delivery: single codebase with phone detection, Service Worker, and mobile install prompt |
 
 ## The Workflow v1 → v2 Evolution
 
@@ -125,22 +125,28 @@ stateDiagram-v2
 
 ## Mobile Evolution (Three Strategies)
 
-### 1. Native Expo App (`mobile/`)
+### 1. PWA Mobile Strategy (`client/` PWA features) — **PRODUCTION**
+- Added: Phase 6 (2026-10-10)
+- Tech: Service Worker v7 + Manifest + Role-aware install nudge + Triple mobile detection
+- Implementation: Single codebase extends web to mobile via `usePhoneLayout` detection and 7 dedicated phone UI components
+- **Official production** mobile delivery strategy
+- Mobile detection: UserAgent + viewport < 768px + touch capability
+- Phone UI: Dedicated components in `client/src/features/auth/phone/` (Welcome, Login, Register, Forgot, ResetPassword)
+- Offline support: Service Worker network-first HTML, cache-first assets, offline.html fallback
+- Auto-update: Version checking every 5 minutes with auto-reload on new deploy
+
+### 2. Native Expo App (`mobile/`) — **ARCHIVED**
 - Added: Phase 4 (2026-09-07)
 - Tech: Expo 56 + React Native 0.85.3 + Expo Router + TanStack Query
-- Built flows: funcionario auth, solicitud create/list, técnico cases list/detail, offline queue
-- **Official** mobile strategy
-
-### 2. PWA Strategy (`client/` PWA features)
-- Added: Phase 6 (2026-10-10)
-- Tech: Service Worker + Manifest + Role-aware install nudge
-- Not a transition from React Native — **parallel** strategy for web users
+- Built flows: funcionario auth, solicitud create/list, técnico cases list/detail, offline queue with JSONL file persistence
+- Status: Nearly complete (~80-100% built) but replaced by PWA strategy in Phase 6
+- Decision: Single codebase via PWA preferred over separate native development
+- Exists in repo but not deployed to production
 
 ### 3. Flutter Legacy (`mobile_flutter/`)
 - Status: **untracked** by git, wrong backend URL, not developed
 - **Aborted** strategy
-
-These strategies **coexist** — not sequential transitions.
+- Note: Strategies evolved but are not all active; PWA alone serves as production mobile delivery
 
 ## Architecture Changes Per Phase
 

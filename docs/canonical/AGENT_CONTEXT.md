@@ -2,16 +2,16 @@
 
 ## Project Identity (1 paragraph)
 
-MiAyudaTIC is a feature-based monorepo originally created to replace paper and WhatsApp support workflows in SENA technical training centers with a unified, software-based, workflow v2 state machine engine (atomic transactions, idempotency keys, 6-state RBAC matrix isolation, append-only audit log). It supports parallel delivery surfaces: Web (React 18 + Vite + TypeScript + Tailwind) + Mobile (Expo + React Native) + PWA (Service Worker + Manifest), all communicating with a central API (Express 5 + MongoDB Atlas + Zod + JWT dual extractor) deployed on Render, Firebase Hosting, and EAS.
+MiAyudaTIC is a feature-based monorepo originally created to replace paper and WhatsApp support workflows in SENA technical training centers with a unified, software-based, workflow v2 state machine engine (atomic transactions, idempotency keys, 6-state RBAC matrix isolation, append-only audit log). It supports parallel delivery surfaces: Web (React 18 + Vite + TypeScript + Tailwind) + PWA Mobile (same codebase with phone detection + Service Worker + Manifest), all communicating with a central API (Express 5 + MongoDB Atlas + Zod + JWT dual extractor) deployed on Render and Firebase Hosting. An Expo/React Native app exists but is archived and not the production mobile strategy.
 
 ## Repository Structure (compact)
 
 ```
 miayudatic/
   docs/canonical/     # This document + canonical reference
-  client/             # Web React 18 + Vite + TypeScript + PWA
+  client/             # Web React 18 + Vite + TypeScript + PWA + Mobile phone detection
   server/             # API Express 5 + Mongoose 8 + TypeScript + Feature-based
-  mobile/             # Mobile Expo 56 + React Native + Expo Router + TanStack Query
+  mobile/             # Expo 56 + React Native app (archived, not production deployment)
   packages/contracts/ # Shared Zod schemas (@miayuda/contracts)
 ```
 
@@ -26,7 +26,7 @@ miayudatic/
 
 ## Architecture (200 words)
 
-MiAyudaTIC is a feature-based monorepo with loosely coupled components. Web (React 18 / Vite / TypeScript) and Mobile (Expo / React Native) independently implement UI over a shared API (Express 5 / Mongoose 8). API serves JWT via dual extraction (Cookie for web, Bearer for mobile) and enforces role isolation (funcionario/tecnico/lider) with middleware guards (403 verboten). Workflow v2 engine (commit 48a67f8f) is the heart: pure lifecycle state machine + orchestrator + idempotency (operationId + payloadHash) + transactions (Atlas) / compensating (local) + append-only event log (14 types). Realtime is Server-Sent Events (SSE) for web push, offline queue for mobile, and 60s poll fallback. Contracts are shared Zod schemas in packages/contracts/@miayuda/contracts. Deploys: Render Docker (backend), Firebase Hosting (prod+qa web), and EAS builds (mobile Android). PWA features were added in HEAD: Service Worker, Manifest, and role-aware install nudge. Three mobile strategies coexist: Expo native, PWA, and Flutter legacy (untracked, abandoned).
+MiAyudaTIC is a feature-based monorepo with loosely coupled components. Web (React 18 / Vite / TypeScript) and PWA Mobile (same codebase with `usePhoneLayout` triple detection) deliver UI over a shared API (Express 5 / Mongoose 8). API serves JWT via dual extraction (Cookie for web/PWA, Bearer for native) and enforces role isolation (funcionario/tecnico/lider) with middleware guards (403 verboten). Workflow v2 engine (commit 48a67f8f) is the heart: pure lifecycle state machine + orchestrator + idempotency (operationId + payloadHash) + transactions (Atlas) / compensating (local) + append-only event log (14 types). Realtime is Server-Sent Events (SSE) for web push with 60s poll fallback. Contracts are shared Zod schemas in packages/contracts/@miayuda/contracts. Deploys: Render Docker (backend), Firebase Hosting (prod+qa web). Production mobile strategy: PWA with Service Worker v7, Manifest standalone mode, triple mobile detection, and 7 dedicated phone UI components in `client/src/features/auth/phone/`. An Expo/React Native app exists in `mobile/` as archived work but is not the production deployment.
 
 ## Critical Files (Must Understand)
 
@@ -37,10 +37,17 @@ MiAyudaTIC is a feature-based monorepo with loosely coupled components. Web (Rea
 | server/src/features/workflow-idempotency.ts | API | Deduplication logic (unique index) + conflict 403 HTTP response
 | server/src/features/workflow-atomicity.ts | API | Runtime decision: Atlas transactions vs local compensating logic
 | server/middleware/extractAuthToken.ts | API | Dual extraction (Cookie bearer) extractor; extracts JWT from either cookie or Authorization header
-| mobile/libs/offline/offline-store.ts | Mobile | File-backed persistence for mobile offline mutations (JSONL format) + auto sync on WIFI resume
-| mobile/libs/session/session.ts | Mobile | SessionStatus 6-state mobile auth machine using Expo SecureStore
-| client/public/sw.js | Web | PWA Service Worker: cache assets + background sync + install prompt role-aware nudge timing
-| client/public/manifest.json | Web | PWA manifest: name, icons, theme color, PWA scope route
+| client/src/features/auth/phone/usePhoneLayout.ts | PWA | Mobile detection triple strategy (UA + viewport + touch)
+| client/src/features/auth/phone/PhoneChrome.tsx | PWA | Phone UI base components and design tokens
+| client/src/features/auth/phone/PhoneWelcome.tsx | PWA | Mobile landing screen
+| client/src/features/auth/phone/PhoneLogin.tsx | PWA | Mobile-optimized login flow
+| client/src/features/auth/phone/PhoneRegister.tsx | PWA | Mobile registration flow
+| client/public/sw.js | PWA | Service Worker v7: hybrid caching (network-first HTML, cache-first assets)
+| client/public/manifest.json | PWA | Manifest: standalone display, SENA theme, portrait orientation, app shortcuts
+| client/src/shared/pwa/PWAInstallPrompt.tsx | PWA | Role-aware install prompt (mobile)
+| client/public/offline.html | PWA | Branded offline page
+| mobile/libs/offline/offline-store.ts | Expo | Offline queue (JSONL) + auto sync (archived work)
+| mobile/libs/session/session.ts | Expo | SessionStatus 6-state auth machine (archived work)
 
 ## Workflow v2 Quick Reference
 
@@ -75,10 +82,10 @@ stateDiagram-v2
 - Do NOT delete `HistorialSolicitud` events (append-only principle)
 - Do NOT bypass `extractAuthToken(req)` dual extractor pattern
 - Do NOT assume SSE always works across CDNs; keep 60s poll fallback
-- Do NOT commit Expo push private keys or Firebase admin SDK config
+- Do NOT commit Expo push private keys, Firebase admin SDK config, or private cryptographic material
 - Do NOT rename paths without updating `packages/contracts/` schemas and redeploy both surfaces
 - Do NOT drop `workflowVersion` guard without a or yen zero-coexistence migration run on Atlas
-- Do NOT promise realtime mobile push; we have offline queue + PWA install + SSE web only
+- Do NOT promise realtime mobile push; production PWA has no push implementation; SSE works only when app is open; Expo has offline queue but is not the production mobile strategy
 
 ## Where Documentation Lives (Agent Entry Points)
 

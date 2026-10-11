@@ -1,6 +1,79 @@
+import { useState } from 'react'
 import { LoginForm } from '@/features/auth'
 import PhoneWelcome from '@/features/auth/phone/PhoneWelcome'
 import { usePhoneLayout } from '@/features/auth/phone/usePhoneLayout'
+
+const NUDGE_KEY = 'desktop-mobile-nudge-v1'
+
+function MobileNudgeBanner() {
+  const [dismissed, setDismissed] = useState(() => {
+    try { return localStorage.getItem(NUDGE_KEY) === 'true' } catch { return false }
+  })
+
+  if (dismissed) return null
+
+  const dismiss = () => {
+    try { localStorage.setItem(NUDGE_KEY, 'true') } catch (_e) { /* ignore */ }
+    setDismissed(true)
+  }
+
+  return (
+    <div className="fixed bottom-0 left-0 right-0 z-50 animate-in slide-in-from-bottom-2 duration-300">
+      <div style={{ background: 'linear-gradient(90deg, #39a900 0%, #2d8600 100%)' }}>
+        <div className="max-w-screen-xl mx-auto px-6 py-4 flex items-center gap-4">
+          {/* Icon */}
+          <div
+            className="hidden sm:flex items-center justify-center flex-shrink-0 rounded-xl"
+            style={{ width: 44, height: 44, background: 'rgba(255,255,255,0.15)' }}
+          >
+            <span style={{ fontSize: 22 }}>📱</span>
+          </div>
+
+          {/* Text */}
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-bold text-sm leading-tight">
+              ¿Funcionario o Técnico? Esta app está pensada para el celular
+            </p>
+            <p className="text-white/80 text-xs mt-0.5 leading-tight">
+              Abrí{' '}
+              <span className="font-semibold text-white underline underline-offset-2">
+                miayudatics.web.app
+              </span>{' '}
+              en Chrome desde tu celular → menú ⋮ → <em>Añadir a pantalla de inicio</em>
+            </p>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <a
+              href="https://miayudatics.web.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-white text-[#39a900] text-xs font-bold px-4 py-2 rounded-lg hover:bg-green-50 transition whitespace-nowrap"
+            >
+              Abrir en mi celular →
+            </a>
+            <button
+              onClick={dismiss}
+              className="text-white/80 text-xs font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition whitespace-nowrap"
+            >
+              Ahora no
+            </button>
+          </div>
+
+          {/* Close */}
+          <button
+            onClick={dismiss}
+            className="flex-shrink-0 text-white/70 hover:text-white transition text-2xl leading-none ml-1"
+            aria-label="Cerrar"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function LoginMain() {
   const phone = usePhoneLayout()
@@ -239,115 +312,6 @@ export default function LoginMain() {
               ))}
             </div>
           </div>
-
-          {/* ── MOBILE APP NUDGE: solo desktop, para funcionarios y técnicos ── */}
-          <div
-            style={{
-              marginLeft: 'auto',
-              marginRight: 'auto',
-              maxWidth: 'clamp(320px,32vw,480px)',
-              marginTop: 'clamp(1rem,2vw,1.5rem)',
-            }}
-          >
-            <div
-              style={{
-                background: 'rgba(57,169,0,0.08)',
-                border: '1px solid rgba(57,169,0,0.2)',
-                borderRadius: 'clamp(10px,1vw,14px)',
-                padding: 'clamp(12px,1.2vw,18px) clamp(14px,1.4vw,20px)',
-              }}
-            >
-              {/* Header */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                <span style={{ fontSize: 'clamp(18px,1.6vw,22px)' }}>📱</span>
-                <p
-                  style={{
-                    color: '#39a900',
-                    fontWeight: 700,
-                    fontSize: 'clamp(12px,1vw,14px)',
-                    letterSpacing: '0.04em',
-                  }}
-                >
-                  ¿FUNCIONARIO O TÉCNICO?
-                </p>
-              </div>
-
-              {/* Message */}
-              <p
-                style={{
-                  color: 'rgba(255,255,255,0.75)',
-                  fontSize: 'clamp(12px,0.95vw,14px)',
-                  lineHeight: 1.55,
-                  marginBottom: '12px',
-                }}
-              >
-                Esta app está diseñada para usarse desde el celular. Radicá solicitudes al instante y gestioná casos desde el campo.
-              </p>
-
-              {/* Benefits row */}
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '14px' }}>
-                {[
-                  '⚡ Sin ir al escritorio',
-                  '📍 Desde cualquier lugar',
-                  '🔔 Casos en tiempo real',
-                ].map(text => (
-                  <span
-                    key={text}
-                    style={{
-                      background: 'rgba(255,255,255,0.06)',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      color: 'rgba(255,255,255,0.6)',
-                      fontSize: 'clamp(10px,0.8vw,12px)',
-                      padding: '3px 10px',
-                      borderRadius: '9999px',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {text}
-                  </span>
-                ))}
-              </div>
-
-              {/* Instruction */}
-              <div
-                style={{
-                  background: 'rgba(0,0,0,0.2)',
-                  borderRadius: '8px',
-                  padding: '10px 14px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                }}
-              >
-                <div style={{ flex: 1 }}>
-                  <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 'clamp(10px,0.75vw,11px)', marginBottom: '3px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                    Cómo descargarlo
-                  </p>
-                  <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 'clamp(11px,0.9vw,13px)', lineHeight: 1.4 }}>
-                    Abrí <strong style={{ color: '#39a900' }}>miayudatics.web.app</strong> en Chrome desde tu celular → menú <span style={{ fontFamily: 'monospace' }}>⋮</span> → <em>Añadir a pantalla de inicio</em>
-                  </p>
-                </div>
-                <a
-                  href="https://miayudatics.web.app"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    background: '#39a900',
-                    color: 'white',
-                    fontWeight: 700,
-                    fontSize: 'clamp(11px,0.85vw,12px)',
-                    padding: 'clamp(6px,0.6vw,8px) clamp(12px,1.2vw,16px)',
-                    borderRadius: '8px',
-                    textDecoration: 'none',
-                    whiteSpace: 'nowrap',
-                    flexShrink: 0,
-                  }}
-                >
-                  Ir →
-                </a>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* ── INFERIOR: Stats ── */}
@@ -405,6 +369,9 @@ export default function LoginMain() {
       <div className="w-full lg:w-1/2 min-h-screen flex items-center justify-center p-6 sm:p-16 bg-[#f1f5f9]">
         <LoginForm />
       </div>
+
+      {/* Bottom invasive banner — only desktop, nudge to mobile app */}
+      <MobileNudgeBanner />
     </main>
   )
 }

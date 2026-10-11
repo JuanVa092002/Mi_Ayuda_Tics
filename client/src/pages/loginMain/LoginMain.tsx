@@ -239,6 +239,115 @@ export default function LoginMain() {
               ))}
             </div>
           </div>
+
+          {/* ── MOBILE APP NUDGE: solo desktop, para funcionarios y técnicos ── */}
+          <div
+            style={{
+              marginLeft: 'auto',
+              marginRight: 'auto',
+              maxWidth: 'clamp(320px,32vw,480px)',
+              marginTop: 'clamp(1rem,2vw,1.5rem)',
+            }}
+          >
+            <div
+              style={{
+                background: 'rgba(57,169,0,0.08)',
+                border: '1px solid rgba(57,169,0,0.2)',
+                borderRadius: 'clamp(10px,1vw,14px)',
+                padding: 'clamp(12px,1.2vw,18px) clamp(14px,1.4vw,20px)',
+              }}
+            >
+              {/* Header */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                <span style={{ fontSize: 'clamp(18px,1.6vw,22px)' }}>📱</span>
+                <p
+                  style={{
+                    color: '#39a900',
+                    fontWeight: 700,
+                    fontSize: 'clamp(12px,1vw,14px)',
+                    letterSpacing: '0.04em',
+                  }}
+                >
+                  ¿FUNCIONARIO O TÉCNICO?
+                </p>
+              </div>
+
+              {/* Message */}
+              <p
+                style={{
+                  color: 'rgba(255,255,255,0.75)',
+                  fontSize: 'clamp(12px,0.95vw,14px)',
+                  lineHeight: 1.55,
+                  marginBottom: '12px',
+                }}
+              >
+                Esta app está diseñada para usarse desde el celular. Radicá solicitudes al instante y gestioná casos desde el campo.
+              </p>
+
+              {/* Benefits row */}
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '14px' }}>
+                {[
+                  '⚡ Sin ir al escritorio',
+                  '📍 Desde cualquier lugar',
+                  '🔔 Casos en tiempo real',
+                ].map(text => (
+                  <span
+                    key={text}
+                    style={{
+                      background: 'rgba(255,255,255,0.06)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      color: 'rgba(255,255,255,0.6)',
+                      fontSize: 'clamp(10px,0.8vw,12px)',
+                      padding: '3px 10px',
+                      borderRadius: '9999px',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {text}
+                  </span>
+                ))}
+              </div>
+
+              {/* Instruction */}
+              <div
+                style={{
+                  background: 'rgba(0,0,0,0.2)',
+                  borderRadius: '8px',
+                  padding: '10px 14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                }}
+              >
+                <div style={{ flex: 1 }}>
+                  <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 'clamp(10px,0.75vw,11px)', marginBottom: '3px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    Cómo descargarlo
+                  </p>
+                  <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 'clamp(11px,0.9vw,13px)', lineHeight: 1.4 }}>
+                    Abrí <strong style={{ color: '#39a900' }}>miayudatics.web.app</strong> en Chrome desde tu celular → menú <span style={{ fontFamily: 'monospace' }}>⋮</span> → <em>Añadir a pantalla de inicio</em>
+                  </p>
+                </div>
+                <a
+                  href="https://miayudatics.web.app"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    background: '#39a900',
+                    color: 'white',
+                    fontWeight: 700,
+                    fontSize: 'clamp(11px,0.85vw,12px)',
+                    padding: 'clamp(6px,0.6vw,8px) clamp(12px,1.2vw,16px)',
+                    borderRadius: '8px',
+                    textDecoration: 'none',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
+                  }}
+                >
+                  Ir →
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* ── INFERIOR: Stats ── */}

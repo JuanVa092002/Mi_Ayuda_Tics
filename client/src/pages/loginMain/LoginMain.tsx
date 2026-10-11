@@ -3,17 +3,12 @@ import { LoginForm } from '@/features/auth'
 import PhoneWelcome from '@/features/auth/phone/PhoneWelcome'
 import { usePhoneLayout } from '@/features/auth/phone/usePhoneLayout'
 
-const NUDGE_KEY = 'desktop-mobile-nudge-v1-session'
-
 function MobileNudgeBanner() {
-  const [dismissed, setDismissed] = useState(() => {
-    try { return sessionStorage.getItem(NUDGE_KEY) === 'true' } catch { return false }
-  })
+  const [dismissed, setDismissed] = useState(false)
 
   if (dismissed) return null
 
   const dismiss = () => {
-    try { sessionStorage.setItem(NUDGE_KEY, 'true') } catch (_e) { /* ignore */ }
     setDismissed(true)
   }
 

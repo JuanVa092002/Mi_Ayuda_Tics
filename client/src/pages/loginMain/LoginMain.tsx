@@ -20,7 +20,7 @@ function MobileNudgeBanner() {
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 animate-in slide-in-from-bottom-2 duration-300">
       <div style={{ background: 'linear-gradient(90deg, #39a900 0%, #2d8600 100%)' }}>
-        <div className="max-w-screen-xl mx-auto px-6 py-4 flex items-center gap-4">
+        <div className="max-w-screen-xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
           {/* Icon */}
           <div
             className="hidden sm:flex items-center justify-center flex-shrink-0 rounded-xl"
@@ -31,31 +31,20 @@ function MobileNudgeBanner() {
 
           {/* Text */}
           <div className="flex-1 min-w-0">
-            <p className="text-white font-bold text-sm leading-tight">
-              ¿Funcionario o Técnico? Esta app está pensada para el celular
+            <p className="text-white font-semibold text-sm leading-relaxed">
+              ¿Funcionario o Técnico? Esta app está optimizada para celular.
             </p>
-            <p className="text-white/80 text-xs mt-0.5 leading-tight">
-              Julgado app desde tu celular con Chrome → menú ⋮ → <em>Añadir a pantalla de inicio</em>
+            <p className="text-white/90 text-xs mt-1 leading-relaxed">
+              Instalala en Chrome → menú ⋮ → "Añadir a pantalla de inicio"
             </p>
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <button
-              onClick={dismiss}
-              className="text-white/80 text-xs font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition whitespace-nowrap"
-            >
-              Ahora no
-            </button>
-          </div>
-
-          {/* Close */}
           <button
             onClick={dismiss}
-            className="flex-shrink-0 text-white/70 hover:text-white transition text-2xl leading-none ml-1"
-            aria-label="Cerrar"
+            className="bg-white/20 backdrop-blur-sm text-white text-xs font-semibold px-5 py-2.5 rounded-lg hover:bg-white/30 transition whitespace-nowrap border border-white/30"
           >
-            ✕
+            Ahora no
           </button>
         </div>
       </div>

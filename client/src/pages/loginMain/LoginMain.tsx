@@ -3,17 +3,17 @@ import { LoginForm } from '@/features/auth'
 import PhoneWelcome from '@/features/auth/phone/PhoneWelcome'
 import { usePhoneLayout } from '@/features/auth/phone/usePhoneLayout'
 
-const NUDGE_KEY = 'desktop-mobile-nudge-v1'
+const NUDGE_KEY = 'desktop-mobile-nudge-v1-session'
 
 function MobileNudgeBanner() {
   const [dismissed, setDismissed] = useState(() => {
-    try { return localStorage.getItem(NUDGE_KEY) === 'true' } catch { return false }
+    try { return sessionStorage.getItem(NUDGE_KEY) === 'true' } catch { return false }
   })
 
   if (dismissed) return null
 
   const dismiss = () => {
-    try { localStorage.setItem(NUDGE_KEY, 'true') } catch (_e) { /* ignore */ }
+    try { sessionStorage.setItem(NUDGE_KEY, 'true') } catch (_e) { /* ignore */ }
     setDismissed(true)
   }
 
@@ -35,24 +35,12 @@ function MobileNudgeBanner() {
               ¿Funcionario o Técnico? Esta app está pensada para el celular
             </p>
             <p className="text-white/80 text-xs mt-0.5 leading-tight">
-              Abrí{' '}
-              <span className="font-semibold text-white underline underline-offset-2">
-                miayudatics.web.app
-              </span>{' '}
-              en Chrome desde tu celular → menú ⋮ → <em>Añadir a pantalla de inicio</em>
+              Julgado app desde tu celular con Chrome → menú ⋮ → <em>Añadir a pantalla de inicio</em>
             </p>
           </div>
 
           {/* Actions */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            <a
-              href="https://miayudatics.web.app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-white text-[#39a900] text-xs font-bold px-4 py-2 rounded-lg hover:bg-green-50 transition whitespace-nowrap"
-            >
-              Abrir en mi celular →
-            </a>
             <button
               onClick={dismiss}
               className="text-white/80 text-xs font-medium px-3 py-2 rounded-lg hover:bg-white/10 transition whitespace-nowrap"
